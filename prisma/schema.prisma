@@ -1,0 +1,382 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://neondb_owner:npg_K4iMd0SvNtQZ@ep-bold-dew-ag5mbbwd-pooler.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require&pgbouncer=true"
+}
+
+// ============================================================================
+// USER AND AUTHENTICATION
+// ============================================================================
+
+model User {
+  id            String       @id @default(cuid())
+  email         String       @unique
+  password      String
+  name          String
+  role          UserRole     @default(ADMIN)
+  permissions   Permission[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+enum UserRole {
+  ADMIN
+  STAFF
+}
+
+model Permission {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  page      String   // "dashboard", "cms", "archive", "finance", "stock", "personel", "users"
+  canRead   Boolean  @default(true)
+  canWrite  Boolean  @default(false)
+  canDelete Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, page])
+}
+
+// ============================================================================
+// CMS CONTENT
+// ============================================================================
+
+model About {
+  id        String   @id @default(cuid())
+  title     String
+  content   String   @db.Text
+  videoUrl  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Service {
+  id          String   @id @default(cuid())
+  title       String
+  description String   @db.Text
+  images      String[] // JSON array of image URLs (max 5)
+  isActive    Boolean  @default(true)
+  displayOrder Int     @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isActive, displayOrder])
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  title       String
+  description String   @db.Text
+  images      String[] // JSON array of image URLs (max 5)
+  year        String?
+  location    String?
+  isActive    Boolean  @default(true)
+  displayOrder Int     @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isActive, displayOrder])
+}
+
+// ============================================================================
+// ARCHIVE (Google Drive PDFs)
+// ============================================================================
+
+model Archive {
+  id          String   @id @default(cuid())
+  projectName String
+  fileName    String
+  driveUrl    String
+  uploadedAt  DateTime @default(now())
+
+  @@index([projectName])
+  @@index([uploadedAt])
+}
+
+// ============================================================================
+// CARİ (Tedarikçi) YÖNETİMİ
+// ============================================================================
+
+model Cari {
+  id           String         @id @default(cuid())
+  code         String         @unique // Cari kodu (C001, C002, vb.)
+  name         String         // Firma/Şahıs adı
+  type         CariType       @default(SUPPLIER) // Tedarikçi/Müşteri
+  contactName  String?        // İletişim kişisi
+  email        String?
+  phone        String?
+  address      String?        @db.Text
+  taxNumber    String?        // Vergi numarası
+  taxOffice    String?        // Vergi dairesi
+  balance      Float          @default(0) // Mevcut bakiye
+  debts        Debt[]
+  payments     Payment[]
+  notes        String?        @db.Text
+  isActive     Boolean        @default(true)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@index([code])
+  @@index([type])
+  @@index([isActive])
+}
+
+enum CariType {
+  SUPPLIER
+  CUSTOMER
+}
+
+model Debt {
+  id          String   @id @default(cuid())
+  cariId      String
+  cari        Cari     @relation(fields: [cariId], references: [id], onDelete: Cascade)
+  amount      Float
+  description String?  @db.Text
+  dueDate     DateTime? // Vade tarihi
+  isPaid      Boolean  @default(false)
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([cariId])
+  @@index([isPaid])
+  @@index([dueDate])
+}
+
+model Payment {
+  id          String   @id @default(cuid())
+  cariId      String
+  cari        Cari     @relation(fields: [cariId], references: [id], onDelete: Cascade)
+  amount      Float
+  description String?  @db.Text
+  paymentMethod String? // Nakit, Havale, Kredi Kartı, vb.
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  @@index([cariId])
+  @@index([date])
+}
+
+// ============================================================================
+// STOK YÖNETİMİ
+// ============================================================================
+
+model Stock {
+  id          String             @id @default(cuid())
+  code        String             @unique // Stok kodu (S001, S002, vb.)
+  name        String             // Stok adı
+  category    String?            // Kategori
+  unit        StockUnit          // Birim
+  minStock    Float?             // Minimum stok seviyesi
+  maxStock    Float?             // Maksimum stok seviyesi
+  costPrice   Float?             // Birim maliyet
+  sellPrice   Float?             // Satış fiyatı
+  isActive    Boolean            @default(true)
+  transactions StockTransaction[]
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@index([code])
+  @@index([category])
+  @@index([isActive])
+}
+
+enum StockUnit {
+  ADET
+  KG
+  TON
+  M
+  M2
+  M3
+  LT
+  PAKET
+  KUTU
+  DEMET
+}
+
+model StockTransaction {
+  id          String           @id @default(cuid())
+  stockId     String
+  stock       Stock            @relation(fields: [stockId], references: [id], onDelete: Cascade)
+  type        TransactionType
+  quantity    Float
+  unitPrice   Float?           // Birim fiyat
+  totalPrice  Float?           // Toplam tutar
+  description String?          @db.Text
+  date        DateTime         @default(now())
+  createdAt   DateTime         @default(now())
+
+  @@index([stockId])
+  @@index([type])
+  @@index([date])
+}
+
+enum TransactionType {
+  IN
+  OUT
+}
+
+// ============================================================================
+// PERSONEL YÖNETİMİ
+// ============================================================================
+
+model Personel {
+  id              String              @id @default(cuid())
+  personnelNo     String              @unique // Personel no (P001, P002, vb.)
+  name            String              // Ad Soyad
+  tcNo            String?             @unique // TC Kimlik No
+  age             Int
+  birthDate       DateTime
+  gender          Gender?
+  phone           String?
+  email           String?
+  address         String?             @db.Text
+  department      String              // Çalışılan birim
+  position        String?             // Görev/Ünvan
+  currentSite     String              // Mevcut şantiye lokasyonu
+  hireDate        DateTime            // İşe giriş tarihi
+  leavingDate     DateTime?           // İşten çıkış tarihi
+  employmentType  EmploymentType?     // İşçi/Memur/Şirket Ortaklığı
+  status          PersonelStatus      @default(ACTIVE)
+  siteHistory     SiteHistory[]
+  payments        PersonelPayment[]
+  insurance       Insurance?
+  notes           String?             @db.Text
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  @@index([personnelNo])
+  @@index([department])
+  @@index([currentSite])
+  @@index([status])
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum EmploymentType {
+  WORKER
+  OFFICER
+  PARTNERSHIP
+  CONTRACTOR
+}
+
+enum PersonelStatus {
+  ACTIVE
+  ON_LEAVE
+  RESIGNED
+  RETIRED
+}
+
+model SiteHistory {
+  id          String   @id @default(cuid())
+  personelId  String
+  personel    Personel @relation(fields: [personelId], references: [id], onDelete: Cascade)
+  siteName    String
+  siteCode    String?  // Şantiye kodu
+  startDate   DateTime
+  endDate     DateTime?
+  position    String?  // Şantiyedeki görev
+  notes       String?  @db.Text
+  createdAt   DateTime @default(now())
+
+  @@index([personelId])
+  @@index([siteName])
+  @@index([startDate])
+}
+
+model PersonelPayment {
+  id          String          @id @default(cuid())
+  personelId  String
+  personel    Personel        @relation(fields: [personelId], references: [id], onDelete: Cascade)
+  type        PaymentType
+  amount      Float
+  description String?         @db.Text
+  period      String?         // Dönem (Ocak 2024, vb.)
+  isPaid      Boolean         @default(false)
+  paidDate    DateTime?
+  date        DateTime        @default(now()) // Ödeme/kesinti tarihi
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([personelId])
+  @@index([type])
+  @@index([isPaid])
+  @@index([period])
+}
+
+enum PaymentType {
+  SALARY
+  BONUS
+  ROTATING_CAPITAL
+  DEDUCTION
+  OVERTIME
+}
+
+model Insurance {
+  id                  String   @id @default(cuid())
+  personelId          String   @unique
+  personel            Personel @relation(fields: [personelId], references: [id], onDelete: Cascade)
+  insuranceNo         String?  // Sigorta poliçe no
+  insuranceCompany    String?  // Sigorta şirketi
+  startDate           DateTime
+  renewalPeriod       Int      // Yenileme periyodu (ay)
+  nextRenewalDate     DateTime
+  premiumAmount       Float?   // Prim tutarı
+  status              InsuranceStatus @default(ACTIVE)
+  notes               String?  @db.Text
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([personelId])
+  @@index([nextRenewalDate])
+  @@index([status])
+}
+
+enum InsuranceStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  PENDING
+}
+
+// ============================================================================
+// SYSTEM SETTINGS
+// ============================================================================
+
+model SystemSettings {
+  id        String   @id @default(cuid())
+  key       String   @unique // Setting key (e.g., "drive_folder_id")
+  value     String   // Setting value
+  updatedAt DateTime @updatedAt
+
+  @@index([key])
+}
+
+// ============================================================================
+// FINANCE TRANSACTIONS
+// ============================================================================
+
+model FinanceRecord {
+  id          String   @id @default(cuid())
+  type        String   // "INCOME" or "EXPENSE"
+  amount      Float
+  description String?  @db.Text
+  category    String?
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([type])
+  @@index([date])
+  @@index([category])
+}
