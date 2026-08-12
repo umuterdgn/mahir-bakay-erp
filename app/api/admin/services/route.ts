@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
+import { deleteFromCloudinary, deleteMultipleFromCloudinary } from "@/lib/cloudinary"
 
 export async function GET() {
   try {
@@ -29,13 +30,15 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const { title, description, images } = body
+    
+    // id'yi ayır, geri kalan tüm verileri dataToSave içine al
+    const { id, ...dataToSave } = body
 
     const service = await prisma.service.create({
       data: {
-        title,
-        description,
-        images: images || []
+        ...dataToSave,
+        images: (dataToSave.images || []).filter((img: string) => img && img.trim() !== ''),
+        threeDModelUrl: dataToSave.threeDModelUrl || null
       }
     })
 
@@ -57,14 +60,44 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json()
-    const { id, title, description, images } = body
+    const { id, title, description, images, threeDModelUrl } = body
+
+    // Önce eski servisi bul
+    const existingService = await prisma.service.findUnique({
+      where: { id }
+    })
+
+    if (!existingService) {
+      return NextResponse.json(
+        { error: "Hizmet bulunamadı" },
+        { status: 404 }
+      )
+    }
+
+    // 3D model değiştiyse eskisini sil
+    if (threeDModelUrl && threeDModelUrl !== existingService.threeDModelUrl && existingService.threeDModelUrl) {
+      await deleteFromCloudinary(existingService.threeDModelUrl)
+    }
+
+    // Görseller değiştiyse eskilerini sil
+    if (images && images.length > 0) {
+      const oldImages = existingService.images || []
+      const newImages = images.filter((img: string) => img && img.trim() !== '')
+      
+      // Eski görsellerden yeni olanlarda olmayanları sil
+      const imagesToDelete = oldImages.filter((oldImg: string) => !newImages.includes(oldImg))
+      if (imagesToDelete.length > 0) {
+        await deleteMultipleFromCloudinary(imagesToDelete)
+      }
+    }
 
     const service = await prisma.service.update({
       where: { id },
       data: {
         title,
         description,
-        images: images || []
+        images: (images || []).filter((img: string) => img && img.trim() !== ''),
+        threeDModelUrl: threeDModelUrl || null
       }
     })
 

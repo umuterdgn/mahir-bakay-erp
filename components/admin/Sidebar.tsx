@@ -1,23 +1,88 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { signOut } from "next-auth/react"
+import { 
+  LayoutDashboard, 
+  FileText, 
+  Archive, 
+  DollarSign, 
+  Building2, 
+  FolderKanban, 
+  Package, 
+  Users, 
+  ClipboardList, 
+  Wrench, 
+  Calendar, 
+  FileSignature, 
+  PackageSearch, 
+  UserCheck, 
+  CheckSquare, 
+  FileText as FileLog, 
+  Settings,
+  MessageSquare 
+} from "lucide-react"
 
 export default function AdminSidebar() {
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
+  const [user, setUser] = useState<any>(null)
 
-  const navItems = [
-    { href: "/admin", label: "Dashboard" },
-    { href: "/admin/cms", label: "İçerik Yönetimi" },
-    { href: "/admin/archive", label: "Arşiv" },
-    { href: "/admin/finance", label: "Finans" },
-    { href: "/admin/stock", label: "Stok" },
-    { href: "/admin/personel", label: "Personel" },
-    { href: "/admin/users", label: "Kullanıcılar" },
-    { href: "/admin/ayarlar", label: "Ayarlar" },
+  useEffect(() => {
+    // Kullanıcı bilgilerini session'dan al (İleride gerçek auth ile bağlanacak)
+    // Şimdilik simüle edilmiş kullanıcı verisi
+    const mockUser = {
+      role: "SUPER_ADMIN", // "SUPER_ADMIN", "ADMIN", "SITE_MANAGER", "MUHASEBE", "STAFF", "WORKER"
+      permissions: [] // Boş ise SUPER_ADMIN kabul edilir
+    }
+    setUser(mockUser)
+  }, [])
+
+  const isAdmin = user?.role === "SUPER_ADMIN" || user?.role === "ADMIN"
+  const isWorker = user?.role === "WORKER"
+  const userPermissions = user?.permissions || []
+
+  const allNavItems = [
+    { href: "/admin", label: "Dashboard", requiredPermission: "DASHBOARD", icon: LayoutDashboard },
+    { href: "/admin/cms", label: "İçerik Yönetimi", requiredPermission: null, icon: FileText },
+    { href: "/admin/archive", label: "Arşiv", requiredPermission: "MARKUP", icon: Archive },
+    { href: "/admin/finance", label: "Finans", requiredPermission: "FINANCE", icon: DollarSign },
+    { href: "/admin/crm", label: "CRM / Firmalar", requiredPermission: null, icon: Building2 },
+    { href: "/admin/projects", label: "Projeler", requiredPermission: "PROJECTS", icon: FolderKanban },
+    { href: "/admin/inventory", label: "Ambar & Karekod", requiredPermission: "INVENTORY", icon: PackageSearch },
+    { href: "/admin/personel", label: "Personel", requiredPermission: "PERSONNEL", icon: Users },
+    { href: "/admin/site-reports", label: "Şantiye Günlüğü", requiredPermission: null, icon: ClipboardList },
+    { href: "/admin/equipments", label: "Demirbaş", requiredPermission: null, icon: Wrench },
+    { href: "/admin/calendar", label: "Takvim", requiredPermission: null, icon: Calendar },
+    { href: "/admin/contracts", label: "Sözleşmeler", requiredPermission: null, icon: FileSignature },
+    { href: "/admin/chat", label: "Sohbet", requiredPermission: null, icon: MessageSquare },
+    { href: "/admin/attendance", label: "Puantaj & Personel", requiredPermission: "ATTENDANCE", icon: UserCheck },
+    { href: "/admin/tasks", label: "Yapılacaklar", requiredPermission: "TASKS", icon: CheckSquare },
+    { href: "/admin/my-tasks", label: "Görevlerim", requiredPermission: null, icon: CheckSquare, workerOnly: true },
+    { href: "/admin/logs", label: "Sistem Logları", requiredPermission: null, icon: FileLog },
+    { href: "/admin/users", label: "Kullanıcılar", requiredPermission: null, icon: Users },
+    { href: "/admin/ayarlar", label: "Ayarlar", requiredPermission: null, icon: Settings },
   ]
+
+  // Yetki bazlı menü filtreleme
+  const navItems = allNavItems.filter(item => {
+    // Worker sadece Görevlerim menüsünü görür
+    if (isWorker) {
+      return item.workerOnly === true
+    }
+    
+    // Admin ve Super Admin workerOnly menüleri görmemeli
+    if (item.workerOnly === true) {
+      return false
+    }
+    
+    // Admin ve diğer roller için yetki kontrolü
+    if (isAdmin) return true // Admin tüm diğer menüleri görür
+    if (!item.requiredPermission) return true // Yetki gerektirmeyen menüler
+    return userPermissions.includes(item.requiredPermission)
+  })
 
   return (
     <>
@@ -62,17 +127,19 @@ export default function AdminSidebar() {
           <nav className="flex-1 space-y-2 overflow-y-auto">
             {navItems.map((item) => {
               const isActive = pathname === item.href
+              const Icon = item.icon
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   onClick={() => setIsOpen(false)}
-                  className={`block px-4 py-3 rounded-lg transition-colors ${
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                     isActive
                       ? "bg-slate-800 text-white"
                       : "text-slate-300 hover:bg-slate-800 hover:text-white"
                   }`}
                 >
+                  <Icon className="w-5 h-5" />
                   {item.label}
                 </Link>
               )
@@ -81,14 +148,12 @@ export default function AdminSidebar() {
 
           {/* Footer */}
           <div className="pt-6 border-t border-slate-800">
-            <form action="/api/auth/signout" method="POST">
-              <button
-                type="submit"
-                className="w-full px-4 py-3 rounded-lg bg-red-600 hover:bg-red-500 transition-colors text-white text-left"
-              >
-                Çıkış Yap
-              </button>
-            </form>
+            <button
+              onClick={() => signOut({ callbackUrl: '/login' })}
+              className="w-full px-4 py-3 rounded-lg bg-red-600 hover:bg-red-500 transition-colors text-white text-left"
+            >
+              Çıkış Yap
+            </button>
           </div>
 
           {/* Close Button (Mobile Only) */}

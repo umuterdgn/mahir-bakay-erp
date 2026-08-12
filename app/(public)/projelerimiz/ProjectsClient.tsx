@@ -2,7 +2,13 @@
 
 import { motion } from "framer-motion"
 import { useState } from "react"
+import dynamic from "next/dynamic"
 import ProjectModal from "@/components/ProjectModal"
+
+const ThreeDViewer = dynamic(() => import("@/components/ThreeDViewer"), {
+  ssr: false,
+  loading: () => <div className="w-full h-full bg-slate-800 flex items-center justify-center text-slate-400">Yükleniyor...</div>
+})
 
 interface Project {
   id: string
@@ -11,6 +17,7 @@ interface Project {
   images: string[]
   year: string | null
   location: string | null
+  threeDModelUrl?: string
 }
 
 interface ProjectsClientProps {
@@ -19,6 +26,11 @@ interface ProjectsClientProps {
 
 export default function ProjectsClient({ projects }: ProjectsClientProps) {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
+  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set())
+
+  const handleImageError = (projectId: string) => {
+    setImageErrors(prev => new Set(prev).add(projectId))
+  }
 
   if (projects.length === 0) {
     return (
@@ -73,16 +85,23 @@ export default function ProjectsClient({ projects }: ProjectsClientProps) {
               className="group relative md:col-span-2 md:row-span-2 bg-slate-900/50 backdrop-blur-sm rounded-3xl overflow-hidden cursor-pointer border border-slate-800 hover:border-purple-500/50 transition-all duration-500 hover:shadow-2xl hover:shadow-purple-500/10"
             >
               <div className="absolute inset-0">
-                {projects[0].images.length > 0 ? (
+                {projects[0].threeDModelUrl ? (
+                  <ThreeDViewer modelUrl={projects[0].threeDModelUrl} />
+                ) : projects[0].images && projects[0].images.length > 0 && projects[0].images[0] !== '' && !imageErrors.has(projects[0].id) ? (
                   <img
                     src={projects[0].images[0]}
                     alt={projects[0].title}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                    onError={() => handleImageError(projects[0].id)}
                   />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-purple-600/20 to-blue-600/20" />
+                  <div className="w-full h-full bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center">
+                    <svg className="w-16 h-16 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
                 )}
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-transparent" />
+                {!projects[0].threeDModelUrl && <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-transparent" />}
               </div>
 
               <div className="absolute top-6 left-6 flex gap-2">
@@ -130,16 +149,23 @@ export default function ProjectsClient({ projects }: ProjectsClientProps) {
                 className="group relative bg-slate-900/50 backdrop-blur-sm rounded-3xl overflow-hidden cursor-pointer border border-slate-800 hover:border-purple-500/50 transition-all duration-500 hover:shadow-2xl hover:shadow-purple-500/10"
               >
                 <div className="absolute inset-0">
-                  {project.images.length > 0 ? (
+                  {project.threeDModelUrl ? (
+                    <ThreeDViewer modelUrl={project.threeDModelUrl} />
+                  ) : project.images && project.images.length > 0 && project.images[0] !== '' && !imageErrors.has(project.id) ? (
                     <img
                       src={project.images[0]}
                       alt={project.title}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                      onError={() => handleImageError(project.id)}
                     />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-purple-600/20 to-blue-600/20" />
+                    <div className="w-full h-full bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center">
+                      <svg className="w-12 h-12 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-transparent" />
+                  {!project.threeDModelUrl && <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-transparent" />}
                 </div>
 
                 <div className="absolute top-4 left-4 flex gap-2">

@@ -50,7 +50,7 @@ export default function AdminUsersPage() {
                   </span>
                 </td>
                 <td className="px-6 py-4 text-sm text-slate-400">
-                  {user.permissions?.length || 0} sayfa
+                  {Array.isArray(user.permissions) ? user.permissions.length : 0} modül
                 </td>
                 <td className="px-6 py-4 text-right text-sm space-x-2">
                   <button
@@ -84,7 +84,7 @@ export default function AdminUsersPage() {
         <UserModal
           user={selectedUser}
           onClose={() => setSelectedUser(null)}
-          onSave={(updatedUser) => {
+          onSave={(updatedUser: any) => {
             setUsers(users.map(u => u.id === updatedUser.id ? updatedUser : u))
             setSelectedUser(null)
           }}
@@ -95,7 +95,7 @@ export default function AdminUsersPage() {
       {isAdding && (
         <UserModal
           onClose={() => setIsAdding(false)}
-          onSave={(newUser) => {
+          onSave={(newUser: any) => {
             setUsers([...users, newUser])
             setIsAdding(false)
           }}
@@ -127,45 +127,37 @@ function UserModal({ user, onClose, onSave }: any) {
     email: user?.email || "",
     password: "",
     role: user?.role || "STAFF",
-    permissions: user?.permissions || []
+    permissions: Array.isArray(user?.permissions) ? user.permissions : [],
+    isSuperAdmin: user?.role === "SUPER_ADMIN"
   })
 
-  const pages = [
-    { id: "dashboard", name: "Dashboard" },
-    { id: "cms", name: "İçerik Yönetimi" },
-    { id: "archive", name: "Arşiv" },
-    { id: "finance", name: "Finans" },
-    { id: "stock", name: "Stok" },
-    { id: "staff", name: "Personel" },
-    { id: "users", name: "Kullanıcılar" }
+  const MODULES = [
+    { id: "DASHBOARD", name: "📊 Dashboard & Raporlar" },
+    { id: "PERSONNEL", name: "👥 Personel ve Hakediş" },
+    { id: "ATTENDANCE", name: "📋 Puantaj ve Yoklama" },
+    { id: "INVENTORY", name: "📦 Ambar ve Karekod" },
+    { id: "FINANCE", name: "💰 Finans ve Kasa" },
+    { id: "PROJECTS", name: "🏗️ Projeler ve Yapı Denetim" },
+    { id: "TASKS", name: "📋 Görevler ve Kanban" }
   ]
 
-  const handlePermissionChange = (pageId: string, permissionType: "canRead" | "canWrite" | "canDelete") => {
-    const existingPermission = formData.permissions.find((p: any) => p.page === pageId)
-    
-    if (existingPermission) {
-      setFormData({
-        ...formData,
-        permissions: formData.permissions.map((p: any) =>
-          p.page === pageId
-            ? { ...p, [permissionType]: !p[permissionType] }
-            : p
-        )
-      })
-    } else {
-      setFormData({
-        ...formData,
-        permissions: [
-          ...formData.permissions,
-          {
-            page: pageId,
-            canRead: permissionType === "canRead" ? true : false,
-            canWrite: permissionType === "canWrite" ? true : false,
-            canDelete: permissionType === "canDelete" ? true : false
-          }
-        ]
-      })
-    }
+  const handleSuperAdminToggle = (isSuper: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      isSuperAdmin: isSuper,
+      role: isSuper ? "SUPER_ADMIN" : "STAFF",
+      permissions: isSuper ? [] : prev.permissions // Süper admin ise yetkiler boş
+    }))
+  }
+
+  const handlePermissionToggle = (moduleId: string) => {
+    if (formData.isSuperAdmin) return // Süper admin ise yetki değişikliği yapma
+    setFormData(prev => ({
+      ...prev,
+      permissions: prev.permissions.includes(moduleId)
+        ? prev.permissions.filter((m: string) => m !== moduleId)
+        : [...prev.permissions, moduleId]
+    }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -252,54 +244,52 @@ function UserModal({ user, onClose, onSave }: any) {
                 value={formData.role}
                 onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                 className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                disabled={formData.isSuperAdmin}
               >
                 <option value="STAFF">Personel</option>
                 <option value="ADMIN">Admin</option>
+                <option value="SITE_MANAGER">Şantiye Yöneticisi</option>
+                <option value="MUHASEBE">Muhasebe</option>
               </select>
             </div>
 
-            {/* Permissions */}
-            <div>
-              <h3 className="text-lg font-semibold text-white mb-4">Sayfa Yetkileri</h3>
-              <div className="space-y-4">
-                {pages.map((page) => {
-                  const permission = formData.permissions.find((p: any) => p.page === page.id)
-                  return (
-                    <div key={page.id} className="border border-slate-700 rounded-lg p-4">
-                      <div className="font-medium text-white mb-3">{page.name}</div>
-                      <div className="flex space-x-4">
-                        <label className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            checked={permission?.canRead || false}
-                            onChange={() => handlePermissionChange(page.id, "canRead")}
-                            className="rounded border-slate-600 text-blue-600 focus:ring-blue-500 bg-slate-800"
-                          />
-                          <span className="text-sm text-slate-300">Okuma</span>
-                        </label>
-                        <label className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            checked={permission?.canWrite || false}
-                            onChange={() => handlePermissionChange(page.id, "canWrite")}
-                            className="rounded border-slate-600 text-blue-600 focus:ring-blue-500 bg-slate-800"
-                          />
-                          <span className="text-sm text-slate-300">Yazma</span>
-                        </label>
-                        <label className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            checked={permission?.canDelete || false}
-                            onChange={() => handlePermissionChange(page.id, "canDelete")}
-                            className="rounded border-slate-600 text-blue-600 focus:ring-blue-500 bg-slate-800"
-                          />
-                          <span className="text-sm text-slate-300">Silme</span>
-                        </label>
-                      </div>
-                    </div>
-                  )
-                })}
+            {/* Super Admin Toggle */}
+            <div className="flex items-center justify-between p-4 bg-slate-800 rounded-lg border border-slate-700">
+              <div>
+                <h3 className="text-lg font-semibold text-white">Süper Admin Yap</h3>
+                <p className="text-sm text-slate-400">Süper admin kullanıcı sistemdeki her şeye tam yetkilidir</p>
               </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.isSuperAdmin}
+                  onChange={(e) => handleSuperAdminToggle(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-slate-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+              </label>
+            </div>
+
+            {/* Permissions */}
+            <div className={formData.isSuperAdmin ? "opacity-50 pointer-events-none" : ""}>
+              <h3 className="text-lg font-semibold text-white mb-4">Yetkiler</h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {MODULES.map((module) => (
+                  <label key={module.id} className="flex items-center space-x-2 cursor-pointer p-3 bg-slate-800 rounded-lg hover:bg-slate-700 transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={formData.permissions.includes(module.id)}
+                      onChange={() => handlePermissionToggle(module.id)}
+                      disabled={formData.isSuperAdmin}
+                      className="w-4 h-4 rounded border-slate-600 text-blue-500 focus:ring-blue-500 focus:ring-offset-slate-900"
+                    />
+                    <span className="text-sm text-slate-300">{module.name}</span>
+                  </label>
+                ))}
+              </div>
+              {formData.isSuperAdmin && (
+                <p className="text-sm text-slate-500 mt-2 italic">Süper admin kullanıcının tüm yetkileri otomatik olarak mevcuttur</p>
+              )}
             </div>
 
             <div className="flex space-x-4">

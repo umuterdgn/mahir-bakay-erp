@@ -20,27 +20,22 @@ model User {
   password      String
   name          String
   role          UserRole     @default(ADMIN)
-  permissions   Permission[]
+  permissions   String[]     @default([]) // Modül yetkileri
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
+  managedProjects Project[]  @relation("ProjectManager")
+  activityLogs    ActivityLog[]
+  inventory       Inventory[]
+  messages        Message[]
+  conversationParticipants ConversationParticipant[]
 }
 
 enum UserRole {
+  SUPER_ADMIN
   ADMIN
+  SITE_MANAGER
+  MUHASEBE
   STAFF
-}
-
-model Permission {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  page      String   // "dashboard", "cms", "archive", "finance", "stock", "personel", "users"
-  canRead   Boolean  @default(true)
-  canWrite  Boolean  @default(false)
-  canDelete Boolean  @default(false)
-  createdAt DateTime @default(now())
-
-  @@unique([userId, page])
 }
 
 // ============================================================================
@@ -57,31 +52,82 @@ model About {
 }
 
 model Service {
-  id          String   @id @default(cuid())
-  title       String
-  description String   @db.Text
-  images      String[] // JSON array of image URLs (max 5)
-  isActive    Boolean  @default(true)
-  displayOrder Int     @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String   @id @default(cuid())
+  title         String
+  description   String   @db.Text
+  images        String[] // JSON array of image URLs (max 5)
+  threeDModelUrl String? // .glb or .gltf URL for 3D model
+  isActive      Boolean  @default(true)
+  displayOrder  Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@index([isActive, displayOrder])
 }
 
 model Project {
-  id          String   @id @default(cuid())
-  title       String
-  description String   @db.Text
-  images      String[] // JSON array of image URLs (max 5)
-  year        String?
-  location    String?
-  isActive    Boolean  @default(true)
-  displayOrder Int     @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String   @id @default(cuid())
+  title         String
+  description   String   @db.Text
+  images        String[] // JSON array of image URLs (max 5)
+  threeDModelUrl String? // .glb or .gltf URL for 3D model
+  year          String?
+  location      String?
+  isActive      Boolean  @default(true)
+  displayOrder  Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  // ERP Project fields
+  name          String?
+  status        String?  // ETUT, CIZIM, SAHA, TAMAMLANDI
+  companyId     String?
+  company       Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  startDate   DateTime @default(now())
+  endDate     DateTime?
+  managerId    String?  // Projeye atanan şantiye şefinin ID'si
+  manager     User?    @relation("ProjectManager", fields: [managerId], references: [id], onDelete: SetNull)
+  engineers   String[] @default([])  // Mühendis ID'leri
+  architects  String[] @default([])  // Mimar ID'leri
+  siteManager String?  // Şantiye Şefi (isim)
+  engineer    String?  // Sorumlu Mühendis (isim)
+  architect   String?  // Mimar (isim)
+  // New categorization and location fields
+  category     String?   // "Güçlendirme", "Paket İş", "Kentsel Dönüşüm", "Performans Analizi", "Danışmanlık", "Şantiye Şefliği" vb.
+  city         String?
+  district     String?
+  mintika      String?
+  ada          String?
+  parsel       String?
+  clientName   String?   // Firma / Müşteri Adı
+  mapUrl       String?   // Google Maps Linki
+  shiftStart   String    @default("08:00") // Mesai Başlangıç Saati
+  shiftEnd     String    @default("17:00") // Mesai Bitiş Saati
+  // Relations
+  archives    Archive[]
+  transactions Transaction[]
+  movements   StockMovement[]
+  siteReports SiteReport[]
+  equipments  Equipment[]
+  contracts   Contract[]
+  inventory   Inventory[]
+  workers     Worker[]
+  attendanceRecords AttendanceRecord[]
+  visitorRecords VisitorRecord[]
+  siteTasks   SiteTask[]
+  activityLogs ActivityLog[]
+  reminders   Reminder[]
+  projectFiles ProjectFile[]
+  dailyLogs   DailyLog[]
+  inspectionReports InspectionReport[]
+  tasks       Task[]
 
   @@index([isActive, displayOrder])
+  @@index([status])
+  @@index([companyId])
+  @@index([managerId])
+  @@index([category])
+  @@index([city])
+  @@index([district])
 }
 
 // ============================================================================
@@ -92,11 +138,82 @@ model Archive {
   id          String   @id @default(cuid())
   projectName String
   fileName    String
+  documentName String?
   driveUrl    String
   uploadedAt  DateTime @default(now())
+  projectId   String?
+  project     Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
   @@index([projectName])
   @@index([uploadedAt])
+  @@index([projectId])
+}
+
+// ============================================================================
+// SITE REPORT (Şantiye Günlüğü)
+// ============================================================================
+
+model SiteReport {
+  id          String   @id @default(cuid())
+  date        DateTime @default(now())
+  weather     String?  // Örn: Güneşli, Yağmurlu 30°C
+  workerCount Int      @default(0)
+  notes       String   @db.Text
+  images      String?  // Virgülle ayrılmış resim URL'leri veya JSON
+  
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id])
+  
+  createdBy   String?  // Raporu yazan kişi
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([date])
+}
+
+// ============================================================================
+// EQUIPMENT (Demirbaş Takibi)
+// ============================================================================
+
+model Equipment {
+  id               String   @id @default(cuid())
+  name             String
+  type             String   // ARAC, IS_MAKINESI, ELEKTRONIK, DIGER
+  status           String   @default("AKTIF") // AKTIF, BAKIMDA, ARIZALI
+  plateOrSerialNo  String?
+  nextMaintenance  DateTime?
+  
+  projectId        String?
+  project          Project? @relation(fields: [projectId], references: [id])
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([status])
+  @@index([type])
+}
+
+// ============================================================================
+// COMPANY (Firma Yönetimi)
+// ============================================================================
+
+model Company {
+  id          String   @id @default(cuid())
+  name        String
+  type        String   // MUSTERI, TASERON, TEDARIKCI
+  contactName String?
+  phone       String?
+  email       String?
+  taxNumber   String?
+  taxOffice   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  projects    Project[]
+  transactions Transaction[]
+
+  @@index([type])
 }
 
 // ============================================================================
@@ -173,12 +290,14 @@ model Stock {
   name        String             // Stok adı
   category    String?            // Kategori
   unit        StockUnit          // Birim
+  quantity    Float              @default(0)
   minStock    Float?             // Minimum stok seviyesi
   maxStock    Float?             // Maksimum stok seviyesi
   costPrice   Float?             // Birim maliyet
   sellPrice   Float?             // Satış fiyatı
   isActive    Boolean            @default(true)
   transactions StockTransaction[]
+  movements   StockMovement[]
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
 
@@ -222,6 +341,48 @@ enum TransactionType {
   OUT
 }
 
+model StockMovement {
+  id          String   @id @default(cuid())
+  type        String   // GIRIS veya CIKIS
+  quantity    Float
+  description String?
+  date        DateTime @default(now())
+  
+  stockId     String
+  stock       Stock    @relation(fields: [stockId], references: [id])
+  
+  projectId   String?
+  project     Project? @relation(fields: [projectId], references: [id])
+
+  personnelId String?
+  personel    Personel? @relation(fields: [personnelId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([stockId])
+  @@index([date])
+  @@index([projectId])
+  @@index([personnelId])
+}
+
+// ============================================================================
+// PERSONNEL PROFESSION/UNIT (Meslek/Birim Yönetimi)
+// ============================================================================
+
+model Profession {
+  id        String   @id @default(cuid())
+  name      String   @unique // Örn: "Kalıpçı", "Elektrikçi", "Demirci", "Şoför"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  personel Personel[]
+  workers  Worker[]
+  tasks    Task[]
+
+  @@index([name])
+}
+
 // ============================================================================
 // PERSONEL YÖNETİMİ
 // ============================================================================
@@ -244,9 +405,24 @@ model Personel {
   leavingDate     DateTime?           // İşten çıkış tarihi
   employmentType  EmploymentType?     // İşçi/Memur/Şirket Ortaklığı
   status          PersonelStatus      @default(ACTIVE)
+  salary          Float               @default(0)
+  salaryPayDay    Int?
+  sgkPeriod       String?
+  sgkPayDay       Int?
+  healthStatus    String?
+  bonuses         Float               @default(0)
+  takim           String?             // Takım (Demirci, Kalıpçı vb.) - DEPRECATED, use professionId
+  gunlukYevmiye   Float               @default(0) // Günlük Yevmiye
+  userId          String?             // AdminUser ile eşleşme (opsiyonel)
+  username        String?             // Kullanıcı adı (login için)
+  professionId    String?             // Meslek/Birim ID
+  profession      Profession?         @relation(fields: [professionId], references: [id], onDelete: SetNull)
   siteHistory     SiteHistory[]
   payments        PersonelPayment[]
   insurance       Insurance?
+  inventoryHistory InventoryHistory[] @relation("InventoryHistoryPersonnel")
+  transactions    Transaction[]
+  movements       StockMovement[]
   notes           String?             @db.Text
   createdAt       DateTime            @default(now())
   updatedAt       DateTime            @updatedAt
@@ -255,6 +431,9 @@ model Personel {
   @@index([department])
   @@index([currentSite])
   @@index([status])
+  @@index([takim])
+  @@index([userId])
+  @@index([professionId])
 }
 
 enum Gender {
@@ -298,7 +477,7 @@ model PersonelPayment {
   id          String          @id @default(cuid())
   personelId  String
   personel    Personel        @relation(fields: [personelId], references: [id], onDelete: Cascade)
-  type        PaymentType
+  type        String          // MAAS, SGK, PRIM, AVANS, ELDEN, SALARY, BONUS, etc.
   amount      Float
   description String?         @db.Text
   period      String?         // Dönem (Ocak 2024, vb.)
@@ -314,13 +493,22 @@ model PersonelPayment {
   @@index([period])
 }
 
+
+
 enum PaymentType {
   SALARY
   BONUS
   ROTATING_CAPITAL
   DEDUCTION
   OVERTIME
+  MAAS
+  SGK
+  PRIM
+  AVANS
+  ELDEN
 }
+
+
 
 model Insurance {
   id                  String   @id @default(cuid())
@@ -366,17 +554,452 @@ model SystemSettings {
 // FINANCE TRANSACTIONS
 // ============================================================================
 
-model FinanceRecord {
+model Transaction {
   id          String   @id @default(cuid())
-  type        String   // "INCOME" or "EXPENSE"
+  type        String   // GELIR veya GIDER
   amount      Float
-  description String?  @db.Text
-  category    String?
+  description String
   date        DateTime @default(now())
+  category    String   // MAAS, SGK, HAKEDIS, MALZEME, DEMIR, BETON, NAKIYE, YEMEK, TASERON, PRIM, AVANS, ELDEN, DIGER
+
+  projectId   String?
+  project     Project? @relation(fields: [projectId], references: [id])
+  
+  companyId   String?
+  company     Company? @relation(fields: [companyId], references: [id])
+  
+  personnelId String?
+  personnel   Personel? @relation(fields: [personnelId], references: [id])
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@index([type])
   @@index([date])
   @@index([category])
+  @@index([projectId])
+  @@index([companyId])
+  @@index([personnelId])
+}
+
+// ============================================================================
+// ACTIVITY LOG (Sistem Logları)
+// ============================================================================
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  action    String   // Örn: "Proje Eklendi", "Stok Çıkışı Yapıldı"
+  details   String?  @db.Text
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([projectId])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// INVENTORY (Stok & QR)
+// ============================================================================
+
+model InventoryHistory {
+  id          String   @id @default(cuid())
+  inventoryId String
+  inventory   Inventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+  action      String   // "CREATED", "STOCK_ADDED", "STOCK_REMOVED", "ASSIGNED", "UNASSIGNED"
+  quantity    Float?
+  description String?  @db.Text
+  personnelId  String?  // If assigned/unassigned
+  personnel   Personel? @relation("InventoryHistoryPersonnel", fields: [personnelId], references: [id], onDelete: SetNull)
+  userId      String?  // Who performed the action
+  createdAt   DateTime @default(now())
+
+  @@index([inventoryId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([personnelId])
+}
+
+model InventoryAssignment {
+  id          String   @id @default(cuid())
+  inventoryId String
+  inventory   Inventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+  workerId    String
+  worker      Worker   @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  quantity    Int      // Zimmetlenen miktar
+  assignedAt  DateTime @default(now())
+  returnedAt  DateTime? // Teslim edildiğinde dolacak
+  notes       String?  @db.Text
+
+  @@index([inventoryId])
+  @@index([workerId])
+  @@index([assignedAt])
+  @@index([returnedAt])
+}
+
+
+model Inventory {
+  id          String   @id @default(cuid())
+  name        String
+  type        String   // IN veya OUT
+  quantity    Float
+  unit        String
+  category    String?  // Kategori
+  location    String?  // Konum/Depo
+  qrCode      String?  @unique // QR kod (opsiyonel ama unique)
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  recordedBy  String
+  recorder    User     @relation(fields: [recordedBy], references: [id])
+  assignments InventoryAssignment[]
+  createdAt   DateTime @default(now())
+  history     InventoryHistory[]
+
+  @@index([projectId])
+  @@index([type])
+  @@index([qrCode])
+}
+
+// ============================================================================
+// ATTENDANCE (Personel Giriş/Çıkış & Puantaj) - DEPRECATED
+// ============================================================================
+
+// This model is deprecated, use AttendanceRecord instead
+
+// ============================================================================
+// CONTRACT (Sözleşmeler)
+// ============================================================================
+
+model Contract {
+  id        String   @id @default(cuid())
+  title     String
+  content   String?  @db.Text // Rich Text (legacy)
+  type      ContractType @default(UPLOADED) // UPLOADED veya GENERATED
+  fileUrl   String?  // Dosya yolu veya base64
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  workerId  String?
+  worker    Worker?  @relation(fields: [workerId], references: [id], onDelete: SetNull)
+  templateId String?
+  template  ContractTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  status    String   @default("ACTIVE") // ACTIVE, COMPLETED, CANCELLED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([status])
+  @@index([type])
+  @@index([workerId])
+  @@index([templateId])
+}
+
+// ============================================================================
+// SITE TASK (Yapılacaklar)
+// ============================================================================
+
+model SiteTask {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  team        String?
+  startDate   DateTime?
+  endDate     DateTime?
+  isCompleted Boolean  @default(false)
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([isCompleted])
+  @@index([team])
+  @@index([startDate])
+}
+
+// ============================================================================
+// WORKER (Şantiye İşçileri)
+// ============================================================================
+
+model Worker {
+  id          String   @id @default(cuid())
+  firstName   String
+  lastName    String
+  username    String   @unique // Çakışmayı önlemek için eşsiz kullanıcı adı (Örn: ahmet.yilmaz)
+  password    String   // İşçinin kendi şifresi
+  team        String   // Örn: "Demirciler" - DEPRECATED, use professionId
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  professionId String? // Meslek/Birim ID
+  profession  Profession? @relation(fields: [professionId], references: [id], onDelete: SetNull)
+  records     AttendanceRecord[]
+  payments    WorkerPayment[]
+  tasks       Task[]
+  inventoryAssignments InventoryAssignment[]
+  contracts   Contract[]
+  conversationParticipants ConversationParticipant[]
+  sentMessages Message[] @relation("WorkerSender")
+  // Financial fields
+  dailyWage          Float    @default(0) // Günlük Yevmiye
+  monthlyBankPayment Float    @default(0) // Bankadan resmi olarak yatan sabit tutar (Örn: Asgari ücret)
+  userId       String?  // AdminUser ile eşleşme (opsiyonel)
+  createdAt   DateTime @default(now())
+
+  @@index([projectId])
+  @@index([username])
+  @@index([userId])
+  @@index([professionId])
+}
+
+// ============================================================================
+// ATTENDANCE RECORD (Personel Yoklama Kayıtları)
+// ============================================================================
+
+model AttendanceRecord {
+  id          String   @id @default(cuid())
+  workerId    String
+  worker      Worker   @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  date        DateTime // Sadece gün bazlı tarih
+  checkIn     DateTime? // Giriş saati
+  checkOut    DateTime? // Çıkış saati
+  dayMultiplier Float   @default(1) // Tam gün için 1, yarım gün için 0.5
+  createdAt   DateTime @default(now())
+
+  @@index([workerId])
+  @@index([projectId])
+  @@index([date])
+}
+
+// ============================================================================
+// WORKER PAYMENT (Avans, Elden Ödeme ve Primler)
+// ============================================================================
+
+model WorkerPayment {
+  id          String   @id @default(cuid())
+  amount      Float
+  type        String   // "AVANS", "ELDEN", "PRIM"
+  description String?
+  date        DateTime @default(now())
+  workerId    String
+  worker      Worker   @relation(fields: [workerId], references: [id], onDelete: Cascade)
+
+  @@index([workerId])
+  @@index([type])
+  @@index([date])
+}
+
+// ============================================================================
+// DAILY LOG (Şantiye Günlüğü)
+// ============================================================================
+
+model DailyLog {
+  id             String   @id @default(cuid())
+  date           DateTime @default(now())
+  weather        String?  // Örn: "Güneşli, 28°C" (Hava durumu çok kritiktir)
+  machineryCount Int      @default(0) // Sahadaki aktif iş makinesi sayısı
+  workDone       String   // O gün yapılan imalatların metin detayı
+  photoUrls      String[] // Yüklenen saha fotoğraflarının URL/Drive linkleri (PostgreSQL array desteği)
+  projectId      String
+  project        Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([date])
+}
+
+// ============================================================================
+// VISITOR RECORD (Ziyaretçi Kayıtları - İSG İçin Kritik)
+// ============================================================================
+
+model VisitorRecord {
+  id          String   @id @default(cuid())
+  fullName    String
+  company     String?  // Hangi firmadan geldiği
+  reason      String?  // Ziyaret sebebi (Malzeme teslimi, Denetim vs.)
+  checkIn     DateTime @default(now())
+  checkOut    DateTime?
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([checkIn])
+}
+
+// ============================================================================
+// REMINDER (Hatırlatıcılar - Beton Dökümü vb.)
+// ============================================================================
+
+model Reminder {
+  id          String   @id @default(cuid())
+  title       String   // Örn: "Beton Dökümü", "Yapı Denetim Kontrolü"
+  date        DateTime // Hatırlatılacak Tarih
+  isCompleted Boolean  @default(false)
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@index([projectId])
+  @@index([date])
+  @@index([isCompleted])
+}
+
+// ============================================================================
+// PROJECT FILE (Kategorize Edilmiş Arşiv)
+// ============================================================================
+
+model ProjectFile {
+  id          String   @id @default(cuid())
+  name        String   // Kullanıcının belirlediği özel dosya adı
+  url         String   // Dosyanın Drive veya bulut URL'si
+  category    String   // "Mimari", "Statik", "Zemin Etüt", "Elektrik", "Mekanik", "Resmi Evrak", "Personel Evrakı", "Diğer"
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  uploadedBy  String?  // Yükleyen kişi (opsiyonel)
+  createdAt   DateTime @default(now())
+
+  @@index([projectId])
+  @@index([category])
+}
+
+// ============================================================================
+// SYSTEM LOG (Sistem Logları - Audit Trail)
+// ============================================================================
+
+model SystemLog {
+  id        String   @id @default(cuid())
+  action    String   // Örn: "PROJE_EKLENDI", "PERSONEL_AVANS_GIRILDI"
+  details   String   // Yapılan işlemin metin detayı
+  user      String   // İşlemi yapan şefin/kullanıcının adı
+  createdAt DateTime @default(now())
+
+  @@index([action])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// ADMIN USER (Sistem Yöneticileri - Authentication)
+// ============================================================================
+
+model AdminUser {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String   // Hashed password
+  role      String   @default("ADMIN")
+  createdAt DateTime @default(now())
+
+  @@index([email])
+}
+
+// ============================================================================
+// INSPECTION REPORT (Yapı Denetim Raporları)
+// ============================================================================
+
+model InspectionReport {
+  id                String   @id @default(cuid())
+  projectId         String
+  project           Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  imageUrl          String?  // İşaretlenmiş görselin URL'si (legacy)
+  markedBlueprintUrl String? // İşaretlenmiş plan görselinin URL'si
+  markedPhotoUrl    String? // İşaretlenmiş fotoğrafın URL'si
+  description       String   @db.Text // Rapor açıklaması
+  createdAt         DateTime @default(now())
+
+  @@index([projectId])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// TASK (Kanban Görevleri)
+// ============================================================================
+
+model Task {
+  id          String   @id @default(cuid())
+  title       String
+  description String?  @db.Text
+  status      String   @default("TODO") // TODO, IN_PROGRESS, IN_REVIEW, DONE
+  projectId   String?
+  project     Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  assignedTo  String?  // Worker ID (opsiyonel)
+  worker      Worker?   @relation(fields: [assignedTo], references: [id], onDelete: SetNull)
+  professionId String? // Sorumlu Ekip/Birim ID
+  profession  Profession? @relation(fields: [professionId], references: [id], onDelete: SetNull)
+  dueDate     DateTime?
+  createdAt   DateTime @default(now())
+
+  @@index([status])
+  @@index([projectId])
+  @@index([assignedTo])
+  @@index([professionId])
+  @@index([dueDate])
+}
+
+// ============================================================================
+// CONTRACT MANAGEMENT (Sözleşme ve Belge Yönetimi)
+// ============================================================================
+
+model ContractTemplate {
+  id        String   @id @default(cuid())
+  name      String   @unique // Örn: İSG Tutanağı, İş Sözleşmesi vb.
+  content   String   @db.Text // İçinde {{PERSONEL_ADI}}, {{PROJE_ADI}}, {{TARİH}} gibi dinamik değişkenler
+  createdAt DateTime @default(now())
+
+  contracts Contract[]
+}
+enum ContractType {
+  UPLOADED
+  GENERATED
+}
+
+// ============================================================================
+// CHAT (Mesajlaşma Sistemi)
+// ============================================================================
+
+model Conversation {
+  id             String   @id @default(cuid())
+  name           String?  // Grup adı (opsiyonel)
+  isGroup        Boolean  @default(false)
+  isAnnouncement Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  messages      Message[]
+  participants  ConversationParticipant[]
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  body           String
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String?
+  sender         User?        @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  workerSenderId String?
+  workerSender   Worker?      @relation("WorkerSender", fields: [workerSenderId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@index([workerSenderId])
+}
+
+model ConversationParticipant {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String?
+  user           User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workerId       String?
+  worker         Worker?      @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  joinedAt       DateTime     @default(now())
+
+  @@unique([conversationId, userId])
+  @@unique([conversationId, workerId])
+  @@index([conversationId])
+  @@index([userId])
+  @@index([workerId])
 }

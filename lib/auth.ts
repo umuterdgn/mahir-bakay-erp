@@ -21,7 +21,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         const user = await prisma.user.findUnique({
           where: { email: credentials.email as string },
-          include: { permissions: true }
+          include: {
+            permissions: true
+          }
         })
 
         if (!user) {
@@ -37,14 +39,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return null
         }
 
+        console.log("✅ User authenticated:", user.email, "Role:", user.role)
+
         return {
           id: user.id,
           email: user.email,
           name: user.name,
           role: user.role,
-          permissions: user.permissions
+          permissions: user.permissions || []
         }
       }
     })
   ]
 })
+
+// Export auth config for API routes if needed
+export const authOptions = authConfig

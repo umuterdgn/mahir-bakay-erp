@@ -26,23 +26,13 @@ export async function PUT(
       updateData.password = await bcrypt.hash(password, 10)
     }
 
-    // Delete existing permissions
-    await prisma.permission.deleteMany({
-      where: { userId: params.id }
-    })
+    if (permissions !== undefined) {
+      updateData.permissions = permissions
+    }
 
-    // Update user and create new permissions
     const user = await prisma.user.update({
       where: { id: params.id },
-      data: {
-        ...updateData,
-        permissions: {
-          create: permissions || []
-        }
-      },
-      include: {
-        permissions: true
-      }
+      data: updateData
     })
 
     return NextResponse.json(user)

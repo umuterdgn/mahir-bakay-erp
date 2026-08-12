@@ -1,63 +1,65 @@
-import { google } from 'googleapis'
-import { Readable } from 'stream'
-
-const OAuth2 = google.auth.OAuth2
+import { google } from 'googleapis';
+import { Readable } from 'stream';
 
 export async function getDriveClient() {
-  const oauth2Client = new OAuth2(
-    process.env.GOOGLE_DRIVE_CLIENT_ID,
-    process.env.GOOGLE_DRIVE_CLIENT_SECRET,
-    process.env.GOOGLE_DRIVE_REDIRECT_URI
-  )
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
 
-  // For service account or other auth methods, configure accordingly
-  // This is a basic setup - you may need to adjust based on your auth flow
-  
-  const drive = google.drive({
-    version: 'v3',
-    auth: oauth2Client
-  })
+  // Terminalde sorunun nerede olduğunu görmek için logluyoruz
+  console.log("--- ENV KONTROL ---");
+  console.log("Client ID:", clientId ? "Okundu ✅" : "BULUNAMADI ❌");
+  console.log("Client Secret:", clientSecret ? "Okundu ✅" : "BULUNAMADI ❌");
+  console.log("Refresh Token:", refreshToken ? "Okundu ✅" : "BULUNAMADI ❌");
 
-  return drive
+  if (!clientId || !clientSecret || !refreshToken) {
+    throw new Error("KRITIK HATA: OAuth2 kimlik bilgileri (.env) okunamadi! Lütfen sunucuyu kapatip .next klasörünü silin ve tekrar baslatin.");
+  }
+
+  const oauth2Client = new google.auth.OAuth2(
+    clientId,
+    clientSecret,
+    'https://developers.google.com/oauthplayground'
+  );
+
+  oauth2Client.setCredentials({
+    refresh_token: refreshToken
+  });
+
+  return google.drive({ version: 'v3', auth: oauth2Client });
 }
 
-export async function uploadPDFToDrive(
-  fileBuffer: Buffer,
-  fileName: string,
-  folderId?: string
-): Promise<string> {
-  const drive = await getDriveClient()
+export async function uploadPDFToDrive(fileBuffer: Buffer, fileName: string): Promise<string> {
+  const drive = await getDriveClient();
+  const folderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
 
-  const fileMetadata = {
-    name: fileName,
-    mimeType: 'application/pdf',
-    parents: folderId ? [folderId] : undefined
-  }
+  if (!folderId) throw new Error("GOOGLE_DRIVE_FOLDER_ID bulunamadı");
 
-  // Convert Buffer to Readable stream for Google Drive API
-  const stream = Readable.from(fileBuffer)
-
-  const media = {
-    mimeType: 'application/pdf',
-    body: stream
-  }
-
+  const stream = Readable.from(fileBuffer);
+  
   const response = await drive.files.create({
-    requestBody: fileMetadata,
-    media: media,
+    requestBody: { name: fileName, parents: [folderId] },
+    media: { mimeType: 'application/pdf', body: stream },
     fields: 'id, webViewLink'
-  })
+  });
 
   if (response.data.id) {
-    // Make file publicly viewable (optional, adjust permissions as needed)
     await drive.permissions.create({
       fileId: response.data.id,
-      requestBody: {
-        role: 'reader',
-        type: 'anyone'
-      }
-    })
+      requestBody: { role: 'reader', type: 'anyone' }
+    });
   }
 
-  return response.data.webViewLink || `https://drive.google.com/file/d/${response.data.id}/view`
+  return response.data.webViewLink || `https://drive.google.com/file/d/${response.data.id}/view`;
+}
+
+export async function deleteFileFromDrive(fileId: string) {
+  try {
+    const drive = await getDriveClient();
+    await drive.files.delete({ fileId: fileId });
+    return true;
+  } catch (error) {
+    console.error("Drive'dan dosya silinirken hata:", error);
+    return false;
+  }
 }

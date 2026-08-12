@@ -50,10 +50,11 @@ export async function POST(request: Request) {
 
     const formData = await request.formData()
     const file = formData.get("file") as File
-    const projectName = formData.get("projectName") as string
+    const projectId = formData.get("projectId") as string
+    const documentName = formData.get("documentName") as string
 
-    if (!file || !projectName) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+    if (!file) {
+      return NextResponse.json({ error: "Missing file" }, { status: 400 })
     }
 
     if (file.type !== "application/pdf") {
@@ -63,11 +64,24 @@ export async function POST(request: Request) {
     const buffer = Buffer.from(await file.arrayBuffer())
     const driveUrl = await uploadPDFToDrive(buffer, file.name)
 
+    // Get project name if projectId is provided
+    let projectName = "Genel"
+    if (projectId) {
+      const project = await prisma.project.findUnique({
+        where: { id: projectId }
+      })
+      if (project) {
+        projectName = project.title
+      }
+    }
+
     const archive = await prisma.archive.create({
       data: {
         projectName,
         fileName: file.name,
-        driveUrl
+        documentName: documentName || null,
+        driveUrl,
+        projectId: projectId || null
       }
     })
 

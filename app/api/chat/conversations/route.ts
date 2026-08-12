@@ -1,0 +1,149 @@
+import { NextResponse } from "next/server"
+import { prisma } from "@/lib/prisma"
+import { auth } from "@/lib/auth"
+
+export async function GET() {
+  try {
+    const session = await auth()
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    // Get conversations where the user is a participant
+    const conversations = await prisma.conversation.findMany({
+      where: {
+        participants: {
+          some: {
+            OR: [
+              { userId: session.user.id },
+              { workerId: session.user.id }
+            ]
+          }
+        }
+      },
+      include: {
+        participants: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            },
+            worker: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                username: true
+              }
+            }
+          }
+        },
+        messages: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+          include: {
+            sender: {
+              select: {
+                name: true
+              }
+            },
+            workerSender: {
+              select: {
+                firstName: true,
+                lastName: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    })
+
+    return NextResponse.json(conversations)
+  } catch (error) {
+    console.error("Error fetching conversations:", error)
+    return NextResponse.json({ error: "Failed to fetch conversations" }, { status: 500 })
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const session = await auth()
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const { name, isGroup, isAnnouncement, participantIds } = body
+
+    // Check if user has permission to create announcements
+    if (isAnnouncement && session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN') {
+      return NextResponse.json({ error: "Forbidden - Only admins can create announcements" }, { status: 403 })
+    }
+
+    // Separate user and worker participant IDs
+    const userIds: string[] = []
+    const workerIds: string[] = []
+
+    if (participantIds && Array.isArray(participantIds)) {
+      for (const id of participantIds) {
+        // Check if this is a User or Worker by trying to find them
+        const user = await prisma.user.findUnique({ where: { id } })
+        if (user) {
+          userIds.push(id)
+        } else {
+          // Assume it's a worker
+          workerIds.push(id)
+        }
+      }
+    }
+
+    // Create participants array
+    const participantsData = [
+      { userId: session.user.id },
+      ...userIds.map((id) => ({ userId: id })),
+      ...workerIds.map((id) => ({ workerId: id }))
+    ]
+
+    // Create conversation
+    const conversation = await prisma.conversation.create({
+      data: {
+        name: name || null,
+        isGroup: isGroup || false,
+        isAnnouncement: isAnnouncement || false,
+        participants: {
+          create: participantsData
+        }
+      },
+      include: {
+        participants: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            },
+            worker: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                username: true
+              }
+            }
+          }
+        }
+      }
+    })
+
+    return NextResponse.json(conversation)
+  } catch (error) {
+    console.error("Error creating conversation:", error)
+    return NextResponse.json({ error: "Failed to create conversation" }, { status: 500 })
+  }
+}

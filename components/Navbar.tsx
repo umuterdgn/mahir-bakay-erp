@@ -3,8 +3,16 @@
 import { motion, useScroll, useTransform } from 'framer-motion'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 
 export default function Navbar() {
+  const pathname = usePathname()
+  
+  // Hide navbar on check-in pages
+  if (pathname?.startsWith('/check-in')) {
+    return null
+  }
+  
   const { scrollY } = useScroll()
   const [scrolled, setScrolled] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)

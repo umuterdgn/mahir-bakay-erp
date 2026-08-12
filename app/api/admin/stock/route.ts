@@ -42,7 +42,7 @@ export async function POST(request: Request) {
       data: {
         code,
         name,
-        unit
+        unit: unit.toUpperCase()
       }
     })
 

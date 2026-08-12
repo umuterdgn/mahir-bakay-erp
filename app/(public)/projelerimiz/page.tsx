@@ -5,7 +5,16 @@ async function getProjects() {
   try {
     const projects = await prisma.project.findMany({
       where: { isActive: true },
-      orderBy: { displayOrder: 'asc' }
+      orderBy: { displayOrder: 'asc' },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        images: true,
+        year: true,
+        location: true,
+        threeDModelUrl: true
+      }
     })
     return projects
   } catch (error) {

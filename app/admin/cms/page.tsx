@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { toast } from "react-hot-toast"
 
 type TabType = "about" | "services" | "projects"
 
@@ -97,10 +98,17 @@ function AboutSection() {
         body: JSON.stringify(formData)
       })
       if (response.ok) {
-        alert("Hakkımızda içeriği güncellendi")
+        toast.success("✅ Hakkımızda içeriği güncellendi")
+        setFormData({
+          title: "",
+          content: "",
+          videoUrl: ""
+        })
+      } else {
+        toast.error("İçerik güncellenirken hata oluştu")
       }
     } catch (error) {
-      alert("Hata oluştu")
+      toast.error("Hata oluştu")
     } finally {
       setIsSaving(false)
     }
@@ -191,7 +199,8 @@ function ServicesSection() {
       id: "",
       title: "",
       description: "",
-      images: [""]
+      images: [""],
+      threeDModelUrl: ""
     })
     setIsEditing(true)
   }
@@ -209,10 +218,13 @@ function ServicesSection() {
         method: "DELETE"
       })
       if (response.ok) {
+        toast.success("✅ Hizmet silindi")
         fetchServices()
+      } else {
+        toast.error("Hizmet silinirken hata oluştu")
       }
     } catch (error) {
-      alert("Hata oluştu")
+      toast.error("Hata oluştu")
     }
   }
 
@@ -234,8 +246,12 @@ function ServicesSection() {
           onSave={(service: any) => {
             fetchServices()
             setIsEditing(false)
+            setEditingService(null)
           }}
-          onCancel={() => setIsEditing(false)}
+          onCancel={() => {
+            setIsEditing(false)
+            setEditingService(null)
+          }}
         />
       ) : (
         <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
@@ -277,21 +293,103 @@ function ServicesSection() {
 }
 
 function ServiceForm({ service, onSave, onCancel }: any) {
-  const [formData, setFormData] = useState(service)
+  const [formData, setFormData] = useState({
+    ...service,
+    threeDModelUrl: service.threeDModelUrl || ""
+  })
+  const [isUploading, setIsUploading] = useState(false)
+
+  const uploadFile = async (file: File): Promise<string> => {
+    // Dosya boyutu kontrolü (10 MB sınırı)
+    const maxSize = 10 * 1024 * 1024 // 10 MB
+    if (file.size > maxSize) {
+      toast.error("Dosya boyutu çok yüksek! Lütfen 10MB altı bir dosya yükleyin.")
+      throw new Error('Dosya boyutu çok yüksek (max 10 MB)')
+    }
+    
+    const formData = new FormData()
+    formData.append('file', file)
+    
+    try {
+      const response = await fetch('/api/admin/upload', {
+        method: 'POST',
+        body: formData
+      })
+      
+      if (!response.ok) {
+        const data = await response.json()
+        console.error("🚨 DETAYLI YÜKLEME HATASI:", data)
+        throw new Error(data.error || 'Dosya yüklenemedi')
+      }
+      
+      const data = await response.json()
+      console.log("Cloudinary Linki:", data.url)
+      return data.url
+    } catch (error: any) {
+      console.error("🚨 DETAYLI YÜKLEME HATASI:", error)
+      throw error
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setIsUploading(true)
+    
     try {
+      // Boş string'leri filtrele
+      const cleanedData = {
+        ...formData,
+        images: formData.images.filter((img: string) => img && img.trim() !== ''),
+        threeDModelUrl: formData.threeDModelUrl || null
+      }
+      
+      console.log("Gönderilecek Temizlenmiş Veri (Service):", cleanedData)
+      
       const response = await fetch("/api/admin/services", {
         method: formData.id ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(cleanedData)
       })
       if (response.ok) {
+        toast.success(formData.id ? "✅ Hizmet güncellendi" : "✅ Hizmet başarıyla eklendi")
         onSave(formData)
+      } else {
+        toast.error("Hizmet kaydedilirken hata oluştu")
       }
     } catch (error) {
-      alert("Hata oluştu")
+      toast.error("Hata oluştu")
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+
+    try {
+      const uploadPromises = Array.from(files).slice(0, 5).map(file => uploadFile(file))
+      const urls = await Promise.all(uploadPromises)
+      setFormData(prev => ({
+        ...prev,
+        images: [...prev.images, ...urls].slice(0, 5)
+      }))
+    } catch (error: any) {
+      console.error("🚨 DETAYLI GÖRSEL YÜKLEME HATASI:", error)
+      toast.error(error.message || 'Görseller yüklenirken hata oluştu')
+    }
+  }
+
+  const handle3DModelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    try {
+      const url = await uploadFile(file)
+      setFormData(prev => ({ ...prev, threeDModelUrl: url }))
+    } catch (error: any) {
+      console.error("🚨 DETAYLI 3D MODEL YÜKLEME HATASI:", error)
+      toast.error(error.message || '3D model yüklenirken hata oluştu')
     }
   }
 
@@ -325,27 +423,67 @@ function ServiceForm({ service, onSave, onCancel }: any) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-2">Görsel URL'leri (virgülle ayırın, max 5)</label>
+          <label className="block text-sm font-medium text-slate-300 mb-2">Görseller (Dosya yükle - max 5)</label>
           <input
-            type="text"
-            value={formData.images.join(",")}
-            onChange={(e) => setFormData({ ...formData, images: e.target.value.split(",").slice(0, 5) })}
-            className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
-            placeholder="/images/service1.jpg, /images/service2.jpg"
+            type="file"
+            multiple
+            accept="image/png, image/jpeg, image/webp"
+            onChange={handleImageUpload}
+            className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
           />
+          {formData.images.length > 0 && (
+            <div className="mt-2 space-y-1">
+              {formData.images.map((url, idx) => (
+                <div key={idx} className="flex items-center gap-2 text-sm text-slate-400">
+                  <span className="truncate">{url}</span>
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, images: prev.images.filter((_, i) => i !== idx) }))}
+                    className="text-red-400 hover:text-red-300"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-300 mb-2">3D Model (.glb / .gltf) - Dosya yükle</label>
+          <input
+            type="file"
+            accept=".glb,.gltf"
+            onChange={handle3DModelUpload}
+            className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+          />
+          {formData.threeDModelUrl && (
+            <div className="mt-2 text-sm text-slate-400 truncate">
+              {formData.threeDModelUrl}
+              <button
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, threeDModelUrl: "" }))}
+                className="ml-2 text-red-400 hover:text-red-300"
+              >
+                ×
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="flex space-x-4">
           <button
             type="submit"
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors"
+            disabled={isUploading}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors disabled:opacity-50"
           >
-            Kaydet
+            {isUploading ? "Kaydediliyor..." : "Kaydet"}
           </button>
           <button
             type="button"
             onClick={onCancel}
-            className="px-6 py-2 bg-slate-700 text-slate-200 rounded-lg hover:bg-slate-600 transition-colors"
+            disabled={isUploading}
+            className="px-6 py-2 bg-slate-700 text-slate-200 rounded-lg hover:bg-slate-600 transition-colors disabled:opacity-50"
           >
             İptal
           </button>
@@ -384,7 +522,13 @@ function ProjectsSection() {
       id: "",
       title: "",
       description: "",
-      images: [""]
+      images: [""],
+      threeDModelUrl: "",
+      name: "",
+      status: "ETUT",
+      companyId: "",
+      startDate: "",
+      endDate: ""
     })
     setIsEditing(true)
   }
@@ -402,10 +546,13 @@ function ProjectsSection() {
         method: "DELETE"
       })
       if (response.ok) {
+        toast.success("✅ Proje silindi")
         fetchProjects()
+      } else {
+        toast.error("Proje silinirken hata oluştu")
       }
     } catch (error) {
-      alert("Hata oluştu")
+      toast.error("Hata oluştu")
     }
   }
 
@@ -427,8 +574,12 @@ function ProjectsSection() {
           onSave={(project: any) => {
             fetchProjects()
             setIsEditing(false)
+            setEditingProject(null)
           }}
-          onCancel={() => setIsEditing(false)}
+          onCancel={() => {
+            setIsEditing(false)
+            setEditingProject(null)
+          }}
         />
       ) : (
         <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
@@ -470,21 +621,108 @@ function ProjectsSection() {
 }
 
 function ProjectForm({ project, onSave, onCancel }: any) {
-  const [formData, setFormData] = useState(project)
+  const [formData, setFormData] = useState({
+    ...project,
+    threeDModelUrl: project.threeDModelUrl || "",
+    name: project.name || project.title || "",
+    status: project.status || "ETUT",
+    companyId: project.companyId || "",
+    startDate: project.startDate || "",
+    endDate: project.endDate || ""
+  })
+  const [isUploading, setIsUploading] = useState(false)
+
+  const uploadFile = async (file: File): Promise<string> => {
+    // Dosya boyutu kontrolü (10 MB sınırı)
+    const maxSize = 10 * 1024 * 1024 // 10 MB
+    if (file.size > maxSize) {
+      toast.error("Dosya boyutu çok yüksek! Lütfen 10MB altı bir dosya yükleyin.")
+      throw new Error('Dosya boyutu çok yüksek (max 10 MB)')
+    }
+    
+    const formData = new FormData()
+    formData.append('file', file)
+    
+    try {
+      const response = await fetch('/api/admin/upload', {
+        method: 'POST',
+        body: formData
+      })
+      
+      if (!response.ok) {
+        const data = await response.json()
+        console.error("🚨 DETAYLI YÜKLEME HATASI:", data)
+        throw new Error(data.error || 'Dosya yüklenemedi')
+      }
+      
+      const data = await response.json()
+      console.log("Cloudinary Linki:", data.url)
+      return data.url
+    } catch (error: any) {
+      console.error("🚨 DETAYLI YÜKLEME HATASI:", error)
+      throw error
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setIsUploading(true)
+    
     try {
+      // Boş string'leri filtrele
+      const cleanedData = {
+        ...formData,
+        images: formData.images.filter((img: string) => img && img.trim() !== ''),
+        threeDModelUrl: formData.threeDModelUrl || null
+      }
+      
+      console.log("Gönderilecek Temizlenmiş Veri:", cleanedData)
+      
       const response = await fetch("/api/admin/projects", {
         method: formData.id ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(cleanedData)
       })
       if (response.ok) {
+        toast.success(formData.id ? "✅ Proje güncellendi" : "✅ Proje başarıyla eklendi")
         onSave(formData)
+      } else {
+        toast.error("Proje kaydedilirken hata oluştu")
       }
     } catch (error) {
-      alert("Hata oluştu")
+      toast.error("Hata oluştu")
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+
+    try {
+      const uploadPromises = Array.from(files).slice(0, 5).map(file => uploadFile(file))
+      const urls = await Promise.all(uploadPromises)
+      setFormData(prev => ({
+        ...prev,
+        images: [...prev.images, ...urls].slice(0, 5)
+      }))
+    } catch (error: any) {
+      console.error("🚨 DETAYLI GÖRSEL YÜKLEME HATASI:", error)
+      toast.error(error.message || 'Görseller yüklenirken hata oluştu')
+    }
+  }
+
+  const handle3DModelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    try {
+      const url = await uploadFile(file)
+      setFormData(prev => ({ ...prev, threeDModelUrl: url }))
+    } catch (error: any) {
+      console.error("🚨 DETAYLI 3D MODEL YÜKLEME HATASI:", error)
+      toast.error(error.message || '3D model yüklenirken hata oluştu')
     }
   }
 
@@ -518,27 +756,112 @@ function ProjectForm({ project, onSave, onCancel }: any) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-2">Görsel URL'leri (virgülle ayırın, max 5)</label>
+          <label className="block text-sm font-medium text-slate-300 mb-2">Görseller (Dosya yükle - max 5)</label>
+          <input
+            type="file"
+            multiple
+            accept="image/png, image/jpeg, image/webp"
+            onChange={handleImageUpload}
+            className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+          />
+          {formData.images.length > 0 && (
+            <div className="mt-2 space-y-1">
+              {formData.images.map((url, idx) => (
+                <div key={idx} className="flex items-center gap-2 text-sm text-slate-400">
+                  <span className="truncate">{url}</span>
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, images: prev.images.filter((_, i) => i !== idx) }))}
+                    className="text-red-400 hover:text-red-300"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-300 mb-2">3D Model (.glb / .gltf) - Dosya yükle</label>
+          <input
+            type="file"
+            accept=".glb,.gltf"
+            onChange={handle3DModelUpload}
+            className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+          />
+          {formData.threeDModelUrl && (
+            <div className="mt-2 text-sm text-slate-400 truncate">
+              {formData.threeDModelUrl}
+              <button
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, threeDModelUrl: "" }))}
+                className="ml-2 text-red-400 hover:text-red-300"
+              >
+                ×
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-300 mb-2">Proje Adı (ERP)</label>
           <input
             type="text"
-            value={formData.images.join(",")}
-            onChange={(e) => setFormData({ ...formData, images: e.target.value.split(",").slice(0, 5) })}
+            value={formData.name || formData.title}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
-            placeholder="/images/project1.jpg, /images/project2.jpg"
+            placeholder="Proje adı"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-300 mb-2">Durum</label>
+          <select
+            value={formData.status || "ETUT"}
+            onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+            className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+          >
+            <option value="ETUT">Etüt</option>
+            <option value="CIZIM">Çizim</option>
+            <option value="SAHA">Saha</option>
+            <option value="TAMAMLANDI">Tamamlandı</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-300 mb-2">Başlangıç Tarihi</label>
+          <input
+            type="date"
+            value={formData.startDate}
+            onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+            className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-300 mb-2">Bitiş Tarihi</label>
+          <input
+            type="date"
+            value={formData.endDate}
+            onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+            className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
           />
         </div>
 
         <div className="flex space-x-4">
           <button
             type="submit"
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors"
+            disabled={isUploading}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors disabled:opacity-50"
           >
-            Kaydet
+            {isUploading ? "Kaydediliyor..." : "Kaydet"}
           </button>
           <button
             type="button"
             onClick={onCancel}
-            className="px-6 py-2 bg-slate-700 text-slate-200 rounded-lg hover:bg-slate-600 transition-colors"
+            disabled={isUploading}
+            className="px-6 py-2 bg-slate-700 text-slate-200 rounded-lg hover:bg-slate-600 transition-colors disabled:opacity-50"
           >
             İptal
           </button>

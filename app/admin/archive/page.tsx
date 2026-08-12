@@ -1,17 +1,24 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { toast } from "react-hot-toast"
 
 export default function AdminArchivePage() {
   const [archives, setArchives] = useState<any[]>([])
+  const [projects, setProjects] = useState<any[]>([])
   const [isUploading, setIsUploading] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [dateRange, setDateRange] = useState({ start: "", end: "" })
   const [sortBy, setSortBy] = useState<"date-asc" | "date-desc">("date-desc")
   const [isLoading, setIsLoading] = useState(true)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [tempFile, setTempFile] = useState<File | null>(null)
+  const [modalProjectId, setModalProjectId] = useState("")
+  const [modalDocumentName, setModalDocumentName] = useState("")
 
   useEffect(() => {
     fetchArchives()
+    fetchProjects()
   }, [])
 
   const fetchArchives = async () => {
@@ -28,20 +35,49 @@ export default function AdminArchivePage() {
     }
   }
 
+  const fetchProjects = async () => {
+    try {
+      const response = await fetch("/api/admin/projects")
+      if (response.ok) {
+        const data = await response.json()
+        setProjects(data)
+      }
+    } catch (error) {
+      console.error("Failed to fetch projects:", error)
+    }
+  }
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
     if (file.type !== "application/pdf") {
-      alert("Sadece PDF dosyaları yüklenebilir")
+      toast.error("Sadece PDF dosyaları yüklenebilir")
+      return
+    }
+
+    setTempFile(file)
+    setModalProjectId("")
+    setModalDocumentName("")
+    setIsModalOpen(true)
+    // Reset file input
+    e.target.value = ""
+  }
+
+  const handleConfirmUpload = async () => {
+    if (!tempFile) {
+      toast.error("Lütfen bir dosya seçin")
       return
     }
 
     setIsUploading(true)
+    setIsModalOpen(false)
+    
     try {
       const formData = new FormData()
-      formData.append("file", file)
-      formData.append("projectName", prompt("Proje adı girin:") || "")
+      formData.append("file", tempFile)
+      formData.append("projectId", modalProjectId)
+      formData.append("documentName", modalDocumentName)
 
       const response = await fetch("/api/admin/archive", {
         method: "POST",
@@ -51,14 +87,25 @@ export default function AdminArchivePage() {
       if (response.ok) {
         const newArchive = await response.json()
         fetchArchives()
+        toast.success("Dosya başarıyla arşive eklendi")
       } else {
-        alert("Dosya yüklenirken hata oluştu")
+        toast.error("Dosya yüklenirken hata oluştu")
       }
     } catch (error) {
-      alert("Dosya yüklenirken hata oluştu")
+      toast.error("Dosya yüklenirken hata oluştu")
     } finally {
       setIsUploading(false)
+      setTempFile(null)
+      setModalProjectId("")
+      setModalDocumentName("")
     }
+  }
+
+  const closeModal = () => {
+    setIsModalOpen(false)
+    setTempFile(null)
+    setModalProjectId("")
+    setModalDocumentName("")
   }
 
   const handleDelete = async (id: string) => {
@@ -70,9 +117,12 @@ export default function AdminArchivePage() {
       })
       if (response.ok) {
         fetchArchives()
+        toast.success("Arşiv kaydı başarıyla silindi")
+      } else {
+        toast.error("Silme işlemi sırasında bir hata oluştu")
       }
     } catch (error) {
-      alert("Hata oluştu")
+      toast.error("Silme işlemi sırasında bir hata oluştu")
     }
   }
 
@@ -189,7 +239,9 @@ export default function AdminArchivePage() {
             {filteredArchives.map((archive) => (
               <tr key={archive.id}>
                 <td className="px-6 py-4 text-sm text-white">{archive.projectName}</td>
-                <td className="px-6 py-4 text-sm text-slate-400">{archive.fileName}</td>
+                <td className="px-6 py-4 text-sm text-slate-400">
+                  {archive.documentName || archive.fileName}
+                </td>
                 <td className="px-6 py-4 text-sm text-slate-400">
                   {new Date(archive.uploadedAt).toLocaleDateString("tr-TR")}
                 </td>
@@ -221,6 +273,48 @@ export default function AdminArchivePage() {
           </tbody>
         </table>
       </div>
+
+      {/* Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-slate-900 rounded-xl p-6 border border-slate-800 w-full max-w-md mx-4 shadow-2xl">
+            <h3 className="text-xl font-semibold text-white mb-4">Proje Seçin</h3>
+            <input
+              type="text"
+              value={modalDocumentName}
+              onChange={(e) => setModalDocumentName(e.target.value)}
+              className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500 mb-4"
+              placeholder="Evrak Adı / Açıklaması"
+            />
+            <select
+              value={modalProjectId}
+              onChange={(e) => setModalProjectId(e.target.value)}
+              className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white mb-4"
+            >
+              <option value="">Proje Seçin</option>
+              {projects.map((project) => (
+                <option key={project.id} value={project.id}>
+                  {project.name || project.title}
+                </option>
+              ))}
+            </select>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={closeModal}
+                className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
+              >
+                İptal
+              </button>
+              <button
+                onClick={handleConfirmUpload}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors"
+              >
+                Yükle
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -123,6 +123,36 @@ async function main() {
 
   console.log(`Created ${projects.length} projects`)
 
+  // Create contract templates
+  const contractTemplates = await Promise.all([
+    prisma.contractTemplate.upsert({
+      where: { name: "İSG (İş Sağlığı ve Güvenliği) Taahhütnamesi" },
+      update: {},
+      create: {
+        name: "İSG (İş Sağlığı ve Güvenliği) Taahhütnamesi",
+        content: "İŞ SAĞLIĞI VE GÜVENLİĞİ TAAHHÜTNAMESİ\n\nBen {{PERSONEL_ADI}} (TC: {{KIMLIK_NO}}), {{PROJE_ADI}} şantiyesinde çalışırken İş Sağlığı ve Güvenliği kurallarına eksiksiz uyacağımı, tarafıma teslim edilen kişisel koruyucu donanımları (baret, yelek, iş ayakkabısı) her zaman kullanacağımı beyan ve taahhüt ederim.\n\nTarih: {{TARİH}}\nİmza:"
+      }
+    }),
+    prisma.contractTemplate.upsert({
+      where: { name: "Malzeme ve Donanım Zimmet Formu" },
+      update: {},
+      create: {
+        name: "Malzeme ve Donanım Zimmet Formu",
+        content: "DEMİRBAŞ / MALZEME ZİMMET TUTANAĞI\n\n{{PROJE_ADI}} projesinde görev yapmakta olan {{PERSONEL_ADI}}'na (TC: {{KIMLIK_NO}}) firmaya ait ekipmanlar/malzemeler eksiksiz ve çalışır durumda teslim edilmiştir. İlgili personel işten ayrılma durumunda bu malzemeleri iade etmekle yükümlüdür.\n\nTarih: {{TARİH}}\nTeslim Alan (İmza):"
+      }
+    }),
+    prisma.contractTemplate.upsert({
+      where: { name: "Genel Hizmet / Taşeron Sözleşmesi" },
+      update: {},
+      create: {
+        name: "Genel Hizmet / Taşeron Sözleşmesi",
+        content: "HİZMET SÖZLEŞMESİ\n\nBu sözleşme, {{PROJE_ADI}} projesi kapsamında görev alacak olan {{PERSONEL_ADI}} (TC: {{KIMLIK_NO}}) ile işveren arasında, {{TARİH}} tarihinde imza altına alınmıştır. Taraflar, şantiye yönetmeliklerine ve belirlenen hakediş kurallarına uymayı kabul eder.\n\nTarih: {{TARİH}}\nİmza:"
+      }
+    })
+  ])
+
+  console.log(`Created ${contractTemplates.length} contract templates`)
+
   console.log("Seed completed successfully!")
 }
 

@@ -7,34 +7,58 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts",
+    "seed:contracts": "tsx prisma/seed-contracts.ts",
+    "fix:admin": "tsx scripts/fix-admin-role.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
+    "@react-three/drei": "^10.7.8",
+    "@react-three/fiber": "^9.7.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/nodemailer": "^8.0.1",
     "@types/pg": "^8.20.3",
+    "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.3",
+    "cloudinary": "^2.10.0",
+    "fabric": "^5.3.0",
     "framer-motion": "^12.43.0",
     "googleapis": "^173.0.0",
+    "html2canvas": "^1.4.1",
+    "html2pdf.js": "^0.14.0",
+    "html5-qrcode": "^2.3.8",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
+    "lucide-react": "^1.31.0",
     "next": "16.2.12",
     "next-auth": "^5.0.0-beta.32",
     "nodemailer": "^7.0.13",
     "pg": "^8.22.0",
     "prisma": "^6.19.3",
+    "pusher": "^5.3.4",
+    "pusher-js": "^8.6.0",
+    "qrcode.react": "^4.2.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "recharts": "^3.10.1"
+    "react-hot-toast": "^2.6.0",
+    "react-quill": "^2.0.0",
+    "recharts": "^3.10.1",
+    "three": "^0.185.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/bcrypt": "^6.0.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.12",
     "tailwindcss": "^4",
-    "tsx": "^4.23.4",
+    "tsx": "^4.23.12",
     "typescript": "^5"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed-contracts.ts"
   }
 }

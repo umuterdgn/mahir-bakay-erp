@@ -2,8 +2,32 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 
 export default function AdminPersonelPage() {
+  const router = useRouter()
+  
+  // Basit yetki kontrolü (İleride auth modülüne bağlanacak)
+  const userPermissions: string[] = [] // Boş ise admin olarak kabul edilir
+  const isAdmin = userPermissions.length === 0
+
+  if (!isAdmin && !userPermissions.includes("PERSONNEL")) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-white mb-4">Erişim Engellendi</h1>
+          <p className="text-slate-400 mb-6">Bu sayfayı görme yetkiniz yok.</p>
+          <button
+            onClick={() => router.push('/admin')}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors"
+          >
+            Ana Sayfaya Dön
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   const [personnel, setPersonnel] = useState<any[]>([])
   const [isAdding, setIsAdding] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -129,9 +153,36 @@ function PersonelForm({ onSave, onCancel }: { onSave: () => void; onCancel: () =
     department: "",
     currentSite: "",
     phone: "",
-    email: ""
+    email: "",
+    hireDate: "",
+    salary: "",
+    salaryPayDay: "",
+    sgkPeriod: "",
+    sgkPayDay: "",
+    healthStatus: "",
+    bonuses: "",
+    takim: "",
+    gunlukYevmiye: "",
+    professionId: ""
   })
+  const [professions, setProfessions] = useState<any[]>([])
   const [isSaving, setIsSaving] = useState(false)
+
+  useEffect(() => {
+    fetchProfessions()
+  }, [])
+
+  const fetchProfessions = async () => {
+    try {
+      const response = await fetch("/api/admin/professions")
+      if (response.ok) {
+        const data = await response.json()
+        setProfessions(data)
+      }
+    } catch (error) {
+      console.error("Failed to fetch professions:", error)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -144,7 +195,16 @@ function PersonelForm({ onSave, onCancel }: { onSave: () => void; onCancel: () =
           ...formData,
           age: parseInt(formData.age),
           birthDate: new Date(formData.birthDate),
-          hireDate: new Date()
+          hireDate: formData.hireDate ? new Date(formData.hireDate) : new Date(),
+          salary: formData.salary ? parseFloat(formData.salary) : 0,
+          salaryPayDay: formData.salaryPayDay ? parseInt(formData.salaryPayDay) : null,
+          sgkPeriod: formData.sgkPeriod || null,
+          sgkPayDay: formData.sgkPayDay ? parseInt(formData.sgkPayDay) : null,
+          healthStatus: formData.healthStatus || null,
+          bonuses: formData.bonuses ? parseFloat(formData.bonuses) : 0,
+          takim: formData.takim || null,
+          gunlukYevmiye: formData.gunlukYevmiye ? parseFloat(formData.gunlukYevmiye) : 0,
+          professionId: formData.professionId || null
         })
       })
       if (response.ok) {
@@ -260,6 +320,133 @@ function PersonelForm({ onSave, onCancel }: { onSave: () => void; onCancel: () =
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Net Maaş</label>
+            <input
+              type="number"
+              value={formData.salary}
+              onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
+              className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+              step="0.01"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Prim/Avans</label>
+            <input
+              type="number"
+              value={formData.bonuses}
+              onChange={(e) => setFormData({ ...formData, bonuses: e.target.value })}
+              className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+              step="0.01"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Birim / Meslek</label>
+            <select
+              value={formData.professionId}
+              onChange={(e) => setFormData({ ...formData, professionId: e.target.value })}
+              className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+            >
+              <option value="">Meslek Seçin</option>
+              {professions.map((prof) => (
+                <option key={prof.id} value={prof.id}>{prof.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Takım (Eski)</label>
+            <select
+              value={formData.takim}
+              onChange={(e) => setFormData({ ...formData, takim: e.target.value })}
+              className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+            >
+              <option value="">Takım Seçin</option>
+              <option value="Demirci">Demirci</option>
+              <option value="Kalıpçı">Kalıpçı</option>
+              <option value="Betoncu">Betoncu</option>
+              <option value="İnşaat İşçisi">İnşaat İşçisi</option>
+              <option value="Marangoz">Marangoz</option>
+              <option value="Elektrikçi">Elektrikçi</option>
+              <option value="Tesisatçı">Tesisatçı</option>
+              <option value="Sıvacı">Sıvacı</option>
+              <option value="Boyacı">Boyacı</option>
+              <option value="Diğer">Diğer</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Günlük Yevmiye (TL)</label>
+            <input
+              type="number"
+              value={formData.gunlukYevmiye}
+              onChange={(e) => setFormData({ ...formData, gunlukYevmiye: e.target.value })}
+              className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+              step="0.01"
+              placeholder="Günlük yevmiye tutarı"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">SGK Dönemi</label>
+            <input
+              type="text"
+              value={formData.sgkPeriod}
+              onChange={(e) => setFormData({ ...formData, sgkPeriod: e.target.value })}
+              className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+              placeholder="Ocak 2024"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">İşe Giriş Tarihi</label>
+            <input
+              type="date"
+              value={formData.hireDate}
+              onChange={(e) => setFormData({ ...formData, hireDate: e.target.value })}
+              className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Maaş Ödeme Günü</label>
+            <input
+              type="number"
+              value={formData.salaryPayDay}
+              onChange={(e) => setFormData({ ...formData, salaryPayDay: e.target.value })}
+              className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+              placeholder="1-31 arası"
+              min="1"
+              max="31"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">SGK Ödeme Günü</label>
+            <input
+              type="number"
+              value={formData.sgkPayDay}
+              onChange={(e) => setFormData({ ...formData, sgkPayDay: e.target.value })}
+              className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+              placeholder="1-31 arası"
+              min="1"
+              max="31"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Sağlık Durumu</label>
+            <input
+              type="text"
+              value={formData.healthStatus}
+              onChange={(e) => setFormData({ ...formData, healthStatus: e.target.value })}
+              className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+              placeholder="Sağlıklı / Rapor durumu"
             />
           </div>
         </div>

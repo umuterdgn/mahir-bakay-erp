@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import AdminSidebar from "@/components/admin/Sidebar"
+import { Toaster } from "react-hot-toast"
 
 export default async function AdminLayout({
   children,
@@ -19,6 +20,7 @@ export default async function AdminLayout({
       <main className="lg:ml-64 p-6 lg:p-8">
         {children}
       </main>
+      <Toaster position="bottom-right" />
     </div>
   )
 }
