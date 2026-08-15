@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { toast } from "react-hot-toast"
+import ConfirmModal from "@/components/ConfirmModal"
 
 export default function EquipmentsPage() {
   const [equipments, setEquipments] = useState<any[]>([])
@@ -9,6 +10,8 @@ export default function EquipmentsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [editingEquipment, setEditingEquipment] = useState<any>(null)
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null })
   
   const [formData, setFormData] = useState({
     name: "",
@@ -66,29 +69,34 @@ export default function EquipmentsPage() {
 
     setIsSubmitting(true)
     try {
-      const response = await fetch("/api/admin/equipments", {
-        method: "POST",
+      const url = editingEquipment ? "/api/admin/equipments" : "/api/admin/equipments"
+      const method = editingEquipment ? "PUT" : "POST"
+      const payload = editingEquipment ? { ...formData, id: editingEquipment.id } : formData
+
+      const response = await fetch(url, {
+        method,
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       })
 
       if (response.ok) {
-        toast.success("Demirbaş başarıyla eklendi")
+        toast.success(editingEquipment ? "Demirbaş başarıyla güncellendi" : "Demirbaş başarıyla eklendi")
         fetchEquipments()
         closeModal()
       } else {
-        toast.error("Demirbaş eklenirken hata oluştu")
+        toast.error(editingEquipment ? "Demirbaş güncellenirken hata oluştu" : "Demirbaş eklenirken hata oluştu")
       }
     } catch (error) {
-      toast.error("Demirbaş eklenirken hata oluştu")
+      toast.error(editingEquipment ? "Demirbaş güncellenirken hata oluştu" : "Demirbaş eklenirken hata oluştu")
     } finally {
       setIsSubmitting(false)
     }
   }
 
   const openModal = () => {
+    setEditingEquipment(null)
     setFormData({
       name: "",
       type: "DIGER",
@@ -100,8 +108,22 @@ export default function EquipmentsPage() {
     setIsModalOpen(true)
   }
 
+  const openEditModal = (equipment: any) => {
+    setEditingEquipment(equipment)
+    setFormData({
+      name: equipment.name || "",
+      type: equipment.type || "DIGER",
+      status: equipment.status || "AKTIF",
+      plateOrSerialNo: equipment.plateOrSerialNo || "",
+      nextMaintenance: equipment.nextMaintenance ? new Date(equipment.nextMaintenance).toISOString().split('T')[0] : "",
+      projectId: equipment.projectId || ""
+    })
+    setIsModalOpen(true)
+  }
+
   const closeModal = () => {
     setIsModalOpen(false)
+    setEditingEquipment(null)
     setFormData({
       name: "",
       type: "DIGER",
@@ -110,6 +132,28 @@ export default function EquipmentsPage() {
       nextMaintenance: "",
       projectId: ""
     })
+  }
+
+  const handleDelete = async (id: string) => {
+    setDeleteConfirm({ isOpen: true, id })
+  }
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm.id) return
+
+    try {
+      const response = await fetch(`/api/admin/equipments?id=${deleteConfirm.id}`, {
+        method: "DELETE"
+      })
+      if (response.ok) {
+        toast.success("Demirbaş başarıyla silindi")
+        fetchEquipments()
+      } else {
+        toast.error("Demirbaş silinirken hata oluştu")
+      }
+    } catch (error) {
+      toast.error("Demirbaş silinirken hata oluştu")
+    }
   }
 
   const getTypeLabel = (type: string) => {
@@ -173,6 +217,7 @@ export default function EquipmentsPage() {
               <th className="px-6 py-3 text-left text-sm font-medium text-slate-300">Durumu</th>
               <th className="px-6 py-3 text-left text-sm font-medium text-slate-300">Bakım Tarihi</th>
               <th className="px-6 py-3 text-left text-sm font-medium text-slate-300">Proje/Şantiye</th>
+              <th className="px-6 py-3 text-right text-sm font-medium text-slate-300">İşlemler</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800">
@@ -202,6 +247,20 @@ export default function EquipmentsPage() {
                   <td className="px-6 py-4 text-sm text-slate-400">
                     {equipment.project?.name || equipment.project?.title || "-"}
                   </td>
+                  <td className="px-6 py-4 text-sm text-right space-x-2">
+                    <button
+                      onClick={() => openEditModal(equipment)}
+                      className="text-blue-400 hover:text-blue-300"
+                    >
+                      Düzenle
+                    </button>
+                    <button
+                      onClick={() => handleDelete(equipment.id)}
+                      className="text-red-400 hover:text-red-300"
+                    >
+                      Sil
+                    </button>
+                  </td>
                 </tr>
               ))
             )}
@@ -213,7 +272,9 @@ export default function EquipmentsPage() {
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-slate-900 rounded-xl p-6 border border-slate-800 w-full max-w-lg mx-4 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <h3 className="text-xl font-semibold text-white mb-6">Yeni Demirbaş Ekle</h3>
+            <h3 className="text-xl font-semibold text-white mb-6">
+              {editingEquipment ? "Demirbaş Düzenle" : "Yeni Demirbaş Ekle"}
+            </h3>
             
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
@@ -319,6 +380,17 @@ export default function EquipmentsPage() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm({ isOpen: false, id: null })}
+        onConfirm={confirmDelete}
+        title="Demirbaşı Sil"
+        message="Bu demirbaşı silmek istediğinize emin misiniz? Bu işlem geri alınamaz."
+        confirmText="Sil"
+        cancelText="İptal"
+        type="danger"
+      />
     </div>
   )
 }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import toast from "react-hot-toast"
 
 export default function AdminStockPage() {
   const [stocks, setStocks] = useState<any[]>([])
@@ -129,10 +130,13 @@ function AddStockModal({ onClose, onSave }: any) {
       })
       if (response.ok) {
         const newStock = await response.json()
+        toast.success("Stok kalemi başarıyla eklendi")
         onSave(newStock)
+      } else {
+        toast.error("Hata oluştu")
       }
     } catch (error) {
-      alert("Hata oluştu")
+      toast.error("Hata oluştu")
     }
   }
 

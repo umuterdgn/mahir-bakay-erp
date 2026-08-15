@@ -9,18 +9,14 @@ export async function DELETE(
   try {
     const { id } = await params
 
-    // Check if profession has any personnel or workers assigned
+    // Check if profession has any personnel assigned
     const personelCount = await prisma.personel.count({
       where: { professionId: id }
     })
-    
-    const workerCount = await prisma.worker.count({
-      where: { professionId: id }
-    })
 
-    if (personelCount > 0 || workerCount > 0) {
+    if (personelCount > 0) {
       return NextResponse.json(
-        { error: "Bu mesleğe atanmış personel veya işçi var. Önce personel/işçileri güncelleyin." },
+        { error: "Bu mesleğe atanmış personel var. Önce personeli güncelleyin." },
         { status: 400 }
       )
     }

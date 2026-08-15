@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { auth } from "@/lib/auth"
 
 export async function GET() {
   try {
+    const session = await auth()
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const reports = await prisma.siteReport.findMany({
       include: {
         project: true
@@ -22,6 +28,12 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const session = await auth()
+    if (!session) {
+      console.error("Site Reports POST: No session found")
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const formData = await request.formData()
     
     const date = formData.get('date') as string
@@ -30,6 +42,7 @@ export async function POST(request: Request) {
     const notes = formData.get('notes') as string
     const projectId = formData.get('projectId') as string
     const createdBy = formData.get('createdBy') as string
+    console.log("Site Reports POST: Creating report with data:", { date, weather, workerCount, notes, projectId, createdBy })
     
     // Handle file uploads
     const images = formData.getAll('images') as File[]

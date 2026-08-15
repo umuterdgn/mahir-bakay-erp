@@ -31,15 +31,25 @@ export default function PersonelDetailPage({
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [editFormData, setEditFormData] = useState({
+    personnelNo: "",
     name: "",
+    tcNo: "",
+    age: "",
+    birthDate: "",
+    department: "",
+    currentSite: "",
     phone: "",
     email: "",
+    hireDate: "",
     salary: "",
     salaryPayDay: "",
     sgkPeriod: "",
     sgkPayDay: "",
     healthStatus: "",
-    bonuses: ""
+    bonuses: "",
+    takim: "",
+    gunlukYevmiye: "",
+    professionId: ""
   })
   const [paymentForm, setPaymentForm] = useState({
     amount: "",
@@ -233,15 +243,25 @@ export default function PersonelDetailPage({
   const openEditModal = () => {
     if (!person) return
     setEditFormData({
+      personnelNo: person.personnelNo || "",
       name: person.name,
+      tcNo: person.tcNo || "",
+      age: person.age?.toString() || "",
+      birthDate: person.birthDate ? new Date(person.birthDate).toISOString().split('T')[0] : "",
+      department: person.department || "",
+      currentSite: person.currentSite || "",
       phone: person.phone || "",
       email: person.email || "",
-      salary: person.salary.toString(),
+      hireDate: person.hireDate ? new Date(person.hireDate).toISOString().split('T')[0] : "",
+      salary: person.salary?.toString() || "0",
       salaryPayDay: person.salaryPayDay?.toString() || "",
       sgkPeriod: person.sgkPeriod || "",
       sgkPayDay: person.sgkPayDay?.toString() || "",
       healthStatus: person.healthStatus || "",
-      bonuses: person.bonuses.toString()
+      bonuses: person.bonuses?.toString() || "0",
+      takim: person.takim || "",
+      gunlukYevmiye: person.gunlukYevmiye?.toString() || "0",
+      professionId: person.professionId || ""
     })
     setIsEditModalOpen(true)
   }
@@ -249,15 +269,25 @@ export default function PersonelDetailPage({
   const closeEditModal = () => {
     setIsEditModalOpen(false)
     setEditFormData({
+      personnelNo: "",
       name: "",
+      tcNo: "",
+      age: "",
+      birthDate: "",
+      department: "",
+      currentSite: "",
       phone: "",
       email: "",
+      hireDate: "",
       salary: "",
       salaryPayDay: "",
       sgkPeriod: "",
       sgkPayDay: "",
       healthStatus: "",
-      bonuses: ""
+      bonuses: "",
+      takim: "",
+      gunlukYevmiye: "",
+      professionId: ""
     })
   }
 
@@ -275,12 +305,17 @@ export default function PersonelDetailPage({
         },
         body: JSON.stringify({
           ...editFormData,
+          age: parseInt(editFormData.age),
+          birthDate: editFormData.birthDate ? new Date(editFormData.birthDate) : null,
+          hireDate: editFormData.hireDate ? new Date(editFormData.hireDate) : null,
           salary: parseFloat(editFormData.salary),
           salaryPayDay: editFormData.salaryPayDay ? parseInt(editFormData.salaryPayDay) : null,
           sgkPeriod: editFormData.sgkPeriod || null,
           sgkPayDay: editFormData.sgkPayDay ? parseInt(editFormData.sgkPayDay) : null,
           healthStatus: editFormData.healthStatus || null,
-          bonuses: parseFloat(editFormData.bonuses)
+          bonuses: parseFloat(editFormData.bonuses),
+          gunlukYevmiye: parseFloat(editFormData.gunlukYevmiye),
+          professionId: editFormData.professionId || null
         })
       })
 
@@ -765,128 +800,215 @@ export default function PersonelDetailPage({
             <h3 className="text-xl font-semibold text-white mb-6">Personel Düzenle</h3>
             
             <form onSubmit={handleEditSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Ad Soyad
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={editFormData.name}
-                  onChange={(e) => setEditFormData(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
-                  required
-                />
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Personel No</label>
+                  <input
+                    type="text"
+                    name="personnelNo"
+                    value={editFormData.personnelNo}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, personnelNo: e.target.value }))}
+                    className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Ad Soyad</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={editFormData.name}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, name: e.target.value }))}
+                    className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+                    required
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Telefon
-                </label>
-                <input
-                  type="text"
-                  name="phone"
-                  value={editFormData.phone}
-                  onChange={(e) => setEditFormData(prev => ({ ...prev, phone: e.target.value }))}
-                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
-                />
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">TC No</label>
+                  <input
+                    type="text"
+                    name="tcNo"
+                    value={editFormData.tcNo}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, tcNo: e.target.value }))}
+                    className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Yaş</label>
+                  <input
+                    type="number"
+                    name="age"
+                    value={editFormData.age}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, age: e.target.value }))}
+                    className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  E-posta
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={editFormData.email}
-                  onChange={(e) => setEditFormData(prev => ({ ...prev, email: e.target.value }))}
-                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
-                />
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Doğum Tarihi</label>
+                  <input
+                    type="date"
+                    name="birthDate"
+                    value={editFormData.birthDate}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, birthDate: e.target.value }))}
+                    className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">İşe Giriş Tarihi</label>
+                  <input
+                    type="date"
+                    name="hireDate"
+                    value={editFormData.hireDate}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, hireDate: e.target.value }))}
+                    className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Net Maaş
-                </label>
-                <input
-                  type="number"
-                  name="salary"
-                  value={editFormData.salary}
-                  onChange={(e) => setEditFormData(prev => ({ ...prev, salary: e.target.value }))}
-                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
-                  step="0.01"
-                />
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Birim</label>
+                  <input
+                    type="text"
+                    name="department"
+                    value={editFormData.department}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, department: e.target.value }))}
+                    className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Mevcut Şantiye</label>
+                  <input
+                    type="text"
+                    name="currentSite"
+                    value={editFormData.currentSite}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, currentSite: e.target.value }))}
+                    className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  SGK Dönemi
-                </label>
-                <input
-                  type="text"
-                  name="sgkPeriod"
-                  value={editFormData.sgkPeriod}
-                  onChange={(e) => setEditFormData(prev => ({ ...prev, sgkPeriod: e.target.value }))}
-                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
-                />
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Telefon</label>
+                  <input
+                    type="text"
+                    name="phone"
+                    value={editFormData.phone}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, phone: e.target.value }))}
+                    className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">E-posta</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={editFormData.email}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, email: e.target.value }))}
+                    className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Primler / Avans
-                </label>
-                <input
-                  type="number"
-                  name="bonuses"
-                  value={editFormData.bonuses}
-                  onChange={(e) => setEditFormData(prev => ({ ...prev, bonuses: e.target.value }))}
-                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
-                  step="0.01"
-                />
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Net Maaş</label>
+                  <input
+                    type="number"
+                    name="salary"
+                    value={editFormData.salary}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, salary: e.target.value }))}
+                    className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+                    step="0.01"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Maaş Ödeme Günü</label>
+                  <input
+                    type="number"
+                    name="salaryPayDay"
+                    value={editFormData.salaryPayDay}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, salaryPayDay: e.target.value }))}
+                    className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Maaş Ödeme Günü
-                </label>
-                <input
-                  type="number"
-                  name="salaryPayDay"
-                  value={editFormData.salaryPayDay}
-                  onChange={(e) => setEditFormData(prev => ({ ...prev, salaryPayDay: e.target.value }))}
-                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
-                  min="1"
-                  max="31"
-                />
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">SGK Dönemi</label>
+                  <input
+                    type="text"
+                    name="sgkPeriod"
+                    value={editFormData.sgkPeriod}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, sgkPeriod: e.target.value }))}
+                    className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">SGK Ödeme Günü</label>
+                  <input
+                    type="number"
+                    name="sgkPayDay"
+                    value={editFormData.sgkPayDay}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, sgkPayDay: e.target.value }))}
+                    className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  SGK Ödeme Günü
-                </label>
-                <input
-                  type="number"
-                  name="sgkPayDay"
-                  value={editFormData.sgkPayDay}
-                  onChange={(e) => setEditFormData(prev => ({ ...prev, sgkPayDay: e.target.value }))}
-                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
-                  min="1"
-                  max="31"
-                />
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Primler / Avans</label>
+                  <input
+                    type="number"
+                    name="bonuses"
+                    value={editFormData.bonuses}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, bonuses: e.target.value }))}
+                    className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+                    step="0.01"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Günlük Yevmiye</label>
+                  <input
+                    type="number"
+                    name="gunlukYevmiye"
+                    value={editFormData.gunlukYevmiye}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, gunlukYevmiye: e.target.value }))}
+                    className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+                    step="0.01"
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Sağlık Durumu
-                </label>
-                <input
-                  type="text"
-                  name="healthStatus"
-                  value={editFormData.healthStatus}
-                  onChange={(e) => setEditFormData(prev => ({ ...prev, healthStatus: e.target.value }))}
-                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
-                />
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Takım</label>
+                  <input
+                    type="text"
+                    name="takim"
+                    value={editFormData.takim}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, takim: e.target.value }))}
+                    className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Sağlık Durumu</label>
+                  <input
+                    type="text"
+                    name="healthStatus"
+                    value={editFormData.healthStatus}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, healthStatus: e.target.value }))}
+                    className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+                  />
+                </div>
               </div>
 
               <div className="flex justify-end space-x-3 pt-4">

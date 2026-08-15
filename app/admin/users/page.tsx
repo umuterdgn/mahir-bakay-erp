@@ -1,11 +1,14 @@
 "use client"
 
 import { useState } from "react"
+import toast from "react-hot-toast"
+import ConfirmModal from "@/components/ConfirmModal"
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<any[]>([])
   const [selectedUser, setSelectedUser] = useState<any>(null)
   const [isAdding, setIsAdding] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null })
 
   return (
     <div className="lg:mt-0 mt-16">
@@ -101,22 +104,39 @@ export default function AdminUsersPage() {
           }}
         />
       )}
+
+      <ConfirmModal
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm({ isOpen: false, id: null })}
+        onConfirm={confirmDelete}
+        title="Kullanıcıyı Sil"
+        message="Bu kullanıcıyı silmek istediğinize emin misiniz? Bu işlem geri alınamaz."
+        confirmText="Sil"
+        cancelText="İptal"
+        type="danger"
+      />
     </div>
   )
 
   function handleDelete(id: string) {
-    if (!confirm("Bu kullanıcıyı silmek istediğinize emin misiniz?")) return
-    
+    setDeleteConfirm({ isOpen: true, id })
+  }
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm.id) return
+
     try {
-      fetch(`/api/admin/users/${id}`, {
+      const response = await fetch(`/api/admin/users/${deleteConfirm.id}`, {
         method: "DELETE"
-      }).then(response => {
-        if (response.ok) {
-          setUsers(users.filter(u => u.id !== id))
-        }
       })
+      if (response.ok) {
+        toast.success("Kullanıcı başarıyla silindi")
+        setUsers(users.filter(u => u.id !== deleteConfirm.id))
+      } else {
+        toast.error("Kullanıcı silinirken hata oluştu")
+      }
     } catch (error) {
-      alert("Hata oluştu")
+      toast.error("Hata oluştu")
     }
   }
 }
@@ -174,10 +194,13 @@ function UserModal({ user, onClose, onSave }: any) {
       
       if (response.ok) {
         const savedUser = await response.json()
+        toast.success(user?.id ? "Kullanıcı başarıyla güncellendi" : "Kullanıcı başarıyla oluşturuldu")
         onSave(savedUser)
+      } else {
+        toast.error("Hata oluştu")
       }
     } catch (error) {
-      alert("Hata oluştu")
+      toast.error("Hata oluştu")
     }
   }
 

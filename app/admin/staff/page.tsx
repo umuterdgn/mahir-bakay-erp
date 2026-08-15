@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import toast from "react-hot-toast"
 
 export default function AdminStaffPage() {
   const [staff, setStaff] = useState<any[]>([])
@@ -391,10 +392,13 @@ function AddStaffModal({ onClose, onSave }: any) {
       })
       if (response.ok) {
         const newStaff = await response.json()
+        toast.success("Personel başarıyla eklendi")
         onSave(newStaff)
+      } else {
+        toast.error("Hata oluştu")
       }
     } catch (error) {
-      alert("Hata oluştu")
+      toast.error("Hata oluştu")
     }
   }
 

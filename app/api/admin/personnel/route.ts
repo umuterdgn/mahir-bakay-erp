@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { auth } from "@/lib/auth"
+import { logPersonnelAction } from "@/lib/logger"
 
 export async function GET() {
   try {
@@ -18,6 +20,9 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const session = await auth()
+    const userName = session?.user?.name || "Bilinmeyen Kullanıcı"
+    
     const body = await request.json()
     
     const personnel = await prisma.personel.create({
@@ -44,6 +49,9 @@ export async function POST(request: Request) {
         professionId: body.professionId || null
       }
     })
+    
+    // Log the action with detailed information
+    await logPersonnelAction("EKLENDI", userName, personnel.name, `Personel No: ${personnel.personnelNo}`)
     
     return NextResponse.json(personnel)
   } catch (error) {

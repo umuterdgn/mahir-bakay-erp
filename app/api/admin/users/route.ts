@@ -12,25 +12,24 @@ export async function GET() {
 
     const userRole = session.user.role
     let users: any[] = []
-    let workers: any[] = []
+    let personnel: any[] = []
 
     // Fetch users based on role hierarchy
-    if (userRole === 'WORKER') {
-      // İşçiler sadece ADMIN (Şef) rolündekileri görebilir
+    if (userRole === 'STAFF') {
+      // Personel sadece ADMIN (Şef) rolündekileri görebilir
       users = await prisma.user.findMany({
         where: { role: 'ADMIN' },
         orderBy: { name: "asc" }
       })
     } else if (userRole === 'ADMIN') {
-      // Adminler WORKER (işçiler) ve SUPER_ADMIN rollerini görebilir
-      // WORKER rolü User tablosunda yok, Worker tablosundan çekilmeli
-      workers = await prisma.worker.findMany({
+      // Adminler STAFF (personel) ve SUPER_ADMIN rollerini görebilir
+      personnel = await prisma.personel.findMany({
         include: {
           profession: true
         },
-        orderBy: { firstName: "asc" }
+        orderBy: { name: "asc" }
       })
-      
+
       users = await prisma.user.findMany({
         where: { role: 'SUPER_ADMIN' },
         orderBy: { name: "asc" }
@@ -46,15 +45,15 @@ export async function GET() {
       users = await prisma.user.findMany({
         orderBy: { name: "asc" }
       })
-      workers = await prisma.worker.findMany({
+      personnel = await prisma.personel.findMany({
         include: {
           profession: true
         },
-        orderBy: { firstName: "asc" }
+        orderBy: { name: "asc" }
       })
     }
 
-    // Combine users and workers in unified format with null safety
+    // Combine users and personnel in unified format with null safety
     const combined = [
       ...users.filter(user => user !== null).map(user => ({
         id: user.id,
@@ -63,13 +62,13 @@ export async function GET() {
         role: user.role || 'USER',
         type: 'user'
       })),
-      ...workers.filter(worker => worker !== null).map(worker => ({
-        id: worker.id,
-        name: `${worker.firstName || ''} ${worker.lastName || ''}`.trim() || 'Bilinmeyen İşçi',
-        email: worker.username || 'Username yok',
-        role: 'WORKER',
-        type: 'worker',
-        profession: worker.profession?.name || null
+      ...personnel.filter(person => person !== null).map(person => ({
+        id: person.id,
+        name: person.name || 'Bilinmeyen Personel',
+        email: person.username || 'Username yok',
+        role: 'STAFF',
+        type: 'personnel',
+        profession: person.profession?.name || null
       }))
     ]
 

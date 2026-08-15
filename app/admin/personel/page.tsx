@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import toast from "react-hot-toast"
+import ConfirmModal from "@/components/ConfirmModal"
 
 export default function AdminPersonelPage() {
   const router = useRouter()
@@ -31,6 +33,7 @@ export default function AdminPersonelPage() {
   const [personnel, setPersonnel] = useState<any[]>([])
   const [isAdding, setIsAdding] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null })
 
   useEffect(() => {
     fetchPersonnel()
@@ -51,17 +54,24 @@ export default function AdminPersonelPage() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Bu personeli silmek istediğinize emin misiniz?")) return
+    setDeleteConfirm({ isOpen: true, id })
+  }
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm.id) return
     
     try {
-      const response = await fetch(`/api/admin/personnel/${id}`, {
+      const response = await fetch(`/api/admin/personnel/${deleteConfirm.id}`, {
         method: "DELETE"
       })
       if (response.ok) {
+        toast.success("Personel başarıyla silindi")
         fetchPersonnel()
+      } else {
+        toast.error("Personel silinirken hata oluştu")
       }
     } catch (error) {
-      alert("Hata oluştu")
+      toast.error("Hata oluştu")
     }
   }
 
@@ -139,6 +149,17 @@ export default function AdminPersonelPage() {
           )}
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm({ isOpen: false, id: null })}
+        onConfirm={confirmDelete}
+        title="Personeli Sil"
+        message="Bu personeli silmek istediğinize emin misiniz? Bu işlem geri alınamaz."
+        confirmText="Sil"
+        cancelText="İptal"
+        type="danger"
+      />
     </div>
   )
 }
@@ -208,12 +229,13 @@ function PersonelForm({ onSave, onCancel }: { onSave: () => void; onCancel: () =
         })
       })
       if (response.ok) {
+        toast.success("Personel başarıyla eklendi")
         onSave()
       } else {
-        alert("Hata oluştu")
+        toast.error("Personel eklenirken hata oluştu")
       }
     } catch (error) {
-      alert("Hata oluştu")
+      toast.error("Hata oluştu")
     } finally {
       setIsSaving(false)
     }

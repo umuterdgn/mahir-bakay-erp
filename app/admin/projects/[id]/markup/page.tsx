@@ -124,6 +124,13 @@ export default function MarkupPage({ params }: { params: Promise<{ id: string }>
     const file = e.target.files?.[0]
     if (!file) return
 
+    // Check file type - only PDF and images allowed
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf']
+    if (!validTypes.includes(file.type)) {
+      toast.error("Lütfen JPG, PNG veya PDF dosyası yükleyin")
+      return
+    }
+
     const reader = new FileReader()
     reader.onload = (event) => {
       const photoData = event.target?.result as string
@@ -154,6 +161,13 @@ export default function MarkupPage({ params }: { params: Promise<{ id: string }>
   const handlePlanUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file || !fabricCanvas) return
+
+    // Check file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf']
+    if (!validTypes.includes(file.type)) {
+      toast.error("Lütfen JPG, PNG veya PDF dosyası yükleyin")
+      return
+    }
 
     const reader = new FileReader()
     reader.onload = (event) => {
@@ -344,7 +358,7 @@ export default function MarkupPage({ params }: { params: Promise<{ id: string }>
                 <label className="block text-sm font-medium text-slate-300 mb-2">Plan Dosyası Yükle</label>
                 <input
                   type="file"
-                  accept="image/*"
+                  accept=".pdf,.jpg,.jpeg,.png"
                   onChange={handlePlanUpload}
                   className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm"
                 />
@@ -358,7 +372,7 @@ export default function MarkupPage({ params }: { params: Promise<{ id: string }>
                 <label className="block text-sm font-medium text-slate-300 mb-2">Fotoğraf Çek/Yükle</label>
                 <input
                   type="file"
-                  accept="image/*"
+                  accept=".pdf,.jpg,.jpeg,.png"
                   capture="environment"
                   onChange={handlePhotoUpload}
                   className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm"

@@ -8,51 +8,24 @@ export async function GET(
   try {
     const resolvedParams = await params
     
-    // Check if this is a worker or personnel
-    const worker = await prisma.worker.findUnique({
-      where: { id: resolvedParams.id }
-    })
-    
     const personel = await prisma.personel.findUnique({
       where: { id: resolvedParams.id }
     })
 
-    let assignedInventory: any[] = []
-
-    if (worker) {
-      // For workers, use InventoryAssignment relation
-      assignedInventory = await prisma.inventory.findMany({
-        where: {
-          assignments: {
-            some: { workerId: resolvedParams.id }
-          }
-        },
-        include: {
-          project: true,
-          assignments: {
-            where: { workerId: resolvedParams.id },
-            include: { worker: true }
-          }
-        },
-        orderBy: { createdAt: "desc" }
-      })
-    } else if (personel) {
-      // For personnel, use StockMovement relation
-      assignedInventory = await prisma.stock.findMany({
-        where: {
-          movements: {
-            some: { personnelId: resolvedParams.id }
-          }
-        },
-        include: {
-          movements: {
-            where: { personnelId: resolvedParams.id },
-            orderBy: { date: "desc" }
-          }
-        },
-        orderBy: { name: "asc" }
-      })
+    if (!personel) {
+      return NextResponse.json({ error: "Personel not found" }, { status: 404 })
     }
+
+    // For personnel, use InventoryAssignment relation
+    const assignedInventory = await prisma.inventoryAssignment.findMany({
+      where: {
+        personelId: resolvedParams.id
+      },
+      include: {
+        inventory: true
+      },
+      orderBy: { assignedAt: "desc" }
+    })
 
     return NextResponse.json(assignedInventory)
   } catch (error) {

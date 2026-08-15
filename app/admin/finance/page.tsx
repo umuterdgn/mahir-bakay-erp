@@ -10,27 +10,6 @@ import autoTable from "jspdf-autotable"
 export default function FinancePage() {
   const router = useRouter()
   
-  // Basit yetki kontrolü (İleride auth modülüne bağlanacak)
-  const userPermissions: string[] = [] // Boş ise SUPER_ADMIN olarak kabul edilir
-  const isAdmin = userPermissions.length === 0
-
-  if (!isAdmin && !userPermissions.includes("FINANCE")) {
-    return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-white mb-4">Erişim Engellendi</h1>
-          <p className="text-slate-400 mb-6">Bu sayfayı görme yetkiniz yok.</p>
-          <button
-            onClick={() => router.push('/admin')}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors"
-          >
-            Ana Sayfaya Dön
-          </button>
-        </div>
-      </div>
-    )
-  }
-
   const [transactions, setTransactions] = useState<any[]>([])
   const [projects, setProjects] = useState<any[]>([])
   const [companies, setCompanies] = useState<any[]>([])
@@ -38,6 +17,13 @@ export default function FinancePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  useEffect(() => {
+    fetchTransactions()
+    fetchProjects()
+    fetchCompanies()
+    fetchPersonnel()
+  }, [])
   
   const [formData, setFormData] = useState({
     type: "GELIR",
@@ -63,31 +49,28 @@ export default function FinancePage() {
   })
 
   useEffect(() => {
-    fetchTransactions()
-    fetchProjects()
-    fetchCompanies()
-    fetchPersonnel()
-  }, [])
-
-  useEffect(() => {
-    const filteredTransactions = getFilteredTransactions()
-    
-    const income = filteredTransactions
-      .filter(t => t.type === "GELIR")
-      .reduce((sum, t) => sum + t.amount, 0)
-    
-    const expense = filteredTransactions
-      .filter(t => t.type === "GIDER")
-      .reduce((sum, t) => sum + t.amount, 0)
-    
-    setStats({
-      totalIncome: income,
-      totalExpense: expense,
-      netBalance: income - expense
-    })
+    if (transactions.length > 0) {
+      const filteredTransactions = getFilteredTransactions()
+      
+      const income = filteredTransactions
+        .filter(t => t.type === "GELIR")
+        .reduce((sum, t) => sum + t.amount, 0)
+      
+      const expense = filteredTransactions
+        .filter(t => t.type === "GIDER")
+        .reduce((sum, t) => sum + t.amount, 0)
+      
+      setStats({
+        totalIncome: income,
+        totalExpense: expense,
+        netBalance: income - expense
+      })
+    }
   }, [transactions, dateFilter, categoryFilter])
 
   const getFilteredTransactions = () => {
+    if (!transactions || transactions.length === 0) return []
+    
     return transactions.filter(t => {
       // Date filtering
       const transactionDate = new Date(t.date)

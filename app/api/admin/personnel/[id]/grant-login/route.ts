@@ -38,8 +38,7 @@ export async function POST(
         name: personnel.name,
         email,
         password: hashedPassword,
-        role: role || "STAFF",
-        permissions: JSON.stringify(["personnel", "attendance"])
+        role: role || "STAFF"
       }
     })
 

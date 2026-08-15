@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
+import { logAction } from "@/lib/logger"
 
 export async function GET() {
   try {
@@ -145,5 +146,47 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Error creating conversation:", error)
     return NextResponse.json({ error: "Failed to create conversation" }, { status: 500 })
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const session = await auth()
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    // Only admins can delete conversations
+    if (session.user.role !== 'ADMIN' && session.user.role !== 'SUPER_ADMIN') {
+      return NextResponse.json({ error: "Forbidden - Only admins can delete conversations" }, { status: 403 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+    const userName = session.user.name || "Bilinmeyen Kullanıcı"
+
+    if (!id) {
+      return NextResponse.json({ error: "Conversation ID is required" }, { status: 400 })
+    }
+
+    // Get the existing conversation to log the name
+    const existingConversation = await prisma.conversation.findUnique({
+      where: { id }
+    })
+
+    // Delete conversation (this will cascade delete messages and participants)
+    await prisma.conversation.delete({
+      where: { id }
+    })
+
+    // Log the action with detailed information
+    if (existingConversation) {
+      await logAction("SILINDI", `${userName}, ${existingConversation.name || 'İsimsiz Sohbet'} adlı sohbeti sildi`, userName)
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error("Error deleting conversation:", error)
+    return NextResponse.json({ error: "Failed to delete conversation" }, { status: 500 })
   }
 }

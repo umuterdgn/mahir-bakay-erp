@@ -7,37 +7,29 @@ import * as XLSX from "xlsx"
 
 export default function AttendancePage() {
   const [projects, setProjects] = useState<any[]>([])
-  const [workers, setWorkers] = useState<any[]>([])
+  const [personnel, setPersonnel] = useState<any[]>([])
   const [attendanceRecords, setAttendanceRecords] = useState<any[]>([])
   const [visitorRecords, setVisitorRecords] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [selectedTeamFilter, setSelectedTeamFilter] = useState("Tüm Takımlar")
-  
+  const [selectedProjectFilter, setSelectedProjectFilter] = useState("")
+  const [dateFilter, setDateFilter] = useState({ startDate: "", endDate: "" })
+
   // QR Code state
   const [selectedProjectForQR, setSelectedProjectForQR] = useState("")
   const [showQRModal, setShowQRModal] = useState(false)
-  
-  // Worker form state
-  const [isWorkerModalOpen, setIsWorkerModalOpen] = useState(false)
-  const [workerForm, setWorkerForm] = useState({
-    firstName: "",
-    lastName: "",
-    username: "",
-    password: "",
-    team: "",
-    projectId: ""
-  })
 
   // Manual attendance form state
   const [isManualAttendanceOpen, setIsManualAttendanceOpen] = useState(false)
   const [manualAttendanceForm, setManualAttendanceForm] = useState({
-    workerId: "",
+    personelId: "",
     projectId: "",
     checkInTime: "",
-    checkOutTime: ""
+    checkOutTime: "",
+    dayMultiplier: 1 // Default to full day
   })
-  const [workerSearchTerm, setWorkerSearchTerm] = useState("")
-  const [isWorkerDropdownOpen, setIsWorkerDropdownOpen] = useState(false)
+  const [personelSearchTerm, setPersonelSearchTerm] = useState("")
+  const [isPersonelDropdownOpen, setIsPersonelDropdownOpen] = useState(false)
 
   // Turkish character normalization function
   const normalizeTurkishChars = (text: string) => {
@@ -53,7 +45,7 @@ export default function AttendancePage() {
 
   useEffect(() => {
     fetchProjects()
-    fetchWorkers()
+    fetchPersonnel()
     fetchAttendanceRecords()
     fetchVisitorRecords()
   }, [])
@@ -70,15 +62,15 @@ export default function AttendancePage() {
     }
   }
 
-  const fetchWorkers = async () => {
+  const fetchPersonnel = async () => {
     try {
-      const response = await fetch("/api/admin/workers")
+      const response = await fetch("/api/admin/personnel")
       if (response.ok) {
         const data = await response.json()
-        setWorkers(data)
+        setPersonnel(data)
       }
     } catch (error) {
-      console.error("Failed to fetch workers:", error)
+      console.error("Failed to fetch personnel:", error)
     } finally {
       setIsLoading(false)
     }
@@ -108,48 +100,10 @@ export default function AttendancePage() {
     }
   }
 
-  const handleWorkerSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!workerForm.firstName || !workerForm.lastName || !workerForm.username || !workerForm.password || !workerForm.projectId) {
-      toast.error("Tüm zorunlu alanları doldurun")
-      return
-    }
-
-    try {
-      const response = await fetch("/api/admin/workers", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(workerForm)
-      })
-
-      if (response.ok) {
-        toast.success("İşçi başarıyla eklendi")
-        fetchWorkers()
-        setIsWorkerModalOpen(false)
-        setWorkerForm({
-          firstName: "",
-          lastName: "",
-          username: "",
-          password: "",
-          team: "",
-          projectId: ""
-        })
-      } else {
-        const error = await response.json()
-        toast.error(error.error || "İşçi eklenirken hata oluştu")
-      }
-    } catch (error) {
-      toast.error("İşçi eklenirken hata oluştu")
-    }
-  }
-
   const handleManualAttendanceSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    if (!manualAttendanceForm.workerId || !manualAttendanceForm.projectId) {
+
+    if (!manualAttendanceForm.personelId || !manualAttendanceForm.projectId) {
       toast.error("Personel ve proje seçiniz")
       return
     }
@@ -162,12 +116,12 @@ export default function AttendancePage() {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          workerId: manualAttendanceForm.workerId,
+          personelId: manualAttendanceForm.personelId,
           projectId: manualAttendanceForm.projectId,
           date: today,
           checkIn: manualAttendanceForm.checkInTime ? `${today}T${manualAttendanceForm.checkInTime}` : null,
           checkOut: manualAttendanceForm.checkOutTime ? `${today}T${manualAttendanceForm.checkOutTime}` : null,
-          dayMultiplier: 1 // Default to full day for now
+          dayMultiplier: manualAttendanceForm.dayMultiplier
         })
       })
 
@@ -176,12 +130,13 @@ export default function AttendancePage() {
         fetchAttendanceRecords()
         setIsManualAttendanceOpen(false)
         setManualAttendanceForm({
-          workerId: "",
+          personelId: "",
           projectId: "",
           checkInTime: "",
-          checkOutTime: ""
+          checkOutTime: "",
+          dayMultiplier: 1
         })
-        setWorkerSearchTerm("")
+        setPersonelSearchTerm("")
       } else {
         toast.error("Yoklama eklenirken hata oluştu")
       }
@@ -191,7 +146,19 @@ export default function AttendancePage() {
   }
 
   const exportAttendanceToExcel = () => {
-    const data = attendanceRecords.map(record => ({
+    const filteredRecords = attendanceRecords.filter(record => {
+      const recordDate = new Date(record.date)
+      const startDate = dateFilter.startDate ? new Date(dateFilter.startDate) : null
+      const endDate = dateFilter.endDate ? new Date(dateFilter.endDate) : null
+      
+      if (startDate && recordDate < startDate) return false
+      if (endDate && recordDate > endDate) return false
+      if (selectedProjectFilter && record.projectId !== selectedProjectFilter) return false
+      
+      return true
+    })
+
+    const data = filteredRecords.map(record => ({
       "İşçi Adı": `${record.worker?.firstName} ${record.worker?.lastName}`,
       "Kullanıcı Adı": record.worker?.username,
       "Takım": record.worker?.team,
@@ -209,7 +176,19 @@ export default function AttendancePage() {
   }
 
   const exportVisitorsToExcel = () => {
-    const data = visitorRecords.map(record => ({
+    const filteredRecords = visitorRecords.filter(record => {
+      const recordDate = new Date(record.checkIn)
+      const startDate = dateFilter.startDate ? new Date(dateFilter.startDate) : null
+      const endDate = dateFilter.endDate ? new Date(dateFilter.endDate) : null
+      
+      if (startDate && recordDate < startDate) return false
+      if (endDate && recordDate > endDate) return false
+      if (selectedProjectFilter && record.projectId !== selectedProjectFilter) return false
+      
+      return true
+    })
+
+    const data = filteredRecords.map(record => ({
       "Ad Soyad": record.fullName,
       "Firma": record.company || "-",
       "Ziyaret Sebebi": record.reason || "-",
@@ -311,13 +290,7 @@ export default function AttendancePage() {
       </div>
 
       {/* Action Buttons */}
-      <div className="grid md:grid-cols-3 gap-4 mb-6">
-        <button
-          onClick={() => setIsWorkerModalOpen(true)}
-          className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-500 transition-colors font-medium"
-        >
-          + Yeni İşçi Ekle
-        </button>
+      <div className="grid md:grid-cols-2 gap-4 mb-6">
         <button
           onClick={() => setIsManualAttendanceOpen(true)}
           className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors font-medium"
@@ -340,65 +313,54 @@ export default function AttendancePage() {
         </div>
       </div>
 
-      {/* Workers Table */}
-      <div className="bg-slate-900 rounded-xl p-6 border border-slate-800 mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold text-white">👷 İşçiler</h2>
-          <div className="flex gap-2">
+      {/* Filters */}
+      <div className="bg-slate-900 rounded-xl p-4 border border-slate-800 mb-6">
+        <h3 className="text-lg font-semibold text-white mb-4">Filtreler</h3>
+        <div className="grid md:grid-cols-4 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Başlangıç Tarihi</label>
+            <input
+              type="date"
+              value={dateFilter.startDate}
+              onChange={(e) => setDateFilter(prev => ({ ...prev, startDate: e.target.value }))}
+              className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Bitiş Tarihi</label>
+            <input
+              type="date"
+              value={dateFilter.endDate}
+              onChange={(e) => setDateFilter(prev => ({ ...prev, endDate: e.target.value }))}
+              className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Proje</label>
             <select
-              value={selectedTeamFilter}
-              onChange={(e) => setSelectedTeamFilter(e.target.value)}
-              className="px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white text-sm"
+              value={selectedProjectFilter}
+              onChange={(e) => setSelectedProjectFilter(e.target.value)}
+              className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
             >
-              <option value="Tüm Takımlar">Tüm Takımlar</option>
-              <option value="Demirci">Demirci</option>
-              <option value="Kalıpçı">Kalıpçı</option>
-              <option value="Betoncu">Betoncu</option>
-              <option value="İnşaat İşçisi">İnşaat İşçisi</option>
-              <option value="Marangoz">Marangoz</option>
-              <option value="Elektrikçi">Elektrikçi</option>
-              <option value="Tesisatçı">Tesisatçı</option>
-              <option value="Sıvacı">Sıvacı</option>
-              <option value="Boyacı">Boyacı</option>
-              <option value="Diğer">Diğer</option>
+              <option value="">Tüm Projeler</option>
+              {projects.map((project) => (
+                <option key={project.id} value={project.id}>
+                  {project.name || project.title}
+                </option>
+              ))}
             </select>
           </div>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-slate-700">
-                <th className="text-left py-3 px-4 text-slate-300 font-medium">Ad Soyad</th>
-                <th className="text-left py-3 px-4 text-slate-300 font-medium">Kullanıcı Adı</th>
-                <th className="text-left py-3 px-4 text-slate-300 font-medium">Takım</th>
-                <th className="text-left py-3 px-4 text-slate-300 font-medium">Proje</th>
-              </tr>
-            </thead>
-            <tbody>
-              {workers.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="text-center py-8 text-slate-400">
-                    Henüz işçi kaydı yok
-                  </td>
-                </tr>
-              ) : (
-                workers
-                  .filter(worker => selectedTeamFilter === "Tüm Takımlar" || worker.team === selectedTeamFilter)
-                  .map((worker) => (
-                  <tr key={worker.id} className="border-b border-slate-800">
-                    <td className="py-3 px-4 text-white">
-                      {worker.firstName} {worker.lastName}
-                    </td>
-                    <td className="py-3 px-4 text-slate-300">{worker.username}</td>
-                    <td className="py-3 px-4 text-slate-300">{worker.team}</td>
-                    <td className="py-3 px-4 text-slate-300">
-                      {worker.project?.name || worker.project?.title}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+          <div className="flex items-end">
+            <button
+              onClick={() => {
+                setDateFilter({ startDate: "", endDate: "" })
+                setSelectedProjectFilter("")
+              }}
+              className="w-full px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
+            >
+              Filtreleri Temizle
+            </button>
+          </div>
         </div>
       </div>
 
@@ -409,24 +371,44 @@ export default function AttendancePage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-slate-700">
-                <th className="text-left py-3 px-4 text-slate-300 font-medium">İşçi</th>
+                <th className="text-left py-3 px-4 text-slate-300 font-medium">Personel</th>
                 <th className="text-left py-3 px-4 text-slate-300 font-medium">Tarih</th>
                 <th className="text-left py-3 px-4 text-slate-300 font-medium">Giriş</th>
                 <th className="text-left py-3 px-4 text-slate-300 font-medium">Çıkış</th>
               </tr>
             </thead>
             <tbody>
-              {attendanceRecords.length === 0 ? (
+              {attendanceRecords.filter(record => {
+                const recordDate = new Date(record.date)
+                const startDate = dateFilter.startDate ? new Date(dateFilter.startDate) : null
+                const endDate = dateFilter.endDate ? new Date(dateFilter.endDate) : null
+
+                if (startDate && recordDate < startDate) return false
+                if (endDate && recordDate > endDate) return false
+                if (selectedProjectFilter && record.projectId !== selectedProjectFilter) return false
+
+                return true
+              }).length === 0 ? (
                 <tr>
                   <td colSpan={4} className="text-center py-8 text-slate-400">
                     Henüz yoklama kaydı yok
                   </td>
                 </tr>
               ) : (
-                attendanceRecords.slice(0, 10).map((record) => (
+                attendanceRecords.filter(record => {
+                  const recordDate = new Date(record.date)
+                  const startDate = dateFilter.startDate ? new Date(dateFilter.startDate) : null
+                  const endDate = dateFilter.endDate ? new Date(dateFilter.endDate) : null
+
+                  if (startDate && recordDate < startDate) return false
+                  if (endDate && recordDate > endDate) return false
+                  if (selectedProjectFilter && record.projectId !== selectedProjectFilter) return false
+
+                  return true
+                }).slice(0, 10).map((record) => (
                   <tr key={record.id} className="border-b border-slate-800">
                     <td className="py-3 px-4 text-white">
-                      {record.worker?.firstName} {record.worker?.lastName}
+                      {record.personel?.name}
                     </td>
                     <td className="py-3 px-4 text-slate-300">
                       {new Date(record.date).toLocaleDateString("tr-TR")}
@@ -460,14 +442,34 @@ export default function AttendancePage() {
               </tr>
             </thead>
             <tbody>
-              {visitorRecords.length === 0 ? (
+              {visitorRecords.filter(record => {
+                const recordDate = new Date(record.checkIn)
+                const startDate = dateFilter.startDate ? new Date(dateFilter.startDate) : null
+                const endDate = dateFilter.endDate ? new Date(dateFilter.endDate) : null
+                
+                if (startDate && recordDate < startDate) return false
+                if (endDate && recordDate > endDate) return false
+                if (selectedProjectFilter && record.projectId !== selectedProjectFilter) return false
+                
+                return true
+              }).length === 0 ? (
                 <tr>
                   <td colSpan={5} className="text-center py-8 text-slate-400">
                     Henüz ziyaretçi kaydı yok
                   </td>
                 </tr>
               ) : (
-                visitorRecords.slice(0, 10).map((record) => (
+                visitorRecords.filter(record => {
+                  const recordDate = new Date(record.checkIn)
+                  const startDate = dateFilter.startDate ? new Date(dateFilter.startDate) : null
+                  const endDate = dateFilter.endDate ? new Date(dateFilter.endDate) : null
+                  
+                  if (startDate && recordDate < startDate) return false
+                  if (endDate && recordDate > endDate) return false
+                  if (selectedProjectFilter && record.projectId !== selectedProjectFilter) return false
+                  
+                  return true
+                }).slice(0, 10).map((record) => (
                   <tr key={record.id} className="border-b border-slate-800">
                     <td className="py-3 px-4 text-white">{record.fullName}</td>
                     <td className="py-3 px-4 text-slate-300">{record.company || "-"}</td>
@@ -495,107 +497,6 @@ export default function AttendancePage() {
         </div>
       </div>
 
-      {/* Worker Modal */}
-      {isWorkerModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-slate-900 rounded-xl p-6 border border-slate-800 w-full max-w-lg mx-4 shadow-2xl">
-            <h3 className="text-xl font-semibold text-white mb-6">Yeni İşçi Ekle</h3>
-            
-            <form onSubmit={handleWorkerSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Ad *</label>
-                  <input
-                    type="text"
-                    value={workerForm.firstName}
-                    onChange={(e) => setWorkerForm(prev => ({ ...prev, firstName: e.target.value }))}
-                    className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-white"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Soyad *</label>
-                  <input
-                    type="text"
-                    value={workerForm.lastName}
-                    onChange={(e) => setWorkerForm(prev => ({ ...prev, lastName: e.target.value }))}
-                    className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-white"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Kullanıcı Adı *</label>
-                <input
-                  type="text"
-                  value={workerForm.username}
-                  onChange={(e) => setWorkerForm(prev => ({ ...prev, username: e.target.value }))}
-                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-white"
-                  placeholder="Örn: ahmet.yilmaz"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Şifre *</label>
-                <input
-                  type="password"
-                  value={workerForm.password}
-                  onChange={(e) => setWorkerForm(prev => ({ ...prev, password: e.target.value }))}
-                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-white"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Takım</label>
-                <input
-                  type="text"
-                  value={workerForm.team}
-                  onChange={(e) => setWorkerForm(prev => ({ ...prev, team: e.target.value }))}
-                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-white"
-                  placeholder="Örn: Demirciler"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Proje *</label>
-                <select
-                  value={workerForm.projectId}
-                  onChange={(e) => setWorkerForm(prev => ({ ...prev, projectId: e.target.value }))}
-                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-white"
-                  required
-                >
-                  <option value="">Proje Seçin</option>
-                  {projects.map((project) => (
-                    <option key={project.id} value={project.id}>
-                      {project.name || project.title}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsWorkerModalOpen(false)}
-                  className="flex-1 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
-                >
-                  İptal
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-500 transition-colors"
-                >
-                  Ekle
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
       {/* Manual Attendance Modal */}
       {isManualAttendanceOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
@@ -608,53 +509,52 @@ export default function AttendancePage() {
                 <div className="relative">
                   <input
                     type="text"
-                    value={workerSearchTerm}
+                    value={personelSearchTerm}
                     onChange={(e) => {
-                      setWorkerSearchTerm(e.target.value)
-                      setIsWorkerDropdownOpen(true)
+                      setPersonelSearchTerm(e.target.value)
+                      setIsPersonelDropdownOpen(true)
                     }}
-                    onFocus={() => setIsWorkerDropdownOpen(true)}
-                    onBlur={() => setTimeout(() => setIsWorkerDropdownOpen(false), 200)}
+                    onFocus={() => setIsPersonelDropdownOpen(true)}
+                    onBlur={() => setTimeout(() => setIsPersonelDropdownOpen(false), 200)}
                     className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
-                    placeholder="İsim veya takım ara..."
+                    placeholder="İsim veya departman ara..."
                     required
                   />
-                  {isWorkerDropdownOpen && (
+                  {isPersonelDropdownOpen && (
                     <div className="absolute z-10 w-full mt-1 bg-slate-800 border border-slate-700 rounded-lg max-h-60 overflow-y-auto shadow-xl">
-                      {workers
-                        .filter(w => {
-                          if (workerSearchTerm === "") return true
-                          const searchTerm = normalizeTurkishChars(workerSearchTerm)
-                          const firstName = normalizeTurkishChars(w.firstName)
-                          const lastName = normalizeTurkishChars(w.lastName)
-                          const team = normalizeTurkishChars(w.team)
-                          return firstName.includes(searchTerm) || 
-                                 lastName.includes(searchTerm) || 
-                                 team.includes(searchTerm)
+                      {personnel
+                        .filter(p => {
+                          if (personelSearchTerm === "") return true
+                          const searchTerm = normalizeTurkishChars(personelSearchTerm)
+                          const name = normalizeTurkishChars(p.name)
+                          const department = normalizeTurkishChars(p.department)
+                          const takim = normalizeTurkishChars(p.takim || "")
+                          return name.includes(searchTerm) ||
+                                 department.includes(searchTerm) ||
+                                 takim.includes(searchTerm)
                         })
-                        .slice(0, 10)
-                        .map((worker) => (
+                        .map((person) => (
                         <div
-                          key={worker.id}
+                          key={person.id}
                           onClick={() => {
-                            setManualAttendanceForm(prev => ({ ...prev, workerId: worker.id }))
-                            setWorkerSearchTerm(`${worker.firstName} ${worker.lastName} - ${worker.team}`)
-                            setIsWorkerDropdownOpen(false)
+                            setManualAttendanceForm(prev => ({ ...prev, personelId: person.id }))
+                            setPersonelSearchTerm(`${person.name} - ${person.department}`)
+                            setIsPersonelDropdownOpen(false)
                           }}
                           className="px-4 py-2 hover:bg-slate-700 cursor-pointer text-white text-sm"
                         >
-                          {worker.firstName} {worker.lastName} - {worker.team}
+                          {person.name} - {person.department}
                         </div>
                       ))}
-                      {workers.filter(w => {
-                        if (workerSearchTerm === "") return true
-                        const searchTerm = normalizeTurkishChars(workerSearchTerm)
-                        const firstName = normalizeTurkishChars(w.firstName)
-                        const lastName = normalizeTurkishChars(w.lastName)
-                        const team = normalizeTurkishChars(w.team)
-                        return firstName.includes(searchTerm) || 
-                               lastName.includes(searchTerm) || 
-                               team.includes(searchTerm)
+                      {personnel.filter(p => {
+                        if (personelSearchTerm === "") return true
+                        const searchTerm = normalizeTurkishChars(personelSearchTerm)
+                        const name = normalizeTurkishChars(p.name)
+                        const department = normalizeTurkishChars(p.department)
+                        const takim = normalizeTurkishChars(p.takim || "")
+                        return name.includes(searchTerm) ||
+                               department.includes(searchTerm) ||
+                               takim.includes(searchTerm)
                       }).length === 0 && (
                         <div className="px-4 py-2 text-slate-500 text-sm">
                           Sonuç bulunamadı
@@ -679,6 +579,21 @@ export default function AttendancePage() {
                       {project.name || project.title}
                     </option>
                   ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Gün Çarpanı</label>
+                <select
+                  value={manualAttendanceForm.dayMultiplier}
+                  onChange={(e) => setManualAttendanceForm(prev => ({ ...prev, dayMultiplier: parseFloat(e.target.value) }))}
+                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                >
+                  <option value={1}>Tam Gün (1.0)</option>
+                  <option value={0.5}>Yarım Gün (0.5)</option>
+                  <option value={0}>Çalışma Yok (0.0)</option>
+                  <option value={1.5}>1.5 Gün</option>
+                  <option value={2}>2 Gün</option>
                 </select>
               </div>
 

@@ -9,6 +9,11 @@ export default function SiteReportsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  useEffect(() => {
+    fetchReports()
+    fetchProjects()
+  }, [])
   
   const [formData, setFormData] = useState({
     date: "",
@@ -23,11 +28,6 @@ export default function SiteReportsPage() {
     projectId: "",
     date: ""
   })
-
-  useEffect(() => {
-    fetchReports()
-    fetchProjects()
-  }, [])
 
   const fetchReports = async () => {
     try {

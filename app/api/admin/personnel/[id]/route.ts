@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { auth } from "@/lib/auth"
+import { logPersonnelAction } from "@/lib/logger"
 
 export async function GET(
   request: Request,
@@ -13,9 +15,9 @@ export async function GET(
         payments: {
           orderBy: { date: "desc" }
         },
-        assignedItems: {
+        inventoryHistory: {
           include: {
-            project: true
+            inventory: true
           }
         }
       }
@@ -37,8 +39,16 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await auth()
+    const userName = session?.user?.name || "Bilinmeyen Kullanıcı"
+    
     const resolvedParams = await params
     const body = await request.json()
+    
+    // Get the existing personnel to log the name
+    const existingPerson = await prisma.personel.findUnique({
+      where: { id: resolvedParams.id }
+    })
     
     const updatedPerson = await prisma.personel.update({
       where: { id: resolvedParams.id },
@@ -54,6 +64,11 @@ export async function PATCH(
       }
     })
     
+    // Log the action with detailed information
+    if (existingPerson) {
+      await logPersonnelAction("GUNCELLENDI", userName, existingPerson.name, `Personel No: ${existingPerson.personnelNo}`)
+    }
+    
     return NextResponse.json(updatedPerson)
   } catch (error) {
     console.error("Error updating personnel:", error)
@@ -66,10 +81,24 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await auth()
+    const userName = session?.user?.name || "Bilinmeyen Kullanıcı"
+    
     const resolvedParams = await params
+    
+    // Get the existing personnel to log the name
+    const existingPerson = await prisma.personel.findUnique({
+      where: { id: resolvedParams.id }
+    })
+    
     await prisma.personel.delete({
       where: { id: resolvedParams.id }
     })
+    
+    // Log the action with detailed information
+    if (existingPerson) {
+      await logPersonnelAction("SILINDI", userName, existingPerson.name, `Personel No: ${existingPerson.personnelNo}`)
+    }
     
     return NextResponse.json({ success: true })
   } catch (error) {

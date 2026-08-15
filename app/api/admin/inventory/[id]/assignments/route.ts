@@ -25,7 +25,7 @@ export async function POST(
   try {
     const resolvedParams = await params
     const body = await request.json()
-    const { workerId, quantity, notes } = body
+    const { personelId, quantity, notes } = body
 
     // Get a valid admin user ID for history records
     const adminUser = await prisma.user.findFirst({
@@ -52,21 +52,21 @@ export async function POST(
     const availableQuantity = inventory.quantity - assignedQuantity
 
     if (quantity > availableQuantity) {
-      return NextResponse.json({ 
-        error: `Yetersiz stok. Kullanılabilir miktar: ${availableQuantity} ${inventory.unit}` 
+      return NextResponse.json({
+        error: `Yetersiz stok. Kullanılabilir miktar: ${availableQuantity} ${inventory.unit}`
       }, { status: 400 })
     }
 
-    // Get worker info for history
-    const worker = await prisma.worker.findUnique({
-      where: { id: workerId }
+    // Get personel info for history
+    const personel = await prisma.personel.findUnique({
+      where: { id: personelId }
     })
 
     // Create assignment
     const assignment = await prisma.inventoryAssignment.create({
       data: {
         inventoryId: resolvedParams.id,
-        workerId,
+        personelId,
         quantity: parseInt(quantity),
         notes
       }
@@ -77,8 +77,8 @@ export async function POST(
       resolvedParams.id,
       "ASSIGNED",
       parseInt(quantity),
-      `${worker?.firstName || ""} ${worker?.lastName || ""} personeline ${quantity} ${inventory.unit} zimmetlendi`,
-      undefined,
+      `${personel?.name || ""} personeline ${quantity} ${inventory.unit} zimmetlendi`,
+      personelId,
       validRecordedBy
     )
 
@@ -109,7 +109,7 @@ export async function PATCH(
       where: { id: assignmentId },
       include: {
         inventory: true,
-        worker: true
+        personel: true
       }
     })
 
@@ -134,8 +134,8 @@ export async function PATCH(
       assignment.inventoryId,
       "UNASSIGNED",
       assignment.quantity,
-      `${assignment.worker?.firstName || ""} ${assignment.worker?.lastName || ""} personelinden ${assignment.quantity} ${assignment.inventory.unit} iade alındı`,
-      undefined,
+      `${assignment.personel?.name || ""} personelinden ${assignment.quantity} ${assignment.inventory.unit} iade alındı`,
+      assignment.personelId,
       validRecordedBy
     )
 

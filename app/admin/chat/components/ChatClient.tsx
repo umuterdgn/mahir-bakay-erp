@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { pusherClient } from "@/lib/pusher"
+import toast from "react-hot-toast"
+import ConfirmModal from "@/components/ConfirmModal"
 
 interface ChatClientProps {
   currentUser: any
@@ -18,6 +20,7 @@ export default function ChatClient({ currentUser, initialConversations }: ChatCl
   const [isLoadingUsers, setIsLoadingUsers] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [activeTab, setActiveTab] = useState<"users" | "group" | "announcement">("users")
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null })
 
   useEffect(() => {
     if (activeConversation) {
@@ -82,11 +85,11 @@ export default function ChatClient({ currentUser, initialConversations }: ChatCl
       } else {
         const errorData = await response.json()
         console.error("Failed to send message:", errorData)
-        alert("Mesaj gönderilemedi: " + (errorData.message || "Bilinmeyen hata"))
+        toast.error("Mesaj gönderilemedi: " + (errorData.message || "Bilinmeyen hata"))
       }
     } catch (error) {
       console.error("Error sending message:", error)
-      alert("Mesaj gönderilirken bir hata oluştu")
+      toast.error("Mesaj gönderilirken bir hata oluştu")
     }
   }
 
@@ -226,6 +229,31 @@ export default function ChatClient({ currentUser, initialConversations }: ChatCl
     }
   }
 
+  const handleDeleteConversation = async (id: string) => {
+    setDeleteConfirm({ isOpen: true, id })
+  }
+
+  const confirmDeleteConversation = async () => {
+    if (!deleteConfirm.id) return
+
+    try {
+      const response = await fetch(`/api/chat/conversations?id=${deleteConfirm.id}`, {
+        method: "DELETE"
+      })
+      if (response.ok) {
+        toast.success("Sohbet başarıyla silindi")
+        setConversations(conversations.filter(c => c.id !== deleteConfirm.id))
+        if (activeConversation?.id === deleteConfirm.id) {
+          setActiveConversation(null)
+        }
+      } else {
+        toast.error("Sohbet silinirken hata oluştu")
+      }
+    } catch (error) {
+      toast.error("Sohbet silinirken hata oluştu")
+    }
+  }
+
   const isAdmin = currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPER_ADMIN'
   const filteredConversations = conversations.filter(conv => {
     if (!conv) return false
@@ -270,17 +298,34 @@ export default function ChatClient({ currentUser, initialConversations }: ChatCl
               filteredConversations.filter(conv => conv !== null).map((conversation) => (
                 <div
                   key={conversation.id}
-                  onClick={() => setActiveConversation(conversation)}
-                  className={`p-4 cursor-pointer hover:bg-[#2a3942] transition-colors ${
+                  className={`p-4 hover:bg-[#2a3942] transition-colors ${
                     activeConversation?.id === conversation.id ? 'bg-[#2a3942]' : ''
                   }`}
                 >
-                  <div className="font-medium text-white">
-                    {conversation.name || (conversation.isGroup ? 'Grup Sohbeti' : 'Özel Sohbet')}
-                  </div>
-                  <div className="text-sm text-slate-400">
-                    {conversation.isAnnouncement ? '📢 Duyuru' : 
-                     conversation.isGroup ? '👥 Grup' : '👤 Kişisel'}
+                  <div className="flex items-center justify-between">
+                    <div
+                      className="flex-1 cursor-pointer"
+                      onClick={() => setActiveConversation(conversation)}
+                    >
+                      <div className="font-medium text-white">
+                        {conversation.name || (conversation.isGroup ? 'Grup Sohbeti' : 'Özel Sohbet')}
+                      </div>
+                      <div className="text-sm text-slate-400">
+                        {conversation.isAnnouncement ? '📢 Duyuru' :
+                         conversation.isGroup ? '👥 Grup' : '👤 Kişisel'}
+                      </div>
+                    </div>
+                    {isAdmin && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDeleteConversation(conversation.id)
+                        }}
+                        className="ml-2 text-red-400 hover:text-red-300 text-sm"
+                      >
+                        Sil
+                      </button>
+                    )}
                   </div>
                 </div>
               ))
@@ -535,6 +580,17 @@ export default function ChatClient({ currentUser, initialConversations }: ChatCl
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm({ isOpen: false, id: null })}
+        onConfirm={confirmDeleteConversation}
+        title="Sohbeti Sil"
+        message="Bu sohbeti silmek istediğinize emin misiniz? Bu işlem geri alınamaz."
+        confirmText="Sil"
+        cancelText="İptal"
+        type="danger"
+      />
     </div>
   )
 }

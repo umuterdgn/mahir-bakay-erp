@@ -5,11 +5,7 @@ export async function GET() {
   try {
     const records = await prisma.attendanceRecord.findMany({
       include: {
-        worker: {
-          include: {
-            project: true
-          }
-        },
+        personel: true,
         project: true
       },
       orderBy: {
@@ -29,17 +25,14 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { workerId, projectId, date, checkIn, checkOut } = body
+    const { personelId, projectId, date, checkIn, checkOut, dayMultiplier } = body
 
-    // Get project shift hours
-    const project = await prisma.project.findUnique({
-      where: { id: projectId }
-    })
+    console.log("Attendance POST: Creating record with data:", { personelId, projectId, date, checkIn, checkOut, dayMultiplier })
 
-    // Calculate dayMultiplier based on hours worked
-    let calculatedDayMultiplier = 1
+    // Calculate dayMultiplier based on hours worked if not provided
+    let calculatedDayMultiplier = dayMultiplier !== undefined ? dayMultiplier : 1
 
-    if (checkIn && checkOut) {
+    if (calculatedDayMultiplier === undefined && checkIn && checkOut) {
       const checkInDate = new Date(checkIn)
       const checkOutDate = new Date(checkOut)
       const hoursWorked = (checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60)
@@ -51,24 +44,11 @@ export async function POST(request: Request) {
       } else {
         calculatedDayMultiplier = 0 // 4 saatten az
       }
-    } else if (project?.shiftStart && project?.shiftEnd) {
-      // Use project shift hours if no checkIn/checkOut provided
-      const [startHour, startMin] = project.shiftStart.split(':').map(Number)
-      const [endHour, endMin] = project.shiftEnd.split(':').map(Number)
-      const shiftHours = (endHour + endMin / 60) - (startHour + startMin / 60)
-
-      if (shiftHours >= 8) {
-        calculatedDayMultiplier = 1
-      } else if (shiftHours >= 4) {
-        calculatedDayMultiplier = 0.5
-      } else {
-        calculatedDayMultiplier = 0
-      }
     }
 
     const record = await prisma.attendanceRecord.create({
       data: {
-        workerId,
+        personelId: personelId || null,
         projectId,
         date: new Date(date),
         checkIn: checkIn ? new Date(checkIn) : null,
@@ -76,6 +56,8 @@ export async function POST(request: Request) {
         dayMultiplier: calculatedDayMultiplier
       }
     })
+
+    console.log("Attendance POST: Record created successfully:", record)
 
     return NextResponse.json(record)
   } catch (error) {

@@ -1,25 +1,14 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
-
-// Yardımcı fonksiyon: Yetki kontrolü
-function hasPermission(user: any, permission: string): boolean {
-  if (!user) return false
-  if (user.role === "SUPER_ADMIN") return true
-  if (Array.isArray(user.permissions) && user.permissions.includes(permission)) return true
-  return false
-}
+import { logFinancialAction } from "@/lib/logger"
 
 export async function GET() {
   try {
     const session = await auth()
     if (!session) {
+      console.error("Finance GET: No session found")
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    // Finans modülü için yetki kontrolü
-    if (!hasPermission(session.user, "FINANCE")) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
     const transactions = await prisma.transaction.findMany({
@@ -34,7 +23,7 @@ export async function GET() {
     })
     return NextResponse.json(transactions)
   } catch (error) {
-    console.error("Error fetching transactions:", error)
+    console.error("Finance GET Error:", error)
     return NextResponse.json(
       { error: "İşlemler getirilirken hata oluştu" },
       { status: 500 }
@@ -46,15 +35,12 @@ export async function POST(request: Request) {
   try {
     const session = await auth()
     if (!session) {
+      console.error("Finance POST: No session found")
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Finans modülü için yetki kontrolü
-    if (!hasPermission(session.user, "FINANCE")) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    }
-
     const data = await request.json()
+    const userName = session.user.name || "Bilinmeyen Kullanıcı"
     
     const transaction = await prisma.transaction.create({
       data: {
@@ -72,6 +58,9 @@ export async function POST(request: Request) {
         personnel: true
       }
     })
+    
+    // Log the financial action with detailed information
+    await logFinancialAction("EKLENDI", userName, transaction.amount, `${transaction.type} - ${transaction.description}`)
     
     return NextResponse.json({ success: true, transaction })
   } catch (error) {
