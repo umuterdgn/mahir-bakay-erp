@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation"
 import { toast } from "react-hot-toast"
 import dynamic from "next/dynamic"
 import PhotoAnnotator from "@/components/PhotoAnnotator"
+import { useNetworkState } from 'react-use';
+import { db } from '@/lib/offline-db';
 
 const AnnotatableFloorPlanViewer = dynamic(
   () => import("@/components/AnnotatableFloorPlanViewer"),
@@ -27,6 +29,10 @@ export default function MarkupPage({ params }: { params: Promise<{ id: string }>
   const [markedBlueprintBase64, setMarkedBlueprintBase64] = useState<string>("")
   const [markedPhotoBase64, setMarkedPhotoBase64] = useState<string>("")
   const [uploadedPhoto, setUploadedPhoto] = useState<string>("")
+  const [dxfBase64, setDxfBase64] = useState<string>("")
+
+  // Network state for offline support
+  const { online } = useNetworkState();
 
   const handleDwgFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -67,6 +73,24 @@ export default function MarkupPage({ params }: { params: Promise<{ id: string }>
 
     setIsSaving(true)
     try {
+      // 🔴 --- OFFLINE (İNTERNETSİZ) DURUM ---
+      if (!online) {
+        await db.offlineReports.add({
+          projectId: unwrappedParams.id,
+          description: reportDescription,
+          markedBlueprintBase64: markedBlueprintBase64 || undefined,
+          markedPhotoBase64: markedPhotoBase64 || undefined,
+          dxfBase64: dxfBase64 || undefined,
+          createdAt: new Date().toISOString(),
+          syncStatus: 'pending'
+        });
+
+        toast.success("İnternet yok! 📴 Rapor cihazınıza kaydedildi, bağlantı geldiğinde buluta aktarılacak.");
+        router.push(`/admin/projects/${unwrappedParams.id}`);
+        return; // İşlemi burada kes, buluta gitmeye çalışma!
+      }
+
+      // 🟢 --- ONLINE (İNTERNET VAR) DURUM ---
       // Upload annotation images to Cloudinary
       const uploadPromises = []
       
@@ -96,10 +120,20 @@ export default function MarkupPage({ params }: { params: Promise<{ id: string }>
         )
       }
 
+      if (dxfBase64) {
+        const dxfBlob = new Blob([dxfBase64], { type: 'application/dxf' });
+        const dxfFormData = new FormData();
+        dxfFormData.append("file", dxfBlob, "rapor-cizimi.dxf");
+        uploadPromises.push(
+          fetch("/api/upload", { method: "POST", body: dxfFormData }).then(res => res.json())
+        );
+      }
+
       const uploadResults = await Promise.all(uploadPromises)
       
       const markedBlueprintUrl = uploadResults[0]?.url || null
       const markedPhotoUrl = uploadResults[1]?.url || null
+      const dxfUrl = uploadResults[2]?.url || null
 
       // Save inspection report
       const reportResponse = await fetch("/api/admin/inspection-reports", {
@@ -109,7 +143,8 @@ export default function MarkupPage({ params }: { params: Promise<{ id: string }>
           projectId: unwrappedParams.id,
           description: reportDescription,
           markedBlueprintUrl,
-          markedPhotoUrl
+          markedPhotoUrl,
+          dxfUrl
         })
       })
 
@@ -158,8 +193,9 @@ export default function MarkupPage({ params }: { params: Promise<{ id: string }>
                   {dwgFileUrl ? (
                     <AnnotatableFloorPlanViewer 
                       fileUrl={dwgFileUrl} 
-                      onSaveAnnotation={(dataUrl) => {
+                      onSaveAnnotation={(dataUrl, dxf) => {
                         setMarkedBlueprintBase64(dataUrl)
+                        if(dxf) setDxfBase64(dxf)
                         toast.success("Çizim hafızaya alındı, Raporu Kaydet'e basabilirsiniz.")
                       }}
                     />

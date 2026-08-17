@@ -14,8 +14,10 @@ export default function FinancePage() {
   const [projects, setProjects] = useState<any[]>([])
   const [companies, setCompanies] = useState<any[]>([])
   const [personnel, setPersonnel] = useState<any[]>([])
+  const [progressPayments, setProgressPayments] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isProgressPaymentModalOpen, setIsProgressPaymentModalOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
@@ -23,6 +25,7 @@ export default function FinancePage() {
     fetchProjects()
     fetchCompanies()
     fetchPersonnel()
+    fetchProgressPayments()
   }, [])
   
   const [formData, setFormData] = useState({
@@ -33,6 +36,16 @@ export default function FinancePage() {
     projectId: "",
     companyId: "",
     personnelId: ""
+  })
+
+  const [progressPaymentForm, setProgressPaymentForm] = useState({
+    projectId: "",
+    subcontractor: "",
+    workType: "",
+    unit: "",
+    quantity: "",
+    unitPrice: "",
+    description: ""
   })
 
   const [dateFilter, setDateFilter] = useState({
@@ -138,6 +151,18 @@ export default function FinancePage() {
     }
   }
 
+  const fetchProgressPayments = async () => {
+    try {
+      const response = await fetch("/api/admin/progress-payments")
+      if (response.ok) {
+        const data = await response.json()
+        setProgressPayments(data)
+      }
+    } catch (error) {
+      console.error("Failed to fetch progress payments:", error)
+    }
+  }
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
@@ -199,6 +224,110 @@ export default function FinancePage() {
       companyId: "",
       personnelId: ""
     })
+  }
+
+  const openProgressPaymentModal = () => {
+    setProgressPaymentForm({
+      projectId: "",
+      subcontractor: "",
+      workType: "",
+      unit: "",
+      quantity: "",
+      unitPrice: "",
+      description: ""
+    })
+    setIsProgressPaymentModalOpen(true)
+  }
+
+  const closeProgressPaymentModal = () => {
+    setIsProgressPaymentModalOpen(false)
+    setProgressPaymentForm({
+      projectId: "",
+      subcontractor: "",
+      workType: "",
+      unit: "",
+      quantity: "",
+      unitPrice: "",
+      description: ""
+    })
+  }
+
+  const handleProgressPaymentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!progressPaymentForm.projectId || !progressPaymentForm.subcontractor || !progressPaymentForm.workType || 
+        !progressPaymentForm.unit || !progressPaymentForm.quantity || !progressPaymentForm.unitPrice) {
+      toast.error("Gerekli alanları doldurun")
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      const response = await fetch("/api/admin/progress-payments", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          ...progressPaymentForm,
+          quantity: parseFloat(progressPaymentForm.quantity),
+          unitPrice: parseFloat(progressPaymentForm.unitPrice)
+        })
+      })
+
+      if (response.ok) {
+        toast.success("Hakediş başarıyla oluşturuldu")
+        fetchProgressPayments()
+        closeProgressPaymentModal()
+      } else {
+        toast.error("Hakediş oluşturulurken hata oluştu")
+      }
+    } catch (error) {
+      toast.error("Hakediş oluşturulurken hata oluştu")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleProgressPaymentStatusChange = async (id: string, status: string) => {
+    try {
+      const response = await fetch(`/api/admin/progress-payments/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ status })
+      })
+
+      if (response.ok) {
+        toast.success("Hakediş durumu güncellendi")
+        fetchProgressPayments()
+        fetchTransactions() // Refresh transactions in case a new transaction was created
+      } else {
+        toast.error("Durum güncellenirken hata oluştu")
+      }
+    } catch (error) {
+      toast.error("Durum güncellenirken hata oluştu")
+    }
+  }
+
+  const handleDeleteProgressPayment = async (id: string) => {
+    if (!window.confirm("Bu hakedişi silmek istediğinize emin misiniz?")) return;
+    
+    try {
+      const response = await fetch(`/api/admin/progress-payments/${id}`, {
+        method: "DELETE"
+      })
+
+      if (response.ok) {
+        toast.success("Hakediş silindi")
+        fetchProgressPayments()
+      } else {
+        toast.error("Hakediş silinirken hata oluştu")
+      }
+    } catch (error) {
+      toast.error("Hakediş silinirken hata oluştu")
+    }
   }
 
   const exportToExcel = () => {
@@ -352,6 +481,12 @@ export default function FinancePage() {
               🟥 PDF İndir
             </button>
             <button
+              onClick={openProgressPaymentModal}
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-500 transition-colors"
+            >
+              🏗️ Yeni Hakediş
+            </button>
+            <button
               onClick={openModal}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors"
             >
@@ -382,6 +517,86 @@ export default function FinancePage() {
           <p className={`text-3xl font-bold ${stats.netBalance >= 0 ? "text-green-400" : "text-red-400"}`}>
             {stats.netBalance.toLocaleString("tr-TR")} ₺
           </p>
+        </div>
+      </div>
+
+      {/* Progress Payments Section */}
+      <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden mb-8">
+        <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center">
+          <h3 className="text-lg font-semibold text-white">🏗️ Taşeron Hakedişleri</h3>
+          <span className="text-sm text-slate-400">Toplam: {progressPayments.length} hakediş</span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-slate-800">
+              <tr>
+                <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">Taşeron</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">İş Tipi</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">Miktar</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">Birim</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">Birim Fiyat</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">Toplam</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">Durum</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">İşlemler</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800">
+              {progressPayments.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="px-6 py-12 text-center text-slate-400">
+                    Hakediş kaydı bulunamadı
+                  </td>
+                </tr>
+              ) : (
+                progressPayments.map((payment) => (
+                  <tr key={payment.id}>
+                    <td className="px-4 py-4 text-sm text-white">{payment.subcontractor}</td>
+                    <td className="px-4 py-4 text-sm text-slate-400">{payment.workType}</td>
+                    <td className="px-4 py-4 text-sm text-white">{payment.quantity}</td>
+                    <td className="px-4 py-4 text-sm text-slate-400">{payment.unit}</td>
+                    <td className="px-4 py-4 text-sm text-white">{payment.unitPrice.toLocaleString("tr-TR")} ₺</td>
+                    <td className="px-4 py-4 text-sm text-white font-medium">{payment.totalAmount.toLocaleString("tr-TR")} ₺</td>
+                    <td className="px-4 py-4 text-sm">
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${
+                        payment.status === "BEKLIYOR" ? "bg-yellow-900/50 text-yellow-400" :
+                        payment.status === "ONAYLANDI" ? "bg-green-900/50 text-green-400" :
+                        "bg-red-900/50 text-red-400"
+                      }`}>
+                        {payment.status === "BEKLIYOR" ? "Bekliyor" :
+                         payment.status === "ONAYLANDI" ? "Onaylandı" : "Reddedildi"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 text-sm">
+                      <div className="flex gap-2">
+                        {payment.status === "BEKLIYOR" && (
+                          <>
+                            <button
+                              onClick={() => handleProgressPaymentStatusChange(payment.id, "ONAYLANDI")}
+                              className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-500 text-xs"
+                            >
+                              Onayla
+                            </button>
+                            <button
+                              onClick={() => handleProgressPaymentStatusChange(payment.id, "REDDEDILDI")}
+                              className="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-500 text-xs"
+                            >
+                              Reddet
+                            </button>
+                          </>
+                        )}
+                        <button
+                          onClick={() => handleDeleteProgressPayment(payment.id)}
+                          className="px-2 py-1 bg-slate-600 text-white rounded hover:bg-slate-500 text-xs"
+                        >
+                          Sil
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -606,6 +821,168 @@ export default function FinancePage() {
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? "Kaydediliyor..." : "Kaydet"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Progress Payment Modal */}
+      {isProgressPaymentModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-slate-900 rounded-xl p-6 border border-slate-800 w-full max-w-lg mx-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <h3 className="text-xl font-semibold text-white mb-6">🏗️ Yeni Hakediş (Metraj) Föyü</h3>
+            
+            <form onSubmit={handleProgressPaymentSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Proje *
+                </label>
+                <select
+                  value={progressPaymentForm.projectId}
+                  onChange={(e) => setProgressPaymentForm({ ...progressPaymentForm, projectId: e.target.value })}
+                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                  required
+                >
+                  <option value="">Proje Seçin</option>
+                  {projects.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.name || project.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Taşeron Adı *
+                </label>
+                <input
+                  type="text"
+                  value={progressPaymentForm.subcontractor}
+                  onChange={(e) => setProgressPaymentForm({ ...progressPaymentForm, subcontractor: e.target.value })}
+                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+                  placeholder="Taşeron firma adı..."
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Yapılan İş Tipi *
+                </label>
+                <select
+                  value={progressPaymentForm.workType}
+                  onChange={(e) => setProgressPaymentForm({ ...progressPaymentForm, workType: e.target.value })}
+                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                  required
+                >
+                  <option value="">İş Tipi Seçin</option>
+                  <option value="Kalıp">Kalıp</option>
+                  <option value="Demir">Demir</option>
+                  <option value="Duvar">Duvar</option>
+                  <option value="Sıva">Sıva</option>
+                  <option value="Seramik">Seramik</option>
+                  <option value="Boya">Boya</option>
+                  <option value="Hafriyat">Hafriyat</option>
+                  <option value="Beton">Beton</option>
+                  <option value="Diğer">Diğer</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Birim *
+                </label>
+                <select
+                  value={progressPaymentForm.unit}
+                  onChange={(e) => setProgressPaymentForm({ ...progressPaymentForm, unit: e.target.value })}
+                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                  required
+                >
+                  <option value="">Birim Seçin</option>
+                  <option value="m2">m²</option>
+                  <option value="m3">m³</option>
+                  <option value="ton">ton</option>
+                  <option value="kg">kg</option>
+                  <option value="adet">adet</option>
+                  <option value="mtül">mtül</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Miktar / Metraj *
+                </label>
+                <input
+                  type="number"
+                  value={progressPaymentForm.quantity}
+                  onChange={(e) => setProgressPaymentForm({ ...progressPaymentForm, quantity: e.target.value })}
+                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+                  placeholder="Örn: 150"
+                  required
+                  step="0.01"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Birim Fiyat (TL) *
+                </label>
+                <input
+                  type="number"
+                  value={progressPaymentForm.unitPrice}
+                  onChange={(e) => setProgressPaymentForm({ ...progressPaymentForm, unitPrice: e.target.value })}
+                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+                  placeholder="Örn: 25"
+                  required
+                  step="0.01"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Toplam Tutar
+                </label>
+                <input
+                  type="text"
+                  value={progressPaymentForm.quantity && progressPaymentForm.unitPrice 
+                    ? (parseFloat(progressPaymentForm.quantity) * parseFloat(progressPaymentForm.unitPrice)).toLocaleString("tr-TR") + " ₺"
+                    : "0 ₺"}
+                  disabled
+                  className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white font-medium"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Açıklama
+                </label>
+                <textarea
+                  value={progressPaymentForm.description}
+                  onChange={(e) => setProgressPaymentForm({ ...progressPaymentForm, description: e.target.value })}
+                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500 resize-none"
+                  placeholder="Örn: B Blok 3. Kat Kalıp İşçiliği"
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={closeProgressPaymentModal}
+                  className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
+                  disabled={isSubmitting}
+                >
+                  İptal
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-500 transition-colors"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Kaydediliyor..." : "Hakedişi Kaydet"}
                 </button>
               </div>
             </form>

@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import path from "path";
+import withPWA from '@ducanh2912/next-pwa';
 
 const nextConfig: NextConfig = {
   transpilePackages: [
@@ -46,23 +47,15 @@ const nextConfig: NextConfig = {
     
     return config;
   },
-  webpack(config) {
-    config.experiments = { ...config.experiments, asyncWebAssembly: true, layers: true };
-    
-    // Three.js Çoklu Instance Çakışmasını Önle
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      three: path.resolve(__dirname, 'node_modules/three')
-    };
-    
-    // GELİŞTİRME AŞAMASINDA MİNİFİCATION'I TAMAMEN KAPAT (CAD kütüphanesi mangling hatasını önlemek için)
-    config.optimization = {
-      ...config.optimization,
-      minimize: false,
-    };
-    
-    return config;
-  },
 };
 
-export default nextConfig;
+export default withPWA({
+  dest: 'public',
+  cacheOnFrontEndNav: true,
+  aggressiveFrontEndNavCaching: true,
+  reloadOnOnline: true,
+  disable: process.env.NODE_ENV === 'development',
+  workboxOptions: {
+    disableDevLogs: true,
+  },
+})(nextConfig);

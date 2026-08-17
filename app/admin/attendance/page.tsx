@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { toast } from "react-hot-toast"
 import { QRCodeSVG } from "qrcode.react"
 import * as XLSX from "xlsx"
+import GeofencedCheckIn from "@/components/GeofencedCheckIn"
 
 export default function AttendancePage() {
   const [projects, setProjects] = useState<any[]>([])
@@ -289,6 +290,35 @@ export default function AttendancePage() {
           >
             QR Oluştur
           </button>
+        </div>
+      </div>
+
+      {/* GPS Geofencing Check-in */}
+      <div className="mb-6">
+        <div className="bg-slate-900 rounded-xl p-4 border border-slate-800">
+          <h2 className="text-xl font-semibold text-white mb-4">📍 GPS Bazlı Giriş (Geofencing)</h2>
+          <div className="mb-4">
+            <select
+              value={selectedProjectForQR}
+              onChange={(e) => setSelectedProjectForQR(e.target.value)}
+              className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+            >
+              <option value="">Proje Seçin</option>
+              {projects.map((project) => (
+                <option key={project.id} value={project.id}>
+                  {project.name || project.title}
+                </option>
+              ))}
+            </select>
+          </div>
+          {selectedProjectForQR && (
+            <GeofencedCheckIn 
+              projectId={selectedProjectForQR}
+              projectLat={projects.find(p => p.id === selectedProjectForQR)?.latitude}
+              projectLng={projects.find(p => p.id === selectedProjectForQR)?.longitude}
+              radius={projects.find(p => p.id === selectedProjectForQR)?.geofenceRadius}
+            />
+          )}
         </div>
       </div>
 

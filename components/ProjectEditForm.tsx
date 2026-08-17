@@ -28,7 +28,11 @@ export default function ProjectEditForm({ project, onProjectUpdated }: ProjectEd
     mintika: project.mintika || "",
     ada: project.ada || "",
     parsel: project.parsel || "",
-    clientName: project.clientName || ""
+    clientName: project.clientName || "",
+    // GPS Geofencing fields
+    latitude: project.latitude || "",
+    longitude: project.longitude || "",
+    geofenceRadius: project.geofenceRadius || 100
   })
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -273,6 +277,50 @@ export default function ProjectEditForm({ project, onProjectUpdated }: ProjectEd
                   className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
                   placeholder="Müşteri firma adı..."
                 />
+              </div>
+
+              <div className="border-t border-slate-700 pt-4">
+                <h4 className="text-sm font-medium text-slate-300 mb-3">📍 GPS Geofencing Ayarları</h4>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Enlem (Latitude)</label>
+                  <input
+                    type="number"
+                    step="any"
+                    name="latitude"
+                    value={formData.latitude}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+                    placeholder="41.0082"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Boylam (Longitude)</label>
+                  <input
+                    type="number"
+                    step="any"
+                    name="longitude"
+                    value={formData.longitude}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+                    placeholder="28.9784"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Geofence Yarıçapı (Metre)</label>
+                <input
+                  type="number"
+                  name="geofenceRadius"
+                  value={formData.geofenceRadius}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+                  placeholder="100"
+                />
+                <p className="text-xs text-slate-500 mt-1">Personelin bu mesafe içinde olmalıdır (örn: 100 metre)</p>
               </div>
 
               <div className="flex gap-3 pt-4">

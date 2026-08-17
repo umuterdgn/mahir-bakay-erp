@@ -5,7 +5,10 @@ import { useRouter } from "next/navigation"
 import ProjectFiles from "@/components/ProjectFiles"
 import ProjectReminders from "@/components/ProjectReminders"
 import ProjectDailyLogs from "@/components/ProjectDailyLogs"
+import GeofencedCheckIn from "@/components/GeofencedCheckIn"
 import { toast } from "react-hot-toast"
+import { jsPDF } from "jspdf"
+import * as htmlToImage from 'html-to-image'
 
 interface Project {
   id: string
@@ -27,6 +30,9 @@ interface Project {
   company: { name: string } | null
   shiftStart: string | null
   shiftEnd: string | null
+  latitude: number | null
+  longitude: number | null
+  geofenceRadius: number | null
 }
 
 interface ProjectDetailTabsProps {
@@ -54,7 +60,10 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
     architect: project.architect || "",
     mapUrl: project.mapUrl || "",
     shiftStart: project.shiftStart || "",
-    shiftEnd: project.shiftEnd || ""
+    shiftEnd: project.shiftEnd || "",
+    latitude: project.latitude || null,
+    longitude: project.longitude || null,
+    geofenceRadius: project.geofenceRadius || 100
   })
 
   const tabs = [
@@ -149,6 +158,40 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
     } catch (error) {
       console.error(error);
       toast.error("Rapor güncellenirken hata oluştu.");
+    }
+  };
+
+  const handleDownloadPDF = async (reportId: string) => {
+    const element = document.getElementById(`pdf-template-${reportId}`);
+    if (!element) {
+      toast.error("PDF içeriği bulunamadı!");
+      return;
+    }
+
+    try {
+      // html2canvas yerine htmlToImage.toPng kullanıyoruz (Modern CSS'i kusursuz okur)
+      const dataUrl = await htmlToImage.toPng(element, {
+        quality: 1.0,
+        pixelRatio: 2, // Yüksek çözünürlük
+        backgroundColor: '#ffffff' // Beyaz arka plan
+      });
+      
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      // Orantıyı koruyarak PDF yüksekliğini hesapla
+      const pdfHeight = (element.offsetHeight * pdfWidth) / element.offsetWidth;
+      
+      pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      
+      // DOĞRUDAN İNDİRME YERİNE ÖNİZLEME (YENİ SEKME) İÇİN:
+      const pdfBlob = pdf.output('blob');
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      window.open(pdfUrl, '_blank');
+      
+      toast.success("PDF önizlemesi yeni sekmede açıldı!");
+    } catch (error) {
+      console.error("PDF oluşturma hatası:", error);
+      toast.error("PDF oluşturulurken bir hata oluştu.");
     }
   };
 
@@ -282,6 +325,26 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
                     />
                   </div>
                   <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Merkez Enlem (Latitude)</label>
+                    <input
+                      type="number" step="any"
+                      value={editForm.latitude || ""}
+                      onChange={(e) => setEditForm({ ...editForm, latitude: e.target.value ? parseFloat(e.target.value) : null })}
+                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
+                      placeholder="Örn: 36.5871"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Merkez Boylam (Longitude)</label>
+                    <input
+                      type="number" step="any"
+                      value={editForm.longitude || ""}
+                      onChange={(e) => setEditForm({ ...editForm, longitude: e.target.value ? parseFloat(e.target.value) : null })}
+                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white"
+                      placeholder="Örn: 36.1735"
+                    />
+                  </div>
+                  <div>
                     <label className="block text-sm font-medium text-slate-300 mb-2">Mesai Başlangıç</label>
                     <input
                       type="time"
@@ -298,6 +361,17 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
                       onChange={(e) => setEditForm({ ...editForm, shiftEnd: e.target.value })}
                       className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
                     />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Geofence Yarıçapı (Metre)</label>
+                    <input
+                      type="number"
+                      value={editForm.geofenceRadius || 100}
+                      onChange={(e) => setEditForm({ ...editForm, geofenceRadius: e.target.value ? parseInt(e.target.value) : 100 })}
+                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                      placeholder="100"
+                    />
+                    <p className="text-xs text-slate-500 mt-1">Personelin bu mesafe içinde olmalıdır (örn: 100 metre)</p>
                   </div>
                 </div>
                 <div className="flex gap-2 pt-4">
@@ -460,6 +534,12 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
                 Yapı Denetim / Hasar Tespit Çizimi Yap
               </button>
             </div>
+            <GeofencedCheckIn 
+              projectId={project.id}
+              projectLat={project.latitude}
+              projectLng={project.longitude}
+              radius={project.geofenceRadius}
+            />
             <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
               <ProjectDailyLogs projectId={project.id} />
             </div>
@@ -492,19 +572,20 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
                 {inspectionReports.map((report) => (
                   <div 
                     key={report.id} 
-                    className="group relative bg-slate-800 rounded-xl border border-slate-700 overflow-hidden cursor-pointer hover:border-blue-500 transition-colors"
+                    className="relative bg-slate-800 rounded-xl border border-slate-700 overflow-hidden flex flex-col h-72 hover:border-blue-500 transition-colors cursor-pointer"
                     onClick={() => {
                       setSelectedReport(report)
                       setIsReportModalOpen(true)
                     }}
                   >
-                    <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                    {/* Düzenle / Sil Butonları */}
+                    <div className="absolute top-3 right-3 flex gap-2 z-20">
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();
                           handleEditReport(report.id, report.title || "", report.description || "");
                         }}
-                        className="p-1.5 bg-blue-600/80 text-white rounded hover:bg-blue-600 transition"
+                        className="p-2 bg-blue-600/80 hover:bg-blue-500 rounded text-white backdrop-blur"
                         title="Düzenle"
                       >
                         ✏️
@@ -515,83 +596,47 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
                           e.stopPropagation();
                           handleDeleteReport(report.id);
                         }}
-                        className="p-1.5 bg-red-600/80 text-white rounded hover:bg-red-600 transition"
+                        className="p-2 bg-red-600/80 hover:bg-red-500 rounded text-white backdrop-blur"
                         title="Sil"
                       >
                         🗑️
                       </button>
                     </div>
-                    <div className="aspect-video bg-slate-900 relative">
+
+                    {/* Resim Alanı - DİKKAT: object-cover YERİNE object-contain KULLANILIYOR */}
+                    <div className="relative w-full h-48 bg-[#0f172a] border-b border-slate-700 p-2">
                       {report.markedBlueprintUrl || report.markedPhotoUrl ? (
-                        <div className="grid grid-cols-2 h-full">
-                          {report.markedBlueprintUrl && (
-                            <img
-                              src={report.markedBlueprintUrl}
-                              alt="İşaretlenmiş Plan"
-                              className="w-full h-full object-cover"
-                            />
-                          )}
-                          {report.markedPhotoUrl && (
-                            <img
-                              src={report.markedPhotoUrl}
-                              alt="İşaretlenmiş Fotoğraf"
-                              className="w-full h-full object-cover"
-                            />
-                          )}
-                        </div>
+                        <img 
+                          src={report.markedBlueprintUrl || report.markedPhotoUrl} 
+                          alt={report.title || "Rapor"} 
+                          className="w-full h-full object-contain object-center"
+                        />
                       ) : report.imageUrl ? (
-                        <img
-                          src={report.imageUrl}
-                          alt="Denetim Raporu"
-                          className="w-full h-full object-cover"
+                        <img 
+                          src={report.imageUrl} 
+                          alt="Denetim Raporu" 
+                          className="w-full h-full object-contain object-center"
                         />
                       ) : (
-                        <div className="flex items-center justify-center h-full text-slate-500">
-                          Görsel yok
+                        <div className="w-full h-full flex items-center justify-center text-slate-500 text-sm">
+                          Görsel Yok
                         </div>
                       )}
                     </div>
-                    <div className="p-4">
-                      <div className="flex justify-between items-start mb-2">
+
+                    {/* Alt Bilgi Alanı */}
+                    <div className="p-4 flex-1 flex flex-col justify-center bg-slate-800">
+                      <div className="flex justify-between items-center mb-2">
                         <span className="text-xs text-slate-400">
-                          {new Date(report.createdAt).toLocaleDateString("tr-TR")}
+                          {new Date(report.createdAt || Date.now()).toLocaleDateString('tr-TR')}
                         </span>
-                        <div className="flex gap-2">
-                          {report.markedBlueprintUrl && (
-                            <a
-                              href={report.markedBlueprintUrl}
-                              download
-                              onClick={(e) => e.stopPropagation()}
-                              className="text-blue-400 hover:text-blue-300 text-sm"
-                            >
-                              Plan
-                            </a>
-                          )}
-                          {report.markedPhotoUrl && (
-                            <a
-                              href={report.markedPhotoUrl}
-                              download
-                              onClick={(e) => e.stopPropagation()}
-                              className="text-blue-400 hover:text-blue-300 text-sm"
-                            >
-                              Fotoğraf
-                            </a>
-                          )}
-                          {report.imageUrl && !report.markedBlueprintUrl && !report.markedPhotoUrl && (
-                            <a
-                              href={report.imageUrl}
-                              download
-                              onClick={(e) => e.stopPropagation()}
-                              className="text-blue-400 hover:text-blue-300 text-sm"
-                            >
-                              İndir
-                            </a>
-                          )}
-                        </div>
+                        <span className="text-xs font-semibold px-2 py-1 rounded bg-blue-900/50 text-blue-300">
+                          {report.markedBlueprintUrl ? 'Plan' : 'Fotoğraf'}
+                        </span>
                       </div>
-                      <p className="text-white text-sm line-clamp-3">
-                        {report.description}
-                      </p>
+                      <h3 className="text-sm font-semibold text-slate-200 truncate" title={report.title}>
+                        {report.title || report.description || "Rapor"}
+                      </h3>
                     </div>
                   </div>
                 ))}
@@ -627,7 +672,7 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
                 </svg>
               </button>
             </div>
-            <div className="p-4 overflow-y-auto flex-1">
+            <div id={`pdf-report-${selectedReport.id}`} className="p-4 overflow-y-auto flex-1">
               <div className="mb-4">
                 <span className="text-sm text-slate-400">
                   {new Date(selectedReport.createdAt).toLocaleDateString("tr-TR")}
@@ -676,7 +721,7 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
             </div>
             <div className="p-4 border-t border-slate-800 flex justify-end gap-3">
               <button
-                onClick={() => window.print()}
+                onClick={() => handleDownloadPDF(selectedReport.id)}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors flex items-center gap-2"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -684,6 +729,16 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
                 </svg>
                 PDF Olarak İndir
               </button>
+              {selectedReport.dxfUrl && (
+                <a 
+                  href={selectedReport.dxfUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-500 transition-colors flex items-center gap-2 shadow-lg"
+                >
+                  📐 DXF İndir
+                </a>
+              )}
               <button
                 onClick={() => setIsReportModalOpen(false)}
                 className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
@@ -692,6 +747,53 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
               </button>
             </div>
           </div>
+
+          {/* --- PDF İÇİN ÖZEL GİZLİ ŞABLON (Ekranda görünmez, sadece baskıya gider) --- */}
+          <div className="absolute top-0 left-0 z-[-1] opacity-0 pointer-events-none">
+            <div 
+              id={`pdf-template-${selectedReport.id}`} 
+              className="bg-white text-black p-10 flex flex-col" 
+              style={{ width: '794px', minHeight: '1123px' }} // 96 DPI A4 Boyutu
+            >
+              {/* Antet / Başlık */}
+              <div className="border-b-4 border-slate-800 pb-6 mb-8 flex justify-between items-end">
+                <div>
+                  <h1 className="text-3xl font-black text-slate-900 uppercase mb-2">Yapı Denetim Raporu</h1>
+                  <p className="text-slate-600 font-medium">Tarih: {new Date(selectedReport.createdAt || Date.now()).toLocaleDateString('tr-TR')}</p>
+                </div>
+                <div className="text-right">
+                  <h2 className="text-xl font-bold text-blue-900">MAHİR BAKAY MÜHENDİSLİK</h2>
+                </div>
+              </div>
+
+              {/* Görsel Alanı */}
+              <div className="w-full mb-8 border-2 border-slate-200 p-2 rounded bg-slate-50">
+                <img 
+                  src={selectedReport.markedBlueprintUrl || selectedReport.markedPhotoUrl || selectedReport.imageUrl || ""} 
+                  alt="Denetim Görseli" 
+                  className="w-full object-contain max-h-[500px]"
+                  crossOrigin="anonymous"
+                />
+              </div>
+
+              {/* Açıklama */}
+              <div className="flex-1 mb-8">
+                <h3 className="text-lg font-bold mb-3 border-b border-slate-300 pb-2 text-slate-800">Hasar / İnceleme Detayları:</h3>
+                <p className="text-slate-700 whitespace-pre-wrap text-base leading-relaxed">
+                  {selectedReport.description}
+                </p>
+              </div>
+              
+              {/* İmza Alanı */}
+              <div className="mt-auto pt-10 flex justify-end">
+                <div className="text-center w-64">
+                  <p className="font-bold text-slate-800 mb-12">Denetçi Mühendis</p>
+                  <div className="border-t-2 border-slate-800 pt-2 mx-auto">İmza / Kaşe</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          {/* ------------------------------------------------------------------------ */}
         </div>
       )}
 

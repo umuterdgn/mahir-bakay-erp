@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
+import OfflineStatus from "@/components/OfflineStatus";
+import OfflineSyncManager from "@/components/OfflineSyncManager";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -35,6 +37,8 @@ export default function RootLayout({
   return (
     <html lang="tr" className={`${inter.variable} antialiased`}>
       <body className="min-h-screen bg-slate-950" suppressHydrationWarning>
+        <OfflineStatus />
+        <OfflineSyncManager />
         {children}
         <Toaster position="bottom-right" />
       </body>

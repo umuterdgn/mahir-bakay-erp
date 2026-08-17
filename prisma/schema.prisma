@@ -103,6 +103,10 @@ model Project {
   mapUrl       String?   // Google Maps Linki
   shiftStart   String    @default("08:00") // Mesai Başlangıç Saati
   shiftEnd     String    @default("17:00") // Mesai Bitiş Saati
+  // Geofencing (GPS) fields
+  latitude       Float?   // Proje merkezi enlem
+  longitude      Float?   // Proje merkezi boylam
+  geofenceRadius Int?     @default(100) // Metre cinsinden izin verilen çap
   // Relations
   archives    Archive[]
   transactions Transaction[]
@@ -127,6 +131,8 @@ model Project {
   projectBlueprints ProjectBlueprint[]
   reinforcementInspections ReinforcementInspection[]
   attachmentEvidences AttachmentEvidence[]
+  progressPayments ProgressPayment[]
+  inventoryItems InventoryItem[]
 
   @@index([isActive, displayOrder])
   @@index([status])
@@ -583,6 +589,9 @@ model Transaction {
   personnelId String?
   personnel   Personel? @relation(fields: [personnelId], references: [id])
 
+  progressPaymentId String? @unique
+  progressPayment   ProgressPayment? @relation(fields: [progressPaymentId], references: [id])
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -592,6 +601,7 @@ model Transaction {
   @@index([projectId])
   @@index([companyId])
   @@index([personnelId])
+  @@index([progressPaymentId])
 }
 
 // ============================================================================
@@ -737,20 +747,25 @@ model SiteTask {
 
 model AttendanceRecord {
   id          String   @id @default(cuid())
-  personelId  String
-  personel    Personel @relation(fields: [personelId], references: [id], onDelete: Cascade)
+  personelId  String?
+  personel    Personel? @relation(fields: [personelId], references: [id], onDelete: Cascade)
   projectId   String
   project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   date        DateTime // Sadece gün bazlı tarih
   checkIn     DateTime? // Giriş saati
   checkOut    DateTime? // Çıkış saati
   dayMultiplier Float   @default(1) // Tam gün için 1, yarım gün için 0.5
+  workerName  String?   // GPS bazlı check-in için isim
+  latitude    Float?    // GPS check-in koordinatı
+  longitude   Float?    // GPS check-in koordinatı
   createdAt   DateTime @default(now())
 
   @@index([personelId])
   @@index([projectId])
   @@index([date])
 }
+
+
 
 // ============================================================================
 // DAILY LOG (Şantiye Günlüğü)
@@ -868,6 +883,7 @@ model InspectionReport {
   imageUrl          String?  // İşaretlenmiş görselin URL'si (legacy)
   markedBlueprintUrl String? // İşaretlenmiş plan görselinin URL'si
   markedPhotoUrl    String? // İşaretlenmiş fotoğrafın URL'si
+  dxfUrl            String?  // İşaretlenmiş DXF dosyasının URL'si
   description       String?  @db.Text // Rapor açıklaması
   violations        String?  @db.Text // Tespit edilen uygunsuzluklar
   createdAt         DateTime @default(now())
@@ -1121,4 +1137,56 @@ model AttachmentEvidence {
 
   @@index([projectId])
   @@index([attachmentDate])
+}
+
+// ============================================================================
+// PROGRESS PAYMENT (Taşeron Hakediş Takibi)
+// ============================================================================
+
+model ProgressPayment {
+  id              String   @id @default(cuid())
+  projectId       String
+  subcontractor   String   // Taşeron Firma / Kişi Adı
+  workType        String   // Yapılan İş (Örn: Kalıp, Demir, Beton)
+  unit            String   // Birim (m2, m3, ton, kg, adet)
+  quantity        Float    // Miktar (Metraj)
+  unitPrice       Float    // Birim Fiyat
+  totalAmount     Float    // Toplam Tutar (quantity * unitPrice)
+  status          String   @default("BEKLIYOR") // BEKLIYOR, ONAYLANDI, REDDEDILDI
+  description     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  financeTransaction Transaction?
+
+  @@index([projectId])
+  @@index([status])
+  @@index([subcontractor])
+}
+
+// ============================================================================
+// INVENTORY ITEM (Ambar & BLE Beacon Takibi)
+// ============================================================================
+
+model InventoryItem {
+  id              String   @id @default(cuid())
+  projectId       String
+  name            String   // Örn: Çimento, Demir
+  category        String   // Malzeme Kategorisi
+  quantity        Float    // Miktar
+  unit            String   // Birim (Adet, Ton, Paket)
+  qrCode          String?  @unique // Normal QR Kod ID'si
+  bleMacAddress   String?  @unique // BLE Sticker/Beacon MAC Adresi (ÖNEMLİ!)
+  locationStatus  String   @default("DEPO") // DEPO, SAHADA, ZIMMETLI, KULLANILDI
+  assignedTo      String?  // Zimmetlenen Kalfa/Usta
+  lastSeenLat     Float?   // BLE'nin son görüldüğü enlem
+  lastSeenLng     Float?   // BLE'nin son görüldüğü boylam
+  lastSeenAt      DateTime @default(now())
+  
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([locationStatus])
+  @@index([bleMacAddress])
 }

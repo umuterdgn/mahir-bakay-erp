@@ -1,0 +1,37 @@
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+
+export async function POST(req: Request, { params }: { params: { id: string } }) {
+  try {
+    const payment = await prisma.progressPayment.findUnique({ where: { id: params.id } });
+    
+    if (!payment || payment.status === "ONAYLANDI") {
+      return NextResponse.json({ error: "Hakediş bulunamadı veya zaten onaylı." }, { status: 400 });
+    }
+
+    // 1. Hakedişin durumunu ONAYLANDI yap
+    // 2. Finans (Kasa) tablosuna otomatik "Gider" olarak işle (MÜKEMMEL ERP OTOMASYONU)
+    const result = await prisma.$transaction(async (tx) => {
+      const updatedPayment = await tx.progressPayment.update({
+        where: { id: params.id },
+        data: { status: "ONAYLANDI" }
+      });
+
+      await tx.transaction.create({
+        data: {
+          type: "GIDER",
+          category: "Taşeron Hakediş",
+          amount: updatedPayment.totalAmount,
+          description: `${updatedPayment.subcontractor} - ${updatedPayment.workType} Hakedişi`,
+          date: new Date(),
+          progressPaymentId: updatedPayment.id // İlişkiyi kuruyoruz (Çifte veri girişini engeller)
+        }
+      });
+      return updatedPayment;
+    });
+
+    return NextResponse.json(result);
+  } catch (error) {
+    return NextResponse.json({ error: "Onaylama işlemi başarısız oldu." }, { status: 500 });
+  }
+}

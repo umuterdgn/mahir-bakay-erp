@@ -29,7 +29,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { projectId, imageUrl, description, markedBlueprintUrl, markedPhotoUrl } = body
+    const { projectId, imageUrl, description, markedBlueprintUrl, markedPhotoUrl, dxfUrl } = body
 
     const report = await prisma.inspectionReport.create({
       data: {
@@ -37,7 +37,8 @@ export async function POST(request: Request) {
         imageUrl: imageUrl || null,
         description,
         markedBlueprintUrl: markedBlueprintUrl || null,
-        markedPhotoUrl: markedPhotoUrl || null
+        markedPhotoUrl: markedPhotoUrl || null,
+        dxfUrl: dxfUrl || null
       }
     })
 

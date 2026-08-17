@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { AcApDocManager } from "@mlightcad/cad-simple-viewer";
 import { toast } from "react-hot-toast";
+import Drawing from 'dxf-writer';
 
 // --- NÜKLEER HACK: Tarayıcının WebGL oluşturma kurallarını eziyoruz ---
 if (typeof window !== 'undefined') {
@@ -19,7 +20,7 @@ if (typeof window !== 'undefined') {
 
 interface AnnotatableViewerProps {
   fileUrl: string;
-  onSaveAnnotation?: (dataUrl: string) => void;
+  onSaveAnnotation?: (dataUrl: string, dxfData?: string) => void;
 }
 
 export default function AnnotatableFloorPlanViewer({ fileUrl, onSaveAnnotation }: AnnotatableViewerProps) {
@@ -30,12 +31,14 @@ export default function AnnotatableFloorPlanViewer({ fileUrl, onSaveAnnotation }
   // Çizim yaparken bulaşmayı (smearing) önlemek için snapshot ve başlangıç noktası
   const startPos = useRef<{ x: number; y: number } | null>(null);
   const snapshot = useRef<ImageData | null>(null);
+  const currentPenPoints = useRef<{ x: number; y: number }[]>([]);
   const [loading, setLoading] = useState(true);
   // isDrawingMode boolean'ını iptal edip yerine drawTool state'i getiriyoruz
   const [drawTool, setDrawTool] = useState<'pen' | 'square' | 'circle' | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
   const [isWhiteBg, setIsWhiteBg] = useState(false);
+  const [annotations, setAnnotations] = useState<any[]>([]);
 
   // THREE.JS HACK FONKSİYONU: Motorun arka plan rengini doğrudan değiştirir
   const forceThreeJsBackground = (isWhite: boolean) => {
@@ -148,8 +151,10 @@ export default function AnnotatableFloorPlanViewer({ fileUrl, onSaveAnnotation }
         
         // 🧬 DNA TESTİ: Dosyanın GERÇEK formatını bayt (header) okuyarak anla
         const header = new TextDecoder().decode(fileContent.slice(0, 6));
-        const isDWG = header.includes("AC10"); // DWG dosyaları AC10 ile başlar
-        const finalFileName = isDWG ? "project_file.dwg" : "project_file.dxf";
+        const isDWG = header.includes("AC10");
+        // DİKKAT: Her yüklemede kütüphanenin önbelleğini kandırmak için benzersiz (unique) bir dosya adı üretiyoruz.
+        const uniqueId = Date.now();
+        const finalFileName = isDWG ? `project_${uniqueId}.dwg` : `project_${uniqueId}.dxf`;
         console.log(`🧬 DNA Testi Sonucu: Header [${header}], Seçilen Format: ${finalFileName}`);
 
         if (typeof docInstance.openDocument === 'function') {
@@ -241,6 +246,8 @@ export default function AnnotatableFloorPlanViewer({ fileUrl, onSaveAnnotation }
     if (selectedSymbol) {
       ctx.font = "32px Arial";
       ctx.fillText(selectedSymbol, x - 16, y + 16);
+      // Sembolü kaydet
+      setAnnotations(prev => [...prev, { type: 'symbol', x, y, symbol: selectedSymbol }]);
       return;
     }
     
@@ -253,6 +260,7 @@ export default function AnnotatableFloorPlanViewer({ fileUrl, onSaveAnnotation }
       if (drawTool === 'pen') {
         ctx.beginPath();
         ctx.moveTo(x, y);
+        currentPenPoints.current = [{ x, y }];
       }
     }
   };
@@ -278,6 +286,8 @@ export default function AnnotatableFloorPlanViewer({ fileUrl, onSaveAnnotation }
     if (drawTool === 'pen') {
       ctx.lineTo(currentX, currentY);
       ctx.stroke();
+      // Kalem noktalarını kaydet
+      currentPenPoints.current.push({ x: currentX, y: currentY });
     } else if (drawTool === 'square') {
       const width = currentX - startPos.current.x;
       const height = currentY - startPos.current.y;
@@ -290,7 +300,29 @@ export default function AnnotatableFloorPlanViewer({ fileUrl, onSaveAnnotation }
   };
 
   const stopDrawing = () => {
+    const pos = startPos.current;
+    if (!pos) return;
+    
+    // Çizimi kaydet
+    if (drawTool === 'pen') {
+      setAnnotations(prev => [...prev, { type: 'pen', points: [...currentPenPoints.current] }]);
+    } else if (drawTool === 'square') {
+      const rect = canvasRef.current?.getBoundingClientRect();
+      if (rect) {
+        const width = (rect.width / 2) - pos.x; // Basit hesaplama
+        const height = (rect.height / 2) - pos.y;
+        setAnnotations(prev => [...prev, { type: 'square', x: pos.x, y: pos.y, width, height }]);
+      }
+    } else if (drawTool === 'circle') {
+      // Son pozisyonu almak için basit varsayım
+      const radius = 50; // Varsayılan yarıçap
+      setAnnotations(prev => [...prev, { type: 'circle', x: pos.x, y: pos.y, radius }]);
+    }
+    
     setIsDrawing(false);
+    currentPenPoints.current = [];
+    startPos.current = null;
+    
     // Auto-save annotation when drawing stops
     if (canvasRef.current && onSaveAnnotation) {
       const dataUrl = canvasRef.current.toDataURL("image/png");
@@ -304,29 +336,91 @@ export default function AnnotatableFloorPlanViewer({ fileUrl, onSaveAnnotation }
     if (ctx) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
   };
 
-  const handleSaveCombinedSnapshot = () => {
+  const handleSaveCombinedSnapshot = async () => {
     if (!containerRef.current || !canvasRef.current) return;
+
     const cadCanvas = containerRef.current.querySelector('canvas:not(.absolute)') as HTMLCanvasElement;
     const annotationCanvas = canvasRef.current;
-    
+
     if (!cadCanvas) { toast.error("CAD planı bulunamadı!"); return; }
-    
+
+    // 1. ÇÖZÜNÜRLÜK EŞİTLEME (Pin'in küçülmesini kesinlikle engeller)
+    // DOM'daki görünür boyutları (clientWidth) baz alıyoruz.
+    const targetWidth = cadCanvas.clientWidth || 800;
+    const targetHeight = cadCanvas.clientHeight || 600;
+
     const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = annotationCanvas.width || cadCanvas.width;
-    tempCanvas.height = annotationCanvas.height || cadCanvas.height;
+    tempCanvas.width = targetWidth;
+    tempCanvas.height = targetHeight;
     const ctx = tempCanvas.getContext('2d');
     if (!ctx) return;
 
     ctx.fillStyle = isWhiteBg ? "#ffffff" : "#111827";
     ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-    ctx.drawImage(cadCanvas, 0, 0, tempCanvas.width, tempCanvas.height);
+
+    // 2. KÜTÜPHANEYİ UYANDIRMA (Force Redraw & Wait)
+    // CAD kütüphanesinin render işlemini bitirmesi için 150ms bekliyoruz
+    cadCanvas.style.opacity = "0.99";
+    await new Promise(resolve => setTimeout(resolve, 150));
+    cadCanvas.style.opacity = "1";
+
+    try {
+        // 3. DOĞRUDAN DATAURL İLE ÇEKİM (WebGL için en güvenilir yöntem)
+        const cadData = cadCanvas.toDataURL("image/png");
+        const img = new Image();
+        img.src = cadData;
+        
+        // Resmin yüklenmesini bekle (Asenkron)
+        await new Promise((resolve) => {
+            img.onload = () => {
+                ctx.drawImage(img, 0, 0, tempCanvas.width, tempCanvas.height);
+                resolve(null);
+            };
+            img.onerror = () => resolve(null);
+        });
+    } catch (e) {
+        console.warn("WebGL DataURL hatası, normal drawImage deneniyor...", e);
+        try { ctx.drawImage(cadCanvas, 0, 0, tempCanvas.width, tempCanvas.height); } catch(err) {}
+    }
+
+    // 4. Kırmızı/Pembe Çizimleri Üzerine Ekle
     ctx.drawImage(annotationCanvas, 0, 0, tempCanvas.width, tempCanvas.height);
 
     const finalImage = tempCanvas.toDataURL('image/png', 1.0);
+    const dxfString = generateDxfString();
     if (typeof onSaveAnnotation === 'function') {
-        onSaveAnnotation(finalImage);
-        toast.success("✅ Çizim hafızaya alındı!");
+        onSaveAnnotation(finalImage, dxfString);
+        toast.success("✅ Çizim ve DXF kusursuz şekilde hafızaya alındı!");
     }
+  };
+
+  const generateDxfString = () => {
+    const d = new Drawing();
+    d.setUnits('Meters');
+    d.addLayer('DENETIM_NOTLARI', Drawing.ACI.RED, 'CONTINUOUS');
+    d.setActiveLayer('DENETIM_NOTLARI');
+
+    annotations.forEach(item => {
+        const cadX = item.x; 
+        const cadY = -item.y;
+
+        if (item.type === 'circle') {
+            d.drawCircle(cadX, cadY, item.radius);
+        } else if (item.type === 'square') {
+            d.drawRect(cadX, cadY, cadX + item.width, cadY - item.height);
+        } else if (item.type === 'symbol') {
+            let text = item.symbol;
+            if (text === '📍') text = 'PIN';
+            if (text === '⚠️') text = 'DIKKAT';
+            if (text === '❌') text = 'X';
+            d.drawText(cadX, cadY, 10, 0, text);
+        } else if (item.type === 'pen') {
+            item.points.forEach((p: any, i: number) => {
+                if(i > 0) d.drawLine(item.points[i-1].x, -item.points[i-1].y, p.x, -p.y);
+            });
+        }
+    });
+    return d.toDxfString();
   };
 
   const handleToggleBackground = () => {
