@@ -229,7 +229,7 @@ export default function AdminArchivePage() {
         <table className="w-full">
           <thead className="bg-slate-800">
             <tr>
-              <th className="px-6 py-3 text-left text-sm font-medium text-slate-300">Proje Adı</th>
+              <th className="px-6 py-3 text-left text-sm font-medium text-slate-300">İlgili Proje</th>
               <th className="px-6 py-3 text-left text-sm font-medium text-slate-300">Dosya Adı</th>
               <th className="px-6 py-3 text-left text-sm font-medium text-slate-300">Yükleme Tarihi</th>
               <th className="px-6 py-3 text-right text-sm font-medium text-slate-300">İşlemler</th>
@@ -238,7 +238,17 @@ export default function AdminArchivePage() {
           <tbody className="divide-y divide-slate-800">
             {filteredArchives.map((archive) => (
               <tr key={archive.id}>
-                <td className="px-6 py-4 text-sm text-white">{archive.projectName}</td>
+                <td className="px-6 py-4 text-sm text-white">
+                  {archive.project ? (
+                    <span className="bg-blue-900/50 text-blue-400 px-2 py-1 rounded-full text-xs">
+                      {archive.project.name || archive.project.title}
+                    </span>
+                  ) : (
+                    <span className="bg-slate-700 text-slate-400 px-2 py-1 rounded-full text-xs">
+                      Genel Evrak
+                    </span>
+                  )}
+                </td>
                 <td className="px-6 py-4 text-sm text-slate-400">
                   {archive.documentName || archive.fileName}
                 </td>

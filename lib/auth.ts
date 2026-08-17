@@ -19,12 +19,35 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return null
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email as string },
-          include: {
-            permissions: true
-          }
+        // First try to find user by email in User table (for admin users)
+        let user = await prisma.user.findUnique({
+          where: { email: credentials.email as string }
         })
+
+        if (!user) {
+          // If not found in User table, try to find in Personel table by username (for personnel)
+          const personnel = await (prisma as any).personel.findFirst({
+            where: {
+              username: {
+                equals: credentials.email as string,
+                mode: 'insensitive'
+              }
+            }
+          })
+
+          if (personnel) {
+            // If personnel found and has linked user, use that user
+            if (personnel.userId) {
+              user = await (prisma as any).user.findUnique({
+                where: { id: personnel.userId }
+              })
+            } else {
+              // Personnel exists but no linked user account
+              console.log("❌ Personnel found but no linked user account:", personnel.username)
+              return null
+            }
+          }
+        }
 
         if (!user) {
           return null
@@ -46,11 +69,29 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           email: user.email,
           name: user.name,
           role: user.role,
-          permissions: user.permissions || []
+          permissions: (user as any).permissions || []
         }
       }
     })
-  ]
+  ],
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.role = user.role
+        token.id = user.id
+        token.permissions = user.permissions
+      }
+      return token
+    },
+    async session({ session, token }) {
+      if (token) {
+        session.user.role = token.role as string
+        session.user.id = token.id as string
+        session.user.permissions = token.permissions as any
+      }
+      return session
+    }
+  }
 })
 
 // Export auth config for API routes if needed

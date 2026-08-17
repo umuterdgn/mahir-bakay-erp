@@ -14,6 +14,7 @@ export default function PersonelDetailPage({
   const [person, setPerson] = useState<any>(null)
   const [payments, setPayments] = useState<any[]>([])
   const [assignedInventory, setAssignedInventory] = useState<any[]>([])
+  const [attendanceRecords, setAttendanceRecords] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [calculatedValues, setCalculatedValues] = useState({
     toplamKazanilan: 0,
@@ -86,10 +87,13 @@ export default function PersonelDetailPage({
       const dailyWage = person.gunlukYevmiye || 0
       const bonuses = person.bonuses || 0
 
-      // Since Personel doesn't have attendance records, use default values
-      const totalDayMultiplier = 0
-      const tamGunSayisi = 0
-      const yarimGunSayisi = 0
+      // Calculate attendance from attendanceRecords
+      const totalDayMultiplier = attendanceRecords.reduce((sum: number, record: any) => {
+        return sum + (record.dayMultiplier || 0)
+      }, 0)
+
+      const tamGunSayisi = attendanceRecords.filter((record: any) => record.dayMultiplier === 1).length
+      const yarimGunSayisi = attendanceRecords.filter((record: any) => record.dayMultiplier === 0.5).length
 
       // Calculate gross entitlement (Hakediş)
       const grossEntitlement = totalDayMultiplier * dailyWage
@@ -125,7 +129,7 @@ export default function PersonelDetailPage({
         toplamPrim
       })
     }
-  }, [person, payments])
+  }, [person, payments, attendanceRecords])
 
   const fetchPerson = async () => {
     try {
@@ -138,6 +142,9 @@ export default function PersonelDetailPage({
         }
         if (data.assignedItems) {
           setAssignedInventory(data.assignedItems)
+        }
+        if (data.attendanceRecords) {
+          setAttendanceRecords(data.attendanceRecords)
         }
       } else {
         notFound()
@@ -408,14 +415,12 @@ export default function PersonelDetailPage({
             >
               Düzenle
             </button>
-            {!person.userId && (
-              <button
-                onClick={() => setIsLoginModalOpen(true)}
-                className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors flex items-center gap-2"
-              >
-                🔑 Sisteme Giriş İzni Ver
-              </button>
-            )}
+            <button
+              onClick={() => setIsLoginModalOpen(true)}
+              className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors flex items-center gap-2"
+            >
+              🔑 {person.userId ? "Giriş Bilgilerini Güncelle" : "Sisteme Giriş İzni Ver"}
+            </button>
             <span className={`px-3 py-1 rounded-full text-sm font-medium ${
               person.status === "ACTIVE" 
                 ? "bg-green-900/50 text-green-400" 
@@ -734,6 +739,51 @@ export default function PersonelDetailPage({
                         }>
                           {payment.amount.toLocaleString("tr-TR")} ₺
                         </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+
+        {/* Yoklama Kayıtları */}
+        <div className="mt-8 pt-6 border-t border-slate-800">
+          <h3 className="text-lg font-semibold text-white border-b border-slate-800 pb-2 mb-4">Yoklama Kayıtları</h3>
+          <div className="bg-slate-800 rounded-lg border border-slate-700 overflow-hidden">
+            {!attendanceRecords || attendanceRecords.length === 0 ? (
+              <div className="text-center py-8 text-slate-500">
+                Henüz yoklama kaydı yok
+              </div>
+            ) : (
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-slate-700 bg-slate-900/50">
+                    <th className="text-left py-3 px-4 text-slate-400 font-medium">Tarih</th>
+                    <th className="text-left py-3 px-4 text-slate-400 font-medium">Proje</th>
+                    <th className="text-left py-3 px-4 text-slate-400 font-medium">Giriş</th>
+                    <th className="text-left py-3 px-4 text-slate-400 font-medium">Çıkış</th>
+                    <th className="text-left py-3 px-4 text-slate-400 font-medium">Gün Çarpanı</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {attendanceRecords?.map((record: any) => (
+                    <tr key={record.id} className="border-b border-slate-700 hover:bg-slate-700/50">
+                      <td className="py-3 px-4 text-white">
+                        {new Date(record.date).toLocaleDateString("tr-TR")}
+                      </td>
+                      <td className="py-3 px-4 text-white">
+                        {record.project?.name || record.project?.title || "-"}
+                      </td>
+                      <td className="py-3 px-4 text-green-400">
+                        {record.checkIn ? new Date(record.checkIn).toLocaleTimeString("tr-TR") : "-"}
+                      </td>
+                      <td className="py-3 px-4 text-red-400">
+                        {record.checkOut ? new Date(record.checkOut).toLocaleTimeString("tr-TR") : "-"}
+                      </td>
+                      <td className="py-3 px-4 text-white">
+                        {record.dayMultiplier || 0}
                       </td>
                     </tr>
                   ))}

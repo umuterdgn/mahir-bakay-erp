@@ -643,7 +643,19 @@ export default function InventoryPage() {
               ) : qrScannedData ? (
                 <div className="bg-emerald-900/20 border border-emerald-600 rounded-lg p-4">
                   <p className="text-emerald-400 font-medium mb-2">✅ Okunan Veri:</p>
-                  <p className="text-white text-lg">{qrScannedData}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-white text-lg break-all flex-1">{qrScannedData}</p>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(qrScannedData)
+                        toast.success("Kopyalandı!")
+                      }}
+                      className="px-2 py-1 bg-emerald-600 text-white rounded hover:bg-emerald-500 transition-colors text-sm"
+                      title="Kopyala"
+                    >
+                      📋
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="bg-slate-800 rounded-lg p-4">

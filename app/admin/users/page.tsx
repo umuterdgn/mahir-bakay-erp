@@ -10,6 +10,28 @@ export default function AdminUsersPage() {
   const [isAdding, setIsAdding] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null })
 
+  const handleDelete = (id: string) => {
+    setDeleteConfirm({ isOpen: true, id })
+  }
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm.id) return
+
+    try {
+      const response = await fetch(`/api/admin/users/${deleteConfirm.id}`, {
+        method: "DELETE"
+      })
+      if (response.ok) {
+        toast.success("Kullanıcı başarıyla silindi")
+        setUsers(users.filter(u => u.id !== deleteConfirm.id))
+      } else {
+        toast.error("Kullanıcı silinirken hata oluştu")
+      }
+    } catch (error) {
+      toast.error("Hata oluştu")
+    }
+  }
+
   return (
     <div className="lg:mt-0 mt-16">
       <h1 className="text-2xl lg:text-3xl font-bold text-white mb-8">
@@ -117,28 +139,6 @@ export default function AdminUsersPage() {
       />
     </div>
   )
-
-  function handleDelete(id: string) {
-    setDeleteConfirm({ isOpen: true, id })
-  }
-
-  const confirmDelete = async () => {
-    if (!deleteConfirm.id) return
-
-    try {
-      const response = await fetch(`/api/admin/users/${deleteConfirm.id}`, {
-        method: "DELETE"
-      })
-      if (response.ok) {
-        toast.success("Kullanıcı başarıyla silindi")
-        setUsers(users.filter(u => u.id !== deleteConfirm.id))
-      } else {
-        toast.error("Kullanıcı silinirken hata oluştu")
-      }
-    } catch (error) {
-      toast.error("Hata oluştu")
-    }
-  }
 }
 
 function UserModal({ user, onClose, onSave }: any) {

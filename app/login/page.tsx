@@ -50,17 +50,17 @@ export default function LoginPage() {
     setError("")
 
     try {
-      const response = await fetch("/api/auth/worker", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(workerFormData)
+      const result = await signIn("credentials", {
+        email: workerFormData.username,
+        password: workerFormData.password,
+        redirect: false
       })
 
-      if (response.ok) {
+      if (result?.error) {
+        setError("Geçersiz kullanıcı adı veya şifre")
+      } else {
         router.push("/admin/my-tasks")
         router.refresh()
-      } else {
-        setError("Geçersiz kullanıcı adı veya şifre")
       }
     } catch (error) {
       setError("Giriş yapılırken bir hata oluştu")

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { logPersonnelAction } from "@/lib/logger"
+import bcrypt from "bcryptjs"
 
 export async function GET(
   request: Request,
@@ -19,6 +20,12 @@ export async function GET(
           include: {
             inventory: true
           }
+        },
+        attendanceRecords: {
+          include: {
+            project: true
+          },
+          orderBy: { date: "desc" }
         }
       }
     })
@@ -50,6 +57,37 @@ export async function PATCH(
       where: { id: resolvedParams.id }
     })
     
+    // Handle username/password synchronization with User table
+    let userId = existingPerson?.userId
+    if (body.username && body.password) {
+      // Hash the password
+      const hashedPassword = await bcrypt.hash(body.password, 10)
+      
+      // Create or update User account
+      if (userId) {
+        // Update existing user
+        await (prisma as any).user.update({
+          where: { id: userId },
+          data: {
+            email: body.username, // Use username as email for simplicity
+            password: hashedPassword,
+            name: existingPerson?.name || body.username
+          }
+        })
+      } else {
+        // Create new user
+        const newUser = await (prisma as any).user.create({
+          data: {
+            email: body.username,
+            password: hashedPassword,
+            name: existingPerson?.name || body.username,
+            role: 'STAFF'
+          }
+        })
+        userId = newUser.id
+      }
+    }
+    
     const updatedPerson = await prisma.personel.update({
       where: { id: resolvedParams.id },
       data: {
@@ -60,7 +98,8 @@ export async function PATCH(
         sgkPeriod: body.sgkPeriod || null,
         sgkPayDay: body.sgkPayDay ? Number(body.sgkPayDay) : null,
         healthStatus: body.healthStatus || null,
-        bonuses: body.bonuses ? parseFloat(body.bonuses.toString()) : 0
+        bonuses: body.bonuses ? parseFloat(body.bonuses.toString()) : 0,
+        userId: userId || undefined
       }
     })
     

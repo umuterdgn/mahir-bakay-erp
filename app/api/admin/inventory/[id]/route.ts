@@ -31,7 +31,7 @@ export async function GET(
         assignments: {
           where: { returnedAt: null },
           include: {
-            worker: true
+            personel: true
           },
           orderBy: { assignedAt: 'desc' }
         },

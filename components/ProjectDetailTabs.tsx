@@ -38,6 +38,8 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
   const [activeTab, setActiveTab] = useState("kunya")
   const [isEditing, setIsEditing] = useState(false)
   const [isTkgmModalOpen, setIsTkgmModalOpen] = useState(false)
+  const [selectedReport, setSelectedReport] = useState<any>(null)
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false)
   const [inspectionReports, setInspectionReports] = useState<any[]>([])
   const [loadingReports, setLoadingReports] = useState(false)
   const [editForm, setEditForm] = useState({
@@ -104,6 +106,51 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
       setLoadingReports(false)
     }
   }
+
+  const handleDeleteReport = async (reportId: string) => {
+    if (!window.confirm("Bu raporu silmek istediğinize emin misiniz?")) return;
+    
+    try {
+      const res = await fetch(`/api/inspection/reports/${reportId}`, { method: 'DELETE' });
+      if (res.ok) {
+        toast.success("Rapor silindi.");
+        setInspectionReports(prev => prev.filter(r => r.id !== reportId));
+      } else {
+        toast.error("Rapor silinemedi.");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Rapor silinirken hata oluştu.");
+    }
+  };
+
+  const handleEditReport = async (reportId: string, currentTitle: string, currentDescription: string) => {
+    const newTitle = window.prompt("Yeni Başlık:", currentTitle);
+    if (newTitle === null) return; // User cancelled
+    
+    const newDescription = window.prompt("Yeni Açıklama:", currentDescription || "");
+    if (newDescription === null) return; // User cancelled
+    
+    try {
+      const res = await fetch(`/api/inspection/reports/${reportId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: newTitle, description: newDescription })
+      });
+      
+      if (res.ok) {
+        toast.success("Rapor güncellendi.");
+        setInspectionReports(prev => prev.map(r => 
+          r.id === reportId ? { ...r, title: newTitle, description: newDescription } : r
+        ));
+      } else {
+        toast.error("Rapor güncellenemedi.");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Rapor güncellenirken hata oluştu.");
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -443,7 +490,37 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {inspectionReports.map((report) => (
-                  <div key={report.id} className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+                  <div 
+                    key={report.id} 
+                    className="group relative bg-slate-800 rounded-xl border border-slate-700 overflow-hidden cursor-pointer hover:border-blue-500 transition-colors"
+                    onClick={() => {
+                      setSelectedReport(report)
+                      setIsReportModalOpen(true)
+                    }}
+                  >
+                    <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditReport(report.id, report.title || "", report.description || "");
+                        }}
+                        className="p-1.5 bg-blue-600/80 text-white rounded hover:bg-blue-600 transition"
+                        title="Düzenle"
+                      >
+                        ✏️
+                      </button>
+                      
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteReport(report.id);
+                        }}
+                        className="p-1.5 bg-red-600/80 text-white rounded hover:bg-red-600 transition"
+                        title="Sil"
+                      >
+                        🗑️
+                      </button>
+                    </div>
                     <div className="aspect-video bg-slate-900 relative">
                       {report.markedBlueprintUrl || report.markedPhotoUrl ? (
                         <div className="grid grid-cols-2 h-full">
@@ -484,6 +561,7 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
                             <a
                               href={report.markedBlueprintUrl}
                               download
+                              onClick={(e) => e.stopPropagation()}
                               className="text-blue-400 hover:text-blue-300 text-sm"
                             >
                               Plan
@@ -493,6 +571,7 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
                             <a
                               href={report.markedPhotoUrl}
                               download
+                              onClick={(e) => e.stopPropagation()}
                               className="text-blue-400 hover:text-blue-300 text-sm"
                             >
                               Fotoğraf
@@ -502,6 +581,7 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
                             <a
                               href={report.imageUrl}
                               download
+                              onClick={(e) => e.stopPropagation()}
                               className="text-blue-400 hover:text-blue-300 text-sm"
                             >
                               İndir
@@ -526,6 +606,94 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
           </div>
         )}
       </div>
+
+      {/* Report Detail Modal */}
+      {isReportModalOpen && selectedReport && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-900 rounded-xl w-full max-w-4xl shadow-2xl border border-slate-800 overflow-hidden max-h-[90vh] flex flex-col">
+            <div className="flex justify-between items-center p-4 border-b border-slate-800">
+              <h3 className="text-xl font-semibold text-white flex items-center gap-2">
+                <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Yapı Denetim Raporu Detayı
+              </h3>
+              <button
+                onClick={() => setIsReportModalOpen(false)}
+                className="text-slate-400 hover:text-white transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-4 overflow-y-auto flex-1">
+              <div className="mb-4">
+                <span className="text-sm text-slate-400">
+                  {new Date(selectedReport.createdAt).toLocaleDateString("tr-TR")}
+                </span>
+              </div>
+              <div className="mb-6">
+                {selectedReport.markedBlueprintUrl || selectedReport.markedPhotoUrl ? (
+                  <div className="grid grid-cols-2 gap-4">
+                    {selectedReport.markedBlueprintUrl && (
+                      <div>
+                        <img
+                          src={selectedReport.markedBlueprintUrl}
+                          alt="İşaretlenmiş Plan"
+                          className="w-full rounded-lg"
+                        />
+                        <p className="text-sm text-slate-400 mt-2 text-center">İşaretlenmiş Plan</p>
+                      </div>
+                    )}
+                    {selectedReport.markedPhotoUrl && (
+                      <div>
+                        <img
+                          src={selectedReport.markedPhotoUrl}
+                          alt="İşaretlenmiş Fotoğraf"
+                          className="w-full rounded-lg"
+                        />
+                        <p className="text-sm text-slate-400 mt-2 text-center">İşaretlenmiş Fotoğraf</p>
+                      </div>
+                    )}
+                  </div>
+                ) : selectedReport.imageUrl ? (
+                  <img
+                    src={selectedReport.imageUrl}
+                    alt="Denetim Raporu"
+                    className="w-full rounded-lg"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-64 bg-slate-800 rounded-lg text-slate-500">
+                    Görsel yok
+                  </div>
+                )}
+              </div>
+              <div className="bg-slate-800 rounded-lg p-4">
+                <h4 className="text-sm font-medium text-slate-300 mb-2">Açıklama</h4>
+                <p className="text-white">{selectedReport.description}</p>
+              </div>
+            </div>
+            <div className="p-4 border-t border-slate-800 flex justify-end gap-3">
+              <button
+                onClick={() => window.print()}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors flex items-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                PDF Olarak İndir
+              </button>
+              <button
+                onClick={() => setIsReportModalOpen(false)}
+                className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
+              >
+                Kapat
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* TKGM Modal */}
       {isTkgmModalOpen && (

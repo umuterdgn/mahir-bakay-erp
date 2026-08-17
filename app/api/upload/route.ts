@@ -17,6 +17,41 @@ export async function POST(request: Request) {
       )
     }
 
+    // Check if it's an image file - use Cloudinary for images
+    if (file.type.startsWith("image/")) {
+      try {
+        const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+        const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'ml_default'
+
+        if (!cloudName) {
+          throw new Error("Cloudinary cloud name not configured")
+        }
+
+        const uploadFormData = new FormData()
+        uploadFormData.append('file', file)
+        uploadFormData.append('upload_preset', uploadPreset)
+
+        const uploadResponse = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+          method: 'POST',
+          body: uploadFormData
+        })
+
+        const uploadData = await uploadResponse.json()
+
+        if (!uploadData.secure_url) {
+          throw new Error('Cloudinary upload failed')
+        }
+
+        return NextResponse.json(
+          { url: uploadData.secure_url, filename: customName || file.name },
+          { status: 200 }
+        )
+      } catch (cloudinaryError) {
+        console.error("Cloudinary upload failed, falling back to local:", cloudinaryError)
+        // Fall back to local upload if Cloudinary fails
+      }
+    }
+
     // Check if Google Drive credentials are available
     const apiKey = process.env.GOOGLE_DRIVE_API_KEY
     const folderId = process.env.GOOGLE_DRIVE_FOLDER_ID

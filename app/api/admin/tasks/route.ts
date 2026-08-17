@@ -19,12 +19,6 @@ export async function GET(request: Request) {
             name: true,
             title: true
           }
-        },
-        worker: {
-          select: {
-            firstName: true,
-            lastName: true
-          }
         }
       }
     })

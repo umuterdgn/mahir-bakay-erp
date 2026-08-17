@@ -69,6 +69,7 @@ export default function ProjectFiles({ projectId }: ProjectFilesProps) {
     const response = await fetch('/api/upload', {
       method: 'POST',
       body: formData
+      // Note: No Content-Type header - browser sets multipart/form-data with boundary automatically
     })
     if (response.ok) {
       const data = await response.json()

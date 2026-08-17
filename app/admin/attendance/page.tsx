@@ -242,10 +242,13 @@ export default function AttendancePage() {
       projectName: project?.name || project?.title || "Proje"
     })
     
+    // Encode to Base64 to handle Turkish characters properly
+    const base64Data = btoa(unescape(encodeURIComponent(qrData)))
+    
     if (typeof window !== 'undefined') {
-      return `${window.location.origin}/check-in/${projectId}?data=${encodeURIComponent(qrData)}`
+      return `${window.location.origin}/check-in/${projectId}?data=${encodeURIComponent(base64Data)}`
     }
-    return `/check-in/${projectId}?data=${encodeURIComponent(qrData)}`
+    return `/check-in/${projectId}?data=${encodeURIComponent(base64Data)}`
   }
 
   if (isLoading) {
@@ -653,9 +656,15 @@ export default function AttendancePage() {
               />
             </div>
 
-            <p className="text-center text-slate-400 text-sm mb-4">
-              {getCheckInURL(selectedProjectForQR)}
-            </p>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(getCheckInURL(selectedProjectForQR))
+                toast.success("Bağlantı kopyalandı!")
+              }}
+              className="w-full px-4 py-3 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors font-medium mb-4 flex items-center justify-center gap-2"
+            >
+              🔗 Bağlantıyı Kopyala
+            </button>
 
             <div className="flex gap-3">
               <button

@@ -120,6 +120,13 @@ model Project {
   dailyLogs   DailyLog[]
   inspectionReports InspectionReport[]
   tasks       Task[]
+  isgReports  IsgReport[]
+  concreteTests ConcreteTest[]
+  coreTests   CoreTest[]
+  documentArchives DocumentArchive[]
+  projectBlueprints ProjectBlueprint[]
+  reinforcementInspections ReinforcementInspection[]
+  attachmentEvidences AttachmentEvidence[]
 
   @@index([isActive, displayOrder])
   @@index([status])
@@ -427,6 +434,7 @@ model Personel {
   contracts       Contract[]
   conversationParticipants ConversationParticipant[]
   sentMessages    Message[] @relation("PersonelSender")
+  isgReports      IsgReport[]
   notes           String?             @db.Text
   createdAt       DateTime            @default(now())
   updatedAt       DateTime            @updatedAt
@@ -856,10 +864,12 @@ model InspectionReport {
   id                String   @id @default(cuid())
   projectId         String
   project           Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title             String?  // Rapor başlığı
   imageUrl          String?  // İşaretlenmiş görselin URL'si (legacy)
   markedBlueprintUrl String? // İşaretlenmiş plan görselinin URL'si
   markedPhotoUrl    String? // İşaretlenmiş fotoğrafın URL'si
-  description       String   @db.Text // Rapor açıklaması
+  description       String?  @db.Text // Rapor açıklaması
+  violations        String?  @db.Text // Tespit edilen uygunsuzluklar
   createdAt         DateTime @default(now())
 
   @@index([projectId])
@@ -952,4 +962,163 @@ model ConversationParticipant {
   @@index([conversationId])
   @@index([userId])
   @@index([personelId])
+}
+
+// ============================================================================
+// İSG (İş Sağlığı ve Güvenliği) BİLDİRİMLERİ
+// ============================================================================
+
+model IsgReport {
+  id          String   @id @default(cuid())
+  type        IsgReportType @default(TEHLIKE) // TEHLIKE, KAZA_TUTANAGI, EKSIK_DOKUM
+  status      IsgReportStatus @default(ACIL) // ACIL, INCELEMEDE, COZULDU
+  description String   @db.Text
+  imageUrl    String?  // Saha fotoğrafı
+  location    String?  // Konum bilgisi
+  personelId  String
+  personel    Personel @relation(fields: [personelId], references: [id], onDelete: Cascade)
+  projectId   String?
+  project     Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([personelId])
+  @@index([projectId])
+  @@index([status])
+  @@index([type])
+}
+
+enum IsgReportType {
+  TEHLIKE
+  KAZA_TUTANAGI
+  EKSIK_DOKUM
+}
+
+enum IsgReportStatus {
+  ACIL
+  INCELEMEDE
+  COZULDU
+}
+
+// ============================================================================
+// CONCRETE TEST (Beton Numune ve Karot)
+// ============================================================================
+
+model ConcreteTest {
+  id            String   @id @default(cuid())
+  projectId     String
+  project       Project  @relation(fields: [projectId], references: [id])
+  castDate      DateTime // Beton Döküm Tarihi
+  concreteClass String   // Örn: C30, C35
+  element       String   // Örn: 1. Kat Kolonları, B Blok Tabliye
+  waybillNo     String?  // İrsaliye No
+  day7Result    Float?   // 7 Günlük Kırım Sonucu (MPa)
+  day28Result   Float?   // 28 Günlük Kırım Sonucu (MPa)
+  status        String   @default("BEKLIYOR") // BEKLIYOR, GECTI, KALDI, KAROT_ISTENDI
+  reportUrl     String?  // Laboratuvar Raporu PDF
+  createdAt     DateTime @default(now())
+
+  @@index([projectId])
+  @@index([castDate])
+  @@index([status])
+}
+
+model CoreTest {
+  id          String   @id @default(cuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id])
+  element     String   // Eleman adı
+  location    String?  // Konum
+  testDate    DateTime // Test tarihi
+  strength    Float?   // Dayanım (MPa)
+  status      String   @default("BEKLIYOR") // BEKLIYOR, GECTI, KALDI
+  reportUrl   String?  // Rapor URL
+  createdAt   DateTime @default(now())
+
+  @@index([projectId])
+  @@index([testDate])
+  @@index([status])
+}
+
+// ============================================================================
+// DOCUMENT ARCHIVE (Ruhsat ve Evrak Arşivi)
+// ============================================================================
+
+model DocumentArchive {
+  id          String   @id @default(cuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id])
+  title       String   // Örn: Yapı Ruhsatı, Zemin Etüdü
+  category    String   // Örn: RUHSAT, PROJE_CIZIMI, TUTANAK
+  fileUrl     String   // Cloudinary URL
+  expiryDate  DateTime? // Varsa Geçerlilik Tarihi
+  createdAt   DateTime @default(now())
+
+  @@index([projectId])
+  @@index([category])
+  @@index([expiryDate])
+}
+
+// ============================================================================
+// PROJECT BLUEPRINT (Dijital Proje & Revizyon Takip)
+// ============================================================================
+
+model ProjectBlueprint {
+  id          String   @id @default(cuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id])
+  title       String   // Örn: A Blok Statik Aplikasyon Planı
+  discipline  String   // MIMARI, STATIK, ELEKTRIK, MEKANIK
+  revisionNo  String   // Örn: R0, R1, R2
+  fileUrl     String   // PDF / Görsel URL
+  isCurrent   Boolean  @default(true) // En güncel versiyon mu?
+  uploadedBy  String?
+  createdAt   DateTime @default(now())
+
+  @@index([projectId])
+  @@index([discipline])
+  @@index([isCurrent])
+}
+
+// ============================================================================
+// REINFORCEMENT INSPECTION (Demir & Kalıp Kontrol)
+// ============================================================================
+
+model ReinforcementInspection {
+  id             String   @id @default(cuid())
+  projectId      String
+  project        Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  element        String   // Dökülecek Eleman
+  status         String   @default("BEKLIYOR") // ONAYLANDI, REDDEDILDI, BEKLIYOR
+  notes          String?  @db.Text
+  photoUrl       String?  // Cloudinary URL
+  inspectionDate DateTime @default(now())
+  inspectorName  String?  // Kontrol Eden / Denetçi
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([inspectionDate])
+  @@index([status])
+}
+
+// ============================================================================
+// ATTACHMENT EVIDENCE (Ataşman & Dijital Delil)
+// ============================================================================
+
+model AttachmentEvidence {
+  id            String   @id @default(cuid())
+  projectId     String
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title         String   // Başlık
+  location      String   // Mahal/Konum Bilgisi
+  description   String?  @db.Text
+  photoUrl      String   // Cloudinary URL
+  attachmentDate DateTime @default(now()) // Ataşmanın/Fotoğrafın çekildiği tarih
+  createdBy     String?  // Ekleyen / Sorumlu kişi
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([attachmentDate])
 }

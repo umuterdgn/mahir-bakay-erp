@@ -17,7 +17,7 @@ export async function GET() {
           some: {
             OR: [
               { userId: session.user.id },
-              { workerId: session.user.id }
+              { personelId: session.user.id }
             ]
           }
         }
@@ -32,12 +32,11 @@ export async function GET() {
                 email: true
               }
             },
-            worker: {
+            personel: {
               select: {
                 id: true,
-                firstName: true,
-                lastName: true,
-                username: true
+                name: true,
+                personnelNo: true
               }
             }
           }
@@ -51,10 +50,9 @@ export async function GET() {
                 name: true
               }
             },
-            workerSender: {
+            personelSender: {
               select: {
-                firstName: true,
-                lastName: true
+                name: true
               }
             }
           }
@@ -85,19 +83,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Forbidden - Only admins can create announcements" }, { status: 403 })
     }
 
-    // Separate user and worker participant IDs
+    // Separate user and personel participant IDs
     const userIds: string[] = []
-    const workerIds: string[] = []
+    const personelIds: string[] = []
 
     if (participantIds && Array.isArray(participantIds)) {
       for (const id of participantIds) {
-        // Check if this is a User or Worker by trying to find them
+        // Check if this is a User or Personel by trying to find them
         const user = await prisma.user.findUnique({ where: { id } })
         if (user) {
           userIds.push(id)
         } else {
-          // Assume it's a worker
-          workerIds.push(id)
+          // Assume it's a personel
+          personelIds.push(id)
         }
       }
     }
@@ -106,7 +104,7 @@ export async function POST(request: Request) {
     const participantsData = [
       { userId: session.user.id },
       ...userIds.map((id) => ({ userId: id })),
-      ...workerIds.map((id) => ({ workerId: id }))
+      ...personelIds.map((id) => ({ personelId: id }))
     ]
 
     // Create conversation
@@ -129,12 +127,11 @@ export async function POST(request: Request) {
                 email: true
               }
             },
-            worker: {
+            personel: {
               select: {
                 id: true,
-                firstName: true,
-                lastName: true,
-                username: true
+                name: true,
+                personnelNo: true
               }
             }
           }

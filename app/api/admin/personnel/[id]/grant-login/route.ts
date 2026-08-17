@@ -20,32 +20,43 @@ export async function POST(
       return NextResponse.json({ error: "Personel bulunamadı" }, { status: 404 })
     }
 
-    // Check if email already exists
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10)
+
+    // Check if email already exists - if so, update existing user
     const existingUser = await prisma.user.findUnique({
       where: { email }
     })
 
+    let user
     if (existingUser) {
-      return NextResponse.json({ error: "Bu e-posta zaten kullanımda" }, { status: 400 })
+      // Update existing user's password and role
+      user = await prisma.user.update({
+        where: { email },
+        data: {
+          password: hashedPassword,
+          role: role || "STAFF"
+        }
+      })
+    } else {
+      // Create new User
+      user = await prisma.user.create({
+        data: {
+          name: personnel.name,
+          email,
+          password: hashedPassword,
+          role: role || "STAFF"
+        }
+      })
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10)
-
-    // Create User
-    const user = await prisma.user.create({
-      data: {
-        name: personnel.name,
-        email,
-        password: hashedPassword,
-        role: role || "STAFF"
-      }
-    })
-
-    // Update personnel with userId
+    // Update personnel with userId and username
     const updatedPersonnel = await prisma.personel.update({
       where: { id: resolvedParams.id },
-      data: { userId: user.id }
+      data: { 
+        userId: user.id,
+        username: username || email // Use username if provided, otherwise use email
+      }
     })
 
     return NextResponse.json({ 

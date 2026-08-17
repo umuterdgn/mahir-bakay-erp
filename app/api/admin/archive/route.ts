@@ -17,8 +17,17 @@ export async function GET(request: Request) {
     const sortBy = searchParams.get("sortBy") || "date-desc"
 
     let archives = await prisma.archive.findMany({
-      orderBy: { uploadedAt: sortBy === "date-asc" ? "asc" : "desc" }
-    })
+      orderBy: { uploadedAt: sortBy === "date-asc" ? "asc" : "desc" },
+      include: {
+        project: {
+          select: {
+            id: true,
+            name: true,
+            title: true
+          }
+        }
+      }
+    }) as any[]
 
     if (search) {
       archives = archives.filter(a => 

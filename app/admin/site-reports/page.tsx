@@ -65,6 +65,46 @@ export default function SiteReportsPage() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
+
+    // When project is selected, auto-fetch worker count and weather
+    if (name === 'projectId' && value) {
+      fetchWorkerCount(value, formData.date)
+      fetchWeatherForProject(value)
+    }
+  }
+
+  const fetchWorkerCount = async (projectId: string, date: string) => {
+    try {
+      const response = await fetch(`/api/attendance/worker-count?projectId=${projectId}&date=${date}`)
+      if (response.ok) {
+        const data = await response.json()
+        setFormData(prev => ({ ...prev, workerCount: data.count.toString() }))
+      }
+    } catch (error) {
+      console.error('Failed to fetch worker count:', error)
+    }
+  }
+
+  const fetchWeatherForProject = async (projectId: string) => {
+    try {
+      // Get project details to find city
+      const projectResponse = await fetch(`/api/admin/projects/${projectId}`)
+      if (projectResponse.ok) {
+        const project = await projectResponse.json()
+        if (project.city) {
+          // Fetch weather data (using a free weather API or mock)
+          const weatherResponse = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${project.city}&appid=${process.env.NEXT_PUBLIC_WEATHER_API_KEY}&units=metric&lang=tr`)
+          if (weatherResponse.ok) {
+            const weatherData = await weatherResponse.json()
+            const weatherDescription = weatherData.weather[0].description
+            const temperature = Math.round(weatherData.main.temp)
+            setFormData(prev => ({ ...prev, weather: `${weatherDescription}, ${temperature}°C` }))
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch weather:', error)
+    }
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

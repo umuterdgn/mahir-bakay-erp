@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useParams } from "next/navigation"
 import { toast } from "react-hot-toast"
 
@@ -10,6 +10,8 @@ export default function CheckInPage() {
   const [activeTab, setActiveTab] = useState<"worker" | "visitor">("worker")
   const [project, setProject] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [qrError, setQrError] = useState<string | null>(null)
+  const qrProcessedRef = useRef(false)
 
   // Worker form state
   const [workerForm, setWorkerForm] = useState({
@@ -30,12 +32,15 @@ export default function CheckInPage() {
 
   // Read shift hours from URL parameters
   useEffect(() => {
-    if (typeof window !== 'undefined' && project) {
+    if (typeof window !== 'undefined' && project && !qrProcessedRef.current) {
       const urlParams = new URLSearchParams(window.location.search)
       const dataParam = urlParams.get('data')
       if (dataParam) {
         try {
-          const qrData = JSON.parse(decodeURIComponent(dataParam))
+          // Decode from Base64 first (for Turkish character support)
+          const decodedBase64 = decodeURIComponent(dataParam)
+          const jsonString = decodeURIComponent(escape(atob(decodedBase64)))
+          const qrData = JSON.parse(jsonString)
           if (qrData.shiftStart && qrData.shiftEnd) {
             // Update project with shift hours from QR
             setProject(prev => ({
@@ -44,8 +49,11 @@ export default function CheckInPage() {
               shiftEnd: qrData.shiftEnd
             }))
           }
+          qrProcessedRef.current = true
         } catch (error) {
           console.error("Failed to parse QR data:", error)
+          setQrError("Geçersiz veya bozuk QR kod okutuldu.")
+          qrProcessedRef.current = true
         }
       }
     }
@@ -77,7 +85,7 @@ export default function CheckInPage() {
     }
 
     try {
-      const response = await fetch("/api/attendance/worker", {
+      const response = await fetch("/api/attendance/personnel", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -145,6 +153,17 @@ export default function CheckInPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center">
         <div className="text-white text-xl">Proje bulunamadı</div>
+      </div>
+    )
+  }
+
+  if (qrError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-400 text-xl mb-4">⚠️ {qrError}</div>
+          <p className="text-slate-400">Lütfen geçerli bir QR kod okutun veya sayfayı yenileyin.</p>
+        </div>
       </div>
     )
   }
