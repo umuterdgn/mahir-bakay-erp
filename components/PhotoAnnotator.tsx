@@ -3,48 +3,30 @@
 import React, { useEffect, useRef, useState } from "react";
 
 interface PhotoAnnotatorProps {
+  imageUrl?: string;
   onSaveAnnotation?: (dataUrl: string) => void;
 }
 
-export default function PhotoAnnotator({ onSaveAnnotation }: PhotoAnnotatorProps) {
+export default function PhotoAnnotator({ imageUrl, onSaveAnnotation }: PhotoAnnotatorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [image, setImage] = useState<string | null>(null);
   const [isDrawingMode, setIsDrawingMode] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        setImage(event.target?.result as string);
-      };
-      img.src = event.target?.result as string;
-    };
-    reader.readAsDataURL(file);
-  };
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    if (!canvasRef.current || !image) return;
-
-    const img = new Image();
-    img.onload = () => {
+    if (imageUrl && canvasRef.current) {
       const canvas = canvasRef.current;
-      if (!canvas) return;
-
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-
-      canvas.width = img.width;
-      canvas.height = img.height;
-      ctx.drawImage(img, 0, 0);
-    };
-    img.src = image;
-  }, [image]);
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      img.onload = () => {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx?.drawImage(img, 0, 0);
+        setIsLoaded(true);
+      };
+      img.src = imageUrl;
+    }
+  }, [imageUrl]);
 
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!isDrawingMode || !canvasRef.current) return;
@@ -84,7 +66,7 @@ export default function PhotoAnnotator({ onSaveAnnotation }: PhotoAnnotatorProps
   };
 
   const clearCanvas = () => {
-    if (!canvasRef.current || !image) return;
+    if (!canvasRef.current || !imageUrl) return;
     const ctx = canvasRef.current.getContext("2d");
     if (!ctx) return;
 
@@ -93,7 +75,7 @@ export default function PhotoAnnotator({ onSaveAnnotation }: PhotoAnnotatorProps
       ctx.clearRect(0, 0, canvasRef.current!.width, canvasRef.current!.height);
       ctx.drawImage(img, 0, 0);
     };
-    img.src = image;
+    img.src = imageUrl;
   };
 
   const handleSaveAnnotation = () => {
@@ -105,19 +87,6 @@ export default function PhotoAnnotator({ onSaveAnnotation }: PhotoAnnotatorProps
   return (
     <div className="relative w-full bg-slate-950 rounded-xl overflow-hidden border border-slate-800 min-h-[600px] flex items-center justify-center">
       <div className="absolute top-4 left-4 z-20 flex items-center gap-2 bg-slate-900/90 backdrop-blur p-2 rounded-lg border border-slate-700">
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleFileChange}
-          className="hidden"
-        />
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          className="px-3 py-1.5 text-xs font-medium bg-slate-600 hover:bg-slate-500 text-white rounded-md transition-colors"
-        >
-          📷 Fotoğraf Yükle
-        </button>
         <button
           onClick={() => setIsDrawingMode(false)}
           className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
@@ -150,10 +119,10 @@ export default function PhotoAnnotator({ onSaveAnnotation }: PhotoAnnotatorProps
         )}
       </div>
 
-      {!image && (
+      {!isLoaded && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-950/80">
           <div className="flex flex-col items-center gap-3">
-            <p className="text-sm text-slate-300">Lütfen bir fotoğraf yükleyin</p>
+            <p className="text-sm text-slate-300">Fotoğraf yükleniyor...</p>
           </div>
         </div>
       )}

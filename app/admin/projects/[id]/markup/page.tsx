@@ -174,6 +174,7 @@ export default function MarkupPage({ params }: { params: Promise<{ id: string }>
               {/* Fotoğraf Alanı */}
               <div className={`absolute inset-0 w-full h-full transition-opacity duration-300 ${activeTab === 'photo' ? 'opacity-100 z-10' : 'opacity-0 -z-10 pointer-events-none'}`}>
                   <PhotoAnnotator 
+                    imageUrl={uploadedPhoto}
                     onSaveAnnotation={(dataUrl) => setMarkedPhotoBase64(dataUrl)} 
                   />
               </div>

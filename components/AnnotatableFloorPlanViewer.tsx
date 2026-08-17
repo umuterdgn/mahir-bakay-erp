@@ -2,8 +2,20 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { AcApDocManager } from "@mlightcad/cad-simple-viewer";
-import html2canvas from "html2canvas";
 import { toast } from "react-hot-toast";
+
+// --- NÜKLEER HACK: Tarayıcının WebGL oluşturma kurallarını eziyoruz ---
+if (typeof window !== 'undefined') {
+  const originalGetContext = HTMLCanvasElement.prototype.getContext;
+  (HTMLCanvasElement.prototype as any).getContext = function (type: string, attributes: any, ...args: any[]) {
+    if (type === 'webgl' || type === 'webgl2' || type === 'experimental-webgl') {
+      attributes = attributes || {};
+      attributes.preserveDrawingBuffer = true; // Kütüphane ne derse desin bunu ZORLA aktif et
+    }
+    return originalGetContext.call(this, type, attributes, ...args);
+  };
+}
+// ---------------------------------------------------------------------
 
 interface AnnotatableViewerProps {
   fileUrl: string;
@@ -118,7 +130,10 @@ export default function AnnotatableFloorPlanViewer({ fileUrl, onSaveAnnotation }
         }
 
         try {
-          AcApDocManager.createInstance({ container: containerRef.current! });
+          AcApDocManager.createInstance({ 
+            container: containerRef.current!,
+            preserveDrawingBuffer: true
+          });
           docInstance = AcApDocManager.instance;
           viewerInstanceRef.current = docInstance;
         } catch (e) {
@@ -289,27 +304,30 @@ export default function AnnotatableFloorPlanViewer({ fileUrl, onSaveAnnotation }
     if (ctx) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
   };
 
-  const handleSaveCombinedSnapshot = async () => {
-    if (!containerRef.current) return;
+  const handleSaveCombinedSnapshot = () => {
+    if (!containerRef.current || !canvasRef.current) return;
+    const cadCanvas = containerRef.current.querySelector('canvas:not(.absolute)') as HTMLCanvasElement;
+    const annotationCanvas = canvasRef.current;
     
-    try {
-        // html2canvas ile tüm div'in (CAD + Çizimler) fotoğrafını çek
-        const canvas = await html2canvas(containerRef.current, {
-            useCORS: true,
-            allowTaint: true,
-            backgroundColor: isWhiteBg ? '#ffffff' : '#111827'
-        });
-        
-        const finalImage = canvas.toDataURL('image/png', 1.0);
-        if (typeof onSaveAnnotation === 'function') {
-            onSaveAnnotation(finalImage);
-            toast.success("✅ Çizim ve Plan başarıyla birleştirildi!");
-        }
-    } catch (error) {
-        console.error("Ekran görüntüsü alınamadı:", error);
-        toast.error("Görsel birleştirilirken hata oluştu.");
+    if (!cadCanvas) { toast.error("CAD planı bulunamadı!"); return; }
+    
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = annotationCanvas.width || cadCanvas.width;
+    tempCanvas.height = annotationCanvas.height || cadCanvas.height;
+    const ctx = tempCanvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.fillStyle = isWhiteBg ? "#ffffff" : "#111827";
+    ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+    ctx.drawImage(cadCanvas, 0, 0, tempCanvas.width, tempCanvas.height);
+    ctx.drawImage(annotationCanvas, 0, 0, tempCanvas.width, tempCanvas.height);
+
+    const finalImage = tempCanvas.toDataURL('image/png', 1.0);
+    if (typeof onSaveAnnotation === 'function') {
+        onSaveAnnotation(finalImage);
+        toast.success("✅ Çizim hafızaya alındı!");
     }
-  }
+  };
 
   const handleToggleBackground = () => {
     const newBgState = !isWhiteBg;
