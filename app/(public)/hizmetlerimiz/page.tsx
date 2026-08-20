@@ -17,5 +17,11 @@ async function getServices() {
 export default async function HizmetlerimizPage() {
   const services = await getServices()
 
-  return <ServicesClient services={services} />
+  // Sanitize null values to undefined for type compatibility
+  const sanitizedServices = services.map(service => ({
+    ...service,
+    threeDModelUrl: service.threeDModelUrl ?? undefined
+  }))
+
+  return <ServicesClient services={sanitizedServices} />
 }

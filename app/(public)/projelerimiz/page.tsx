@@ -26,5 +26,13 @@ async function getProjects() {
 export default async function ProjelerimizPage() {
   const projects = await getProjects()
 
-  return <ProjectsClient projects={projects} />
+  // Sanitize null values to undefined for type compatibility
+  const sanitizedProjects = projects.map(project => ({
+    ...project,
+    threeDModelUrl: project.threeDModelUrl ?? undefined,
+    year: project.year ?? undefined,
+    location: project.location ?? undefined
+  }))
+
+  return <ProjectsClient projects={sanitizedProjects} />
 }

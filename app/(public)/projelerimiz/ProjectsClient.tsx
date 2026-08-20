@@ -15,8 +15,8 @@ interface Project {
   title: string
   description: string
   images: string[]
-  year: string | null
-  location: string | null
+  year?: string
+  location?: string
   threeDModelUrl?: string
 }
 
