@@ -21,15 +21,7 @@ export default function MyTasksPage() {
       return
     }
 
-    const userRole = session?.user?.role
-    const isPersonnel = userRole === "STAFF" || userRole === "WORKER"
-
-    if (!isPersonnel) {
-      router.push("/admin")
-      return
-    }
-
-    // Personnel data fetch
+    // All authenticated users can access their own tasks
     fetchTasks()
     fetchAttendance()
     setIsLoading(false)
