@@ -247,7 +247,7 @@ export default function EditMarkupPage({ params }: { params: Promise<{ id: strin
                   {dwgFileUrl ? (
                     <AnnotatableFloorPlanViewer 
                       fileUrl={dwgFileUrl} 
-                      onSaveAnnotation={(dataUrl, dxf) => {
+                      onSaveAnnotation={(dataUrl: any, dxf: any) => {
                         setMarkedBlueprintBase64(dataUrl)
                         if(dxf) setDxfBase64(dxf)
                         toast.success("Çizim hafızaya alındı, Raporu Güncelle'ye basabilirsiniz.")
@@ -265,7 +265,7 @@ export default function EditMarkupPage({ params }: { params: Promise<{ id: strin
               <div className={`absolute inset-0 w-full h-full transition-opacity duration-300 ${activeTab === 'photo' ? 'opacity-100 z-10' : 'opacity-0 -z-10 pointer-events-none'}`}>
                   <PhotoAnnotator 
                     imageUrl={uploadedPhoto}
-                    onSaveAnnotation={(dataUrl) => setMarkedPhotoBase64(dataUrl)} 
+                    onSaveAnnotation={(dataUrl: any) => setMarkedPhotoBase64(dataUrl)} 
                   />
               </div>
               

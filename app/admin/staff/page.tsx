@@ -154,7 +154,7 @@ export default function AdminStaffPage() {
         <StaffDetailModal
           staff={selectedStaff}
           onClose={() => setSelectedStaff(null)}
-          onUpdate={(updatedStaff) => {
+          onUpdate={(updatedStaff: any) => {
             setStaff(staff.map(s => s.id === updatedStaff.id ? updatedStaff : s))
             setSelectedStaff(updatedStaff)
           }}
@@ -165,7 +165,7 @@ export default function AdminStaffPage() {
       {isAdding && (
         <AddStaffModal
           onClose={() => setIsAdding(false)}
-          onSave={(newStaff) => {
+          onSave={(newStaff: any) => {
             fetchStaff()
             setIsAdding(false)
           }}

@@ -229,7 +229,7 @@ export default function CreateReportPage() {
             <AnnotatableFloorPlanViewer
               key={dwgFileUrl}
               fileUrl={dwgFileUrl}
-              onSaveAnnotation={(dataUrl) => setMarkedBlueprintUrl(dataUrl)}
+              onSaveAnnotation={(dataUrl: any) => setMarkedBlueprintUrl(dataUrl)}
             />
             {markedBlueprintUrl && (
               <div className="mt-4 p-3 bg-green-900/30 border border-green-700 rounded-lg">
@@ -245,7 +245,7 @@ export default function CreateReportPage() {
         <h2 className="text-lg font-semibold text-white mb-4">📷 Saha Fotoğrafı İşaretleme</h2>
         
         <PhotoAnnotator
-          onSaveAnnotation={(dataUrl) => setMarkedPhotoUrl(dataUrl)}
+          onSaveAnnotation={(dataUrl: any) => setMarkedPhotoUrl(dataUrl)}
         />
         {markedPhotoUrl && (
           <div className="mt-4 p-3 bg-green-900/30 border border-green-700 rounded-lg">
