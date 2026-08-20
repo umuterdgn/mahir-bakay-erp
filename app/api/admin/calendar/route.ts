@@ -93,7 +93,7 @@ export async function GET() {
       if (person.salaryPayDay) {
         monthsToCheck.forEach((month, idx) => {
           const year = yearsToCheck[idx]
-          const paymentDate = new Date(year, month, person.salaryPayDay)
+          const paymentDate = new Date(year, month, person.salaryPayDay ?? 5)
           events.push({
             id: `salary-${person.id}-${year}-${month}`,
             date: paymentDate.toISOString(),
@@ -108,7 +108,7 @@ export async function GET() {
       if (person.sgkPayDay) {
         monthsToCheck.forEach((month, idx) => {
           const year = yearsToCheck[idx]
-          const paymentDate = new Date(year, month, person.sgkPayDay)
+          const paymentDate = new Date(year, month, person.sgkPayDay ?? 5)
           events.push({
             id: `sgk-${person.id}-${year}-${month}`,
             date: paymentDate.toISOString(),
