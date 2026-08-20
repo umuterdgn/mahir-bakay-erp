@@ -158,7 +158,7 @@ export default function ContractsPage() {
         title: `${template.name} - ${worker ? `${worker.firstName} ${worker.lastName}` : project.name}`,
         content: content,
         projectId: generateFormData.projectId,
-        workerId: generateFormData.workerId || null,
+        workerId: generateFormData.workerId || "",
         templateId: generateFormData.templateId
       })
       
