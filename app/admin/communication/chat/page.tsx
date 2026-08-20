@@ -1,4 +1,10 @@
 "use client"
+/**
+ * © 2026 NXA Software. All rights reserved.
+ * Developer: Umut Erdoğan
+ * This code is the property of NXA Software.
+ */
+
 
 import { useState } from "react"
 import { MessageSquare, Send, Paperclip, Hash, User, Search, MoreVertical, AlertTriangle, FileText, CheckCircle, Plus, X } from "lucide-react"

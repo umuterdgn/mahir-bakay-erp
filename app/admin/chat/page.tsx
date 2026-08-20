@@ -1,3 +1,9 @@
+/**
+ * © 2026 NXA Software. All rights reserved.
+ * Developer: Umut Erdoğan
+ * This code is the property of NXA Software.
+ */
+
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import ChatClient from "./components/ChatClient"

@@ -1,3 +1,9 @@
+/**
+ * © 2026 NXA Software. All rights reserved.
+ * Developer: Umut Erdoğan
+ * This code is the property of NXA Software.
+ */
+
 import type { NextConfig } from "next";
 import path from "path";
 import withPWA from '@ducanh2912/next-pwa';

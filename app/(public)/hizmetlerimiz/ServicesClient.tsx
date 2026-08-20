@@ -1,4 +1,10 @@
 "use client"
+/**
+ * © 2026 NXA Software. All rights reserved.
+ * Developer: Umut Erdoğan
+ * This code is the property of NXA Software.
+ */
+
 
 import { motion } from "framer-motion"
 import { useState } from "react"

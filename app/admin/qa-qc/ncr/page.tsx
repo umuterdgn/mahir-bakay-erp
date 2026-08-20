@@ -1,4 +1,10 @@
 "use client"
+/**
+ * © 2026 NXA Software. All rights reserved.
+ * Developer: Umut Erdoğan
+ * This code is the property of NXA Software.
+ */
+
 
 import { useState, useEffect } from "react"
 import { AlertOctagon, Plus, Search, Camera, Calendar, User, MapPin, CheckCircle, Clock, XCircle, X } from "lucide-react"

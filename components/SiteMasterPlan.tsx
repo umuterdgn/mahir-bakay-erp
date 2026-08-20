@@ -1,3 +1,9 @@
+/**
+ * © 2026 NXA Software. All rights reserved.
+ * Developer: Umut Erdoğan
+ * This code is the property of NXA Software.
+ */
+
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { MapContainer, TileLayer, Circle, CircleMarker, Popup, useMapEvents } from "react-leaflet";

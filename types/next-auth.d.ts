@@ -1,3 +1,9 @@
+/**
+ * © 2026 NXA Software. All rights reserved.
+ * Developer: Umut Erdoğan
+ * This code is the property of NXA Software.
+ */
+
 import { DefaultSession } from "next-auth"
 import { UserRole, Permission } from "@prisma/client"
 

@@ -1,4 +1,10 @@
 "use client"
+/**
+ * © 2026 NXA Software. All rights reserved.
+ * Developer: Umut Erdoğan
+ * This code is the property of NXA Software.
+ */
+
 
 import { useState, useEffect } from "react"
 import { Truck, Clock, MapPin, Phone, CheckCircle, AlertCircle, Plus, Calendar, X } from "lucide-react"

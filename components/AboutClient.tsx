@@ -1,5 +1,10 @@
 "use client"
 
+/**
+ * © 2026 NXA Software. All rights reserved.
+ * Developer: Umut Erdoğan
+ * This code is the property of NXA Software.
+ */
 import { motion } from "framer-motion"
 import Link from "next/link"
 import Image from "next/image"

@@ -1,3 +1,9 @@
+/**
+ * © 2026 NXA Software. All rights reserved.
+ * Developer: Umut Erdoğan
+ * This code is the property of NXA Software.
+ */
+
 import Link from "next/link"
 
 export default function UnauthorizedPage() {

@@ -1,3 +1,8 @@
+/**
+ * © 2026 NXA Software. All rights reserved.
+ * Developer: Umut Erdoğan
+ * This code is the property of NXA Software.
+ */
 import { prisma } from "@/lib/prisma"
 
 export async function logAction(action: string, details: string, user: string = "Sistem/Admin", affectedData?: string) {

@@ -1,3 +1,9 @@
+/**
+ * © 2026 NXA Software. All rights reserved.
+ * Developer: Umut Erdoğan
+ * This code is the property of NXA Software.
+ */
+
 import * as I from "three";
 import { BufferGeometry as Ao, BufferAttribute as Oo, ShapePath as Ji, ShapeUtils as Qi, Shape as Lo, LineCurve as $n, QuadraticBezierCurve as fs, CubicBezierCurve as ps, EllipseCurve as ds } from "three";
 class gs {

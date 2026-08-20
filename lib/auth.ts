@@ -1,3 +1,8 @@
+/**
+ * © 2026 NXA Software. All rights reserved.
+ * Developer: Umut Erdoğan
+ * This code is the property of NXA Software.
+ */
 import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import { authConfig } from "./auth.config"

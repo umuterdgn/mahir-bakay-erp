@@ -1,3 +1,8 @@
+/**
+ * © 2026 NXA Software. All rights reserved.
+ * Developer: Umut Erdoğan
+ * This code is the property of NXA Software.
+ */
 export function getDistanceFromLatLonInMeters(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371000; // Dünyanın yarıçapı (Metre)
   const dLat = (lat2 - lat1) * Math.PI / 180;

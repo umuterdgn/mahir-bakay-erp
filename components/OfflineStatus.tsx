@@ -1,3 +1,9 @@
+/**
+ * © 2026 NXA Software. All rights reserved.
+ * Developer: Umut Erdoğan
+ * This code is the property of NXA Software.
+ */
+
 "use client";
 import { useNetworkState } from 'react-use';
 import { useState, useEffect } from 'react';

@@ -1,3 +1,9 @@
+/**
+ * © 2026 NXA Software. All rights reserved.
+ * Developer: Umut Erdoğan
+ * This code is the property of NXA Software.
+ */
+
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import PersonnelSidebar from "@/components/PersonnelSidebar"
