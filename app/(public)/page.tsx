@@ -49,5 +49,16 @@ export default async function Home() {
   const featuredServices = await getFeaturedServices()
   const featuredProjects = await getFeaturedProjects()
 
-  return <HomeClient featuredServices={featuredServices} featuredProjects={featuredProjects} />
+  // Sanitize null values to undefined for type compatibility
+  const sanitizedServices = featuredServices.map(service => ({
+    ...service,
+    threeDModelUrl: service.threeDModelUrl ?? undefined
+  }))
+
+  const sanitizedProjects = featuredProjects.map(project => ({
+    ...project,
+    threeDModelUrl: project.threeDModelUrl ?? undefined
+  }))
+
+  return <HomeClient featuredServices={sanitizedServices} featuredProjects={sanitizedProjects} />
 }
