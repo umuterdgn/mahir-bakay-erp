@@ -10,7 +10,7 @@ export async function GET(request: Request) {
     const contracts = await prisma.contract.findMany({
       where: {
         ...(projectId && { projectId }),
-        ...(workerId && { workerId })
+        ...(workerId && { personelId: workerId })
       },
       include: {
         project: {
@@ -19,10 +19,9 @@ export async function GET(request: Request) {
             title: true
           }
         },
-        worker: {
+        personel: {
           select: {
-            firstName: true,
-            lastName: true
+            name: true
           }
         },
         template: {
@@ -53,7 +52,7 @@ export async function POST(request: Request) {
         fileUrl,
         content: content || null,
         projectId: projectId || null,
-        workerId: workerId || null,
+        personelId: workerId || null,
         templateId: templateId || null
       },
       include: {
@@ -63,10 +62,9 @@ export async function POST(request: Request) {
             title: true
           }
         },
-        worker: {
+        personel: {
           select: {
-            firstName: true,
-            lastName: true
+            name: true
           }
         }
       }

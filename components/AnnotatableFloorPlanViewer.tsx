@@ -8,12 +8,12 @@ import Drawing from 'dxf-writer';
 // --- NÜKLEER HACK: Tarayıcının WebGL oluşturma kurallarını eziyoruz ---
 if (typeof window !== 'undefined') {
   const originalGetContext = HTMLCanvasElement.prototype.getContext;
-  (HTMLCanvasElement.prototype as any).getContext = function (type: string, attributes: any, ...args: any[]) {
+  (HTMLCanvasElement.prototype as any).getContext = function (type: string, attributes: any) {
     if (type === 'webgl' || type === 'webgl2' || type === 'experimental-webgl') {
       attributes = attributes || {};
       attributes.preserveDrawingBuffer = true; // Kütüphane ne derse desin bunu ZORLA aktif et
     }
-    return originalGetContext.call(this, type, attributes, ...args);
+    return originalGetContext.call(this, type, attributes);
   };
 }
 // ---------------------------------------------------------------------
@@ -134,9 +134,8 @@ export default function AnnotatableFloorPlanViewer({ fileUrl, onSaveAnnotation }
 
         try {
           AcApDocManager.createInstance({ 
-            container: containerRef.current!,
-            preserveDrawingBuffer: true
-          });
+            container: containerRef.current!
+          } as any);
           docInstance = AcApDocManager.instance;
           viewerInstanceRef.current = docInstance;
         } catch (e) {

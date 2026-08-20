@@ -24,18 +24,18 @@ export async function GET(request: NextRequest) {
     const attendanceRecords = await prisma.attendanceRecord.findMany({
       where: {
         projectId,
-        checkInTime: {
+        checkIn: {
           gte: startDate,
           lte: endDate
         }
       },
       select: {
-        personnelId: true
+        personelId: true
       }
     })
 
     // Count unique personnel
-    const uniqueWorkers = new Set(attendanceRecords.map(r => r.personnelId))
+    const uniqueWorkers = new Set(attendanceRecords.map(r => r.personelId))
     const count = uniqueWorkers.size
 
     return NextResponse.json({ count })

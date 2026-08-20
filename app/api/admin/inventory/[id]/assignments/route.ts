@@ -110,7 +110,7 @@ export async function PATCH(
       include: {
         inventory: true,
         personel: true
-      }
+      } as any
     })
 
     if (!assignment) {
@@ -134,8 +134,8 @@ export async function PATCH(
       assignment.inventoryId,
       "UNASSIGNED",
       assignment.quantity,
-      `${assignment.personel?.name || ""} personelinden ${assignment.quantity} ${assignment.inventory.unit} iade alındı`,
-      assignment.personelId,
+      `${(assignment.personel as any)?.name || ""} personelinden ${assignment.quantity} ${(assignment.inventory as any).unit} iade alındı`,
+      assignment.personelId || undefined,
       validRecordedBy
     )
 

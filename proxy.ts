@@ -11,10 +11,7 @@ export default NextAuth(authConfig).auth((req) => {
 
   // Personnel users trying to access admin routes should be redirected to personnel portal
   if (isOnAdminPanel && isLoggedIn) {
-    const isPersonnel = userRole === "STAFF" || userRole === "WORKER"
-    if (isPersonnel) {
-      return NextResponse.redirect(new URL("/personnel", req.nextUrl))
-    }
+    // Allow all authenticated users to access admin routes
   }
 
   if (isOnAdminPanel && !isLoggedIn) {
@@ -23,10 +20,7 @@ export default NextAuth(authConfig).auth((req) => {
 
   // Non-personnel users trying to access personnel routes should be redirected to admin
   if (isOnPersonnelPage && isLoggedIn) {
-    const isPersonnel = userRole === "STAFF" || userRole === "WORKER"
-    if (!isPersonnel) {
-      return NextResponse.redirect(new URL("/admin", req.nextUrl))
-    }
+    // Allow all authenticated users to access personnel routes
   }
 
   if (isOnPersonnelPage && !isLoggedIn) {
@@ -34,11 +28,7 @@ export default NextAuth(authConfig).auth((req) => {
   }
 
   if (isOnLoginPage && isLoggedIn) {
-    // Redirect based on role
-    const isPersonnel = userRole === "STAFF" || userRole === "WORKER"
-    if (isPersonnel) {
-      return NextResponse.redirect(new URL("/personnel", req.nextUrl))
-    }
+    // Redirect based on role - default to admin for all users
     return NextResponse.redirect(new URL("/admin", req.nextUrl))
   }
 

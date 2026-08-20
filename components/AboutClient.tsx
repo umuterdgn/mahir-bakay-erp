@@ -138,7 +138,7 @@ export default function AboutClient({ title, content }: AboutClientProps) {
                     borderRadius: "8px",
                   }}
                   itemStyle={{ color: "#e2e8f0" }}
-                  formatter={(value: number) => [`${value} Proje`, "Proje Sayısı"]}
+                  formatter={(value: any) => [`${value} Proje`, "Proje Sayısı"]}
                 />
                 <Area
                   type="monotone"

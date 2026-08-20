@@ -5,7 +5,7 @@ const prisma = new PrismaClient()
 
 export async function GET() {
   try {
-    const reports = await prisma.nonConformanceReport.findMany({
+    const reports = await (prisma as any).nonConformanceReport.findMany({
       orderBy: {
         createdAt: 'desc'
       }
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { location, issueType, description, photoUrl, subcontractor, dueDate, notes } = body
 
-    const report = await prisma.nonConformanceReport.create({
+    const report = await (prisma as any).nonConformanceReport.create({
       data: {
         location,
         issueType,
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
         subcontractor,
         dueDate: dueDate ? new Date(dueDate) : null,
         notes,
-        status: "Açık"
+        status: "Açık" as any
       }
     })
 

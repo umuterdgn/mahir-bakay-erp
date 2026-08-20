@@ -14,12 +14,12 @@ export async function POST(request: Request) {
     }
 
     // Create İSG report in database
-    const isgReport = await prisma.iSGReport.create({
+    const isgReport = await prisma.isgReport.create({
       data: {
         imageUrl,
         description,
         personelId,
-        status: "AÇIK",
+        status: "ACIL",
         createdAt: new Date()
       }
     })
@@ -43,7 +43,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const personelId = searchParams.get("personelId")
 
-    const reports = await prisma.iSGReport.findMany({
+    const reports = await prisma.isgReport.findMany({
       where: personelId ? { personelId } : {},
       orderBy: { createdAt: 'desc' },
       take: 20

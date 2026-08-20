@@ -6,7 +6,7 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const projectId = searchParams.get("projectId");
     
-    const payments = await prisma.progressPayments.findMany({
+    const payments = await prisma.progressPayment.findMany({
       where: projectId ? { projectId } : undefined,
       include: {
         project: true
@@ -30,7 +30,7 @@ export async function POST(req: Request) {
     
     const totalAmount = quantity * unitPrice;
 
-    const payment = await prisma.progressPayments.create({
+    const payment = await prisma.progressPayment.create({
       data: { 
         projectId, 
         subcontractor, 

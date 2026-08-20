@@ -23,7 +23,7 @@ export async function GET(request: Request) {
         conversationId,
         OR: [
           { userId: session.user.id },
-          { workerId: session.user.id }
+          { personelId: session.user.id }
         ]
       }
     })
@@ -42,11 +42,10 @@ export async function GET(request: Request) {
             email: true
           }
         },
-        workerSender: {
+        personelSender: {
           select: {
             id: true,
-            firstName: true,
-            lastName: true,
+            name: true,
             username: true
           }
         }
@@ -69,7 +68,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const { body: messageBody, conversationId, senderId, workerSenderId } = body
+    const { body: messageBody, conversationId, senderId, personelSenderId } = body
 
     if (!messageBody || !conversationId) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
@@ -86,7 +85,7 @@ export async function POST(request: Request) {
         conversationId,
         OR: [
           { userId: session.user.id },
-          { workerId: session.user.id }
+          { personelId: session.user.id }
         ]
       }
     })
@@ -103,8 +102,8 @@ export async function POST(request: Request) {
 
     if (senderId) {
       messageData.senderId = senderId
-    } else if (workerSenderId) {
-      messageData.workerSenderId = workerSenderId
+    } else if (personelSenderId) {
+      messageData.personelSenderId = personelSenderId
     } else {
       messageData.senderId = session.user.id
     }
@@ -119,11 +118,10 @@ export async function POST(request: Request) {
             email: true
           }
         },
-        workerSender: {
+        personelSender: {
           select: {
             id: true,
-            firstName: true,
-            lastName: true,
+            name: true,
             username: true
           }
         }

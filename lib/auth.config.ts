@@ -28,7 +28,7 @@ export const authConfig: NextAuthConfig = {
     async session({ session, token }) {
       if (token) {
         session.user.id = token.sub!
-        session.user.role = token.role as string
+        session.user.role = token.role as any
         session.user.permissions = token.permissions as any[]
       }
       return session

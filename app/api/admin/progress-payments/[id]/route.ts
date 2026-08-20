@@ -17,7 +17,7 @@ export async function PATCH(
       );
     }
 
-    const payment = await prisma.progressPayments.update({
+    const payment = await prisma.progressPayment.update({
       where: { id: resolvedParams.id },
       data: { status },
       include: {
@@ -27,7 +27,7 @@ export async function PATCH(
 
     // Eğer onaylandıysa otomatik olarak finans kaydı oluştur
     if (status === "ONAYLANDI") {
-      await prisma.transactions.create({
+      await prisma.transaction.create({
         data: {
           type: "GIDER",
           amount: payment.totalAmount,
@@ -56,7 +56,7 @@ export async function DELETE(
   try {
     const resolvedParams = await params;
     
-    await prisma.progressPayments.delete({
+    await prisma.progressPayment.delete({
       where: { id: resolvedParams.id }
     });
 

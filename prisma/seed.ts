@@ -22,17 +22,7 @@ async function main() {
       password: hashedPassword,
       name: "Admin User",
       role: "ADMIN",
-      permissions: {
-        create: [
-          { page: "dashboard", canRead: true, canWrite: true, canDelete: true },
-          { page: "cms", canRead: true, canWrite: true, canDelete: true },
-          { page: "archive", canRead: true, canWrite: true, canDelete: true },
-          { page: "finance", canRead: true, canWrite: true, canDelete: true },
-          { page: "stock", canRead: true, canWrite: true, canDelete: true },
-          { page: "staff", canRead: true, canWrite: true, canDelete: true },
-          { page: "users", canRead: true, canWrite: true, canDelete: true }
-        ]
-      }
+      permissions: ["dashboard", "cms", "archive", "finance", "stock", "staff", "users"]
     }
   })
 

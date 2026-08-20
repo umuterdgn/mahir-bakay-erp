@@ -38,9 +38,9 @@ export default function DashboardCharts() {
 
   // Format site distribution for pie chart
   const siteData = dashboardData?.siteDistribution
-    ? Object.entries(dashboardData.siteDistribution).map(([name, value]: [string, number]) => ({
+    ? Object.entries(dashboardData.siteDistribution).map(([name, value]: [string, any]) => ({
         name,
-        value
+        value: Number(value)
       }))
     : []
 

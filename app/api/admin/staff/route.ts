@@ -62,8 +62,13 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { name, age, birthDate, department, currentSite } = body
 
+    // Generate personnel number
+    const personnelCount = await prisma.personel.count()
+    const personnelNo = `P${String(personnelCount + 1).padStart(3, '0')}`
+
     const newStaff = await prisma.personel.create({
       data: {
+        personnelNo,
         name,
         age,
         birthDate: new Date(birthDate),
@@ -73,9 +78,9 @@ export async function POST(request: Request) {
       },
       include: {
         siteHistory: true,
-        payments: true,
+        personelPayments: true,
         insurance: true
-      }
+      } as any
     })
 
     return NextResponse.json(newStaff)

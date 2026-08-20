@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { stockId, type, quantity, note } = body
 
-    const transaction = await prisma.stockTransaction.create({
+    const transaction = await (prisma as any).stockTransaction.create({
       data: {
         stockId,
         type,
