@@ -370,7 +370,7 @@ function ServiceForm({ service, onSave, onCancel }: any) {
     try {
       const uploadPromises = Array.from(files).slice(0, 5).map(file => uploadFile(file))
       const urls = await Promise.all(uploadPromises)
-      setFormData(prev => ({
+      setFormData((prev: any) => ({
         ...prev,
         images: [...prev.images, ...urls].slice(0, 5)
       }))
@@ -386,7 +386,7 @@ function ServiceForm({ service, onSave, onCancel }: any) {
 
     try {
       const url = await uploadFile(file)
-      setFormData(prev => ({ ...prev, threeDModelUrl: url }))
+      setFormData((prev: any) => ({ ...prev, threeDModelUrl: url }))
     } catch (error: any) {
       console.error("🚨 DETAYLI 3D MODEL YÜKLEME HATASI:", error)
       toast.error(error.message || '3D model yüklenirken hata oluştu')
@@ -433,12 +433,12 @@ function ServiceForm({ service, onSave, onCancel }: any) {
           />
           {formData.images.length > 0 && (
             <div className="mt-2 space-y-1">
-              {formData.images.map((url, idx) => (
+              {formData.images.map((url: any, idx: any) => (
                 <div key={idx} className="flex items-center gap-2 text-sm text-slate-400">
                   <span className="truncate">{url}</span>
                   <button
                     type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, images: prev.images.filter((_, i) => i !== idx) }))}
+                    onClick={() => setFormData((prev: any) => ({ ...prev, images: prev.images.filter((_: any, i: any) => i !== idx) }))}
                     className="text-red-400 hover:text-red-300"
                   >
                     ×
@@ -462,7 +462,7 @@ function ServiceForm({ service, onSave, onCancel }: any) {
               {formData.threeDModelUrl}
               <button
                 type="button"
-                onClick={() => setFormData(prev => ({ ...prev, threeDModelUrl: "" }))}
+                onClick={() => setFormData((prev: any) => ({ ...prev, threeDModelUrl: "" }))}
                 className="ml-2 text-red-400 hover:text-red-300"
               >
                 ×
@@ -703,7 +703,7 @@ function ProjectForm({ project, onSave, onCancel }: any) {
     try {
       const uploadPromises = Array.from(files).slice(0, 5).map(file => uploadFile(file))
       const urls = await Promise.all(uploadPromises)
-      setFormData(prev => ({
+      setFormData((prev: any) => ({
         ...prev,
         images: [...prev.images, ...urls].slice(0, 5)
       }))
@@ -719,7 +719,7 @@ function ProjectForm({ project, onSave, onCancel }: any) {
 
     try {
       const url = await uploadFile(file)
-      setFormData(prev => ({ ...prev, threeDModelUrl: url }))
+      setFormData((prev: any) => ({ ...prev, threeDModelUrl: url }))
     } catch (error: any) {
       console.error("🚨 DETAYLI 3D MODEL YÜKLEME HATASI:", error)
       toast.error(error.message || '3D model yüklenirken hata oluştu')
@@ -766,12 +766,12 @@ function ProjectForm({ project, onSave, onCancel }: any) {
           />
           {formData.images.length > 0 && (
             <div className="mt-2 space-y-1">
-              {formData.images.map((url, idx) => (
+              {formData.images.map((url: any, idx: any) => (
                 <div key={idx} className="flex items-center gap-2 text-sm text-slate-400">
                   <span className="truncate">{url}</span>
                   <button
                     type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, images: prev.images.filter((_, i) => i !== idx) }))}
+                    onClick={() => setFormData((prev: any) => ({ ...prev, images: prev.images.filter((_: any, i: any) => i !== idx) }))}
                     className="text-red-400 hover:text-red-300"
                   >
                     ×
@@ -795,7 +795,7 @@ function ProjectForm({ project, onSave, onCancel }: any) {
               {formData.threeDModelUrl}
               <button
                 type="button"
-                onClick={() => setFormData(prev => ({ ...prev, threeDModelUrl: "" }))}
+                onClick={() => setFormData((prev: any) => ({ ...prev, threeDModelUrl: "" }))}
                 className="ml-2 text-red-400 hover:text-red-300"
               >
                 ×
