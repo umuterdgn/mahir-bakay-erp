@@ -60,17 +60,32 @@ export default function OfflineSyncManager() {
           const dxfUrl = report.dxfBase64 ? uploadResults[resultIndex++]?.url : null;
 
           // Asıl veritabanına (Prisma) kaydet
-          const res = await fetch("/api/admin/inspection-reports", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              projectId: report.projectId,
-              description: report.description,
-              markedBlueprintUrl,
-              markedPhotoUrl,
-              dxfUrl
-            })
-          });
+          const payload = {
+            projectId: report.projectId,
+            title: report.title,
+            description: report.description,
+            findings: report.findings,
+            markedBlueprintUrl,
+            markedPhotoUrl,
+            dxfUrl
+          };
+
+          let res;
+          if (report.operation === 'update' && report.reportId) {
+            // Güncelleme işlemi
+            res = await fetch(`/api/admin/inspection-reports/${report.reportId}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload)
+            });
+          } else {
+            // Yeni oluşturma işlemi
+            res = await fetch("/api/admin/inspection-reports", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload)
+            });
+          }
 
           if (res.ok) {
             // Başarıyla buluta gittiyse, yerel hafızadan sil!

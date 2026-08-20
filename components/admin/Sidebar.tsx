@@ -30,7 +30,13 @@ import {
   Hammer,
   FileCheck,
   Pen,
-  FileSearch
+  FileSearch,
+  MapPin,
+  Map,
+  AlertTriangle,
+  CheckCircle,
+  AlertOctagon,
+  Truck
 } from "lucide-react"
 
 export default function AdminSidebar() {
@@ -60,10 +66,17 @@ export default function AdminSidebar() {
     { href: "/admin/inspection/documents", label: "Ruhsat & Evrak Arşivi", requiredPermission: null, icon: Archive, category: "YAPI DENETİM & KONTROL" },
     { href: "/admin/blueprints", label: "Dijital Projeler / Çizimler", requiredPermission: null, icon: FileText, category: "YAPI DENETİM & KONTROL" },
     { href: "/admin/blueprints/draw", label: "Serbest Çizim / Plan", requiredPermission: null, icon: Pen, category: "YAPI DENETİM & KONTROL" },
-    { href: "/admin/isg", label: "İSG Bildirimleri", requiredPermission: null, icon: Shield, category: "YAPI DENETİM & KONTROL" },
+    { href: "/admin/qa-qc/materials", label: "Malzeme Onayları", requiredPermission: null, icon: CheckCircle, category: "YAPI DENETİM & KALİTE" },
+    { href: "/admin/qa-qc/ncr", label: "Uygunsuzluk & DÖF", requiredPermission: null, icon: AlertOctagon, category: "YAPI DENETİM & KALİTE" },
+    { href: "/admin/isg", label: "İSG Dashboard & Analiz", requiredPermission: null, icon: MapPin, category: "İSG & Risk Yönetimi" },
+    { href: "/admin/isg/master-plan", label: "Vaziyet ve Risk Planı", requiredPermission: null, icon: Map, category: "İSG & Risk Yönetimi" },
+    { href: "/admin/isg/certificates", label: "Evrak & Sertifikalar", requiredPermission: null, icon: FileText, category: "İSG & Risk Yönetimi" },
+    { href: "/admin/isg/near-miss", label: "Ramak Kala Bildirimi", requiredPermission: null, icon: AlertTriangle, category: "İSG & Risk Yönetimi" },
+    { href: "/admin/isg/ppe-forms", label: "KKD Zimmet Formları", requiredPermission: null, icon: Shield, category: "İSG & Risk Yönetimi" },
     { href: "/admin/crm", label: "CRM / Firmalar", requiredPermission: null, icon: Building2, category: "PROJE & CRM" },
     { href: "/admin/cms", label: "İçerik Yönetimi", requiredPermission: null, icon: FileText, category: "PROJE & CRM" },
-    { href: "/admin/chat", label: "Sohbet", requiredPermission: null, icon: MessageSquare, category: "İLETİŞİM & SİSTEM" },
+    { href: "/admin/communication/chat", label: "İç Haberleşme", requiredPermission: null, icon: MessageSquare, category: "İLETİŞİM & OPERASYON" },
+    { href: "/admin/communication/logistics", label: "Lojistik & Randevu Ağı", requiredPermission: null, icon: Truck, category: "İLETİŞİM & OPERASYON" },
     { href: "/admin/users", label: "Kullanıcılar", requiredPermission: null, icon: Users, category: "İLETİŞİM & SİSTEM" },
     { href: "/admin/logs", label: "Sistem Logları", requiredPermission: null, icon: FileLog, category: "İLETİŞİM & SİSTEM" },
     { href: "/admin/ayarlar", label: "Ayarlar", requiredPermission: null, icon: Settings, category: "İLETİŞİM & SİSTEM" },

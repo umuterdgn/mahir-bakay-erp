@@ -16,7 +16,8 @@ export default async function ProjectDetailPage({
     include: {
       company: true,
       archives: true,
-      transactions: true
+      transactions: true,
+      siteZones: true
     }
   }) as any
 
@@ -26,12 +27,12 @@ export default async function ProjectDetailPage({
 
   // Calculate project financial stats
   const totalIncome = project.transactions
-    .filter(t => t.type === "GELIR")
-    .reduce((sum, t) => sum + t.amount, 0)
+    .filter((t: any) => t.type === "GELIR")
+    .reduce((sum: number, t: any) => sum + t.amount, 0)
   
   const totalExpense = project.transactions
-    .filter(t => t.type === "GIDER")
-    .reduce((sum, t) => sum + t.amount, 0)
+    .filter((t: any) => t.type === "GIDER")
+    .reduce((sum: number, t: any) => sum + t.amount, 0)
   
   const netBalance = totalIncome - totalExpense
 

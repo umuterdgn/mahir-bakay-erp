@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import dynamic from 'next/dynamic'
 import ProjectFiles from "@/components/ProjectFiles"
 import ProjectReminders from "@/components/ProjectReminders"
 import ProjectDailyLogs from "@/components/ProjectDailyLogs"
@@ -9,6 +10,10 @@ import GeofencedCheckIn from "@/components/GeofencedCheckIn"
 import { toast } from "react-hot-toast"
 import { jsPDF } from "jspdf"
 import * as htmlToImage from 'html-to-image'
+
+// Leaflet SSR'da hata verdiği için dynamic import kullanıyoruz
+const MapLocationPicker = dynamic(() => import('@/components/MapLocationPicker'), { ssr: false })
+const SiteMasterPlan = dynamic(() => import('@/components/SiteMasterPlan'), { ssr: false })
 
 interface Project {
   id: string
@@ -48,6 +53,8 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false)
   const [inspectionReports, setInspectionReports] = useState<any[]>([])
   const [loadingReports, setLoadingReports] = useState(false)
+  const [deleteReportId, setDeleteReportId] = useState<string | null>(null)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [editForm, setEditForm] = useState({
     city: project.city || "",
     district: project.district || "",
@@ -70,6 +77,7 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
     { id: "kunya", label: "Proje Künyesi" },
     { id: "arsiv", label: "Arşiv ve Evraklar" },
     { id: "gunluk", label: "Şantiye Günlüğü" },
+    { id: "vaziyet", label: "🗺️ Vaziyet Planı" },
     { id: "denetim", label: "Yapı Denetim Arşivi" },
     { id: "hatirlatici", label: "Hatırlatıcılar" }
   ]
@@ -117,47 +125,26 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
   }
 
   const handleDeleteReport = async (reportId: string) => {
-    if (!window.confirm("Bu raporu silmek istediğinize emin misiniz?")) return;
+    setDeleteReportId(reportId);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDeleteReport = async () => {
+    if (!deleteReportId) return;
     
     try {
-      const res = await fetch(`/api/inspection/reports/${reportId}`, { method: 'DELETE' });
+      const res = await fetch(`/api/inspection/reports/${deleteReportId}`, { method: 'DELETE' });
       if (res.ok) {
         toast.success("Rapor silindi.");
-        setInspectionReports(prev => prev.filter(r => r.id !== reportId));
+        setInspectionReports(prev => prev.filter(r => r.id !== deleteReportId));
+        setIsDeleteModalOpen(false);
+        setDeleteReportId(null);
       } else {
         toast.error("Rapor silinemedi.");
       }
     } catch (error) {
       console.error(error);
       toast.error("Rapor silinirken hata oluştu.");
-    }
-  };
-
-  const handleEditReport = async (reportId: string, currentTitle: string, currentDescription: string) => {
-    const newTitle = window.prompt("Yeni Başlık:", currentTitle);
-    if (newTitle === null) return; // User cancelled
-    
-    const newDescription = window.prompt("Yeni Açıklama:", currentDescription || "");
-    if (newDescription === null) return; // User cancelled
-    
-    try {
-      const res = await fetch(`/api/inspection/reports/${reportId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: newTitle, description: newDescription })
-      });
-      
-      if (res.ok) {
-        toast.success("Rapor güncellendi.");
-        setInspectionReports(prev => prev.map(r => 
-          r.id === reportId ? { ...r, title: newTitle, description: newDescription } : r
-        ));
-      } else {
-        toast.error("Rapor güncellenemedi.");
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error("Rapor güncellenirken hata oluştu.");
     }
   };
 
@@ -374,6 +361,18 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
                     <p className="text-xs text-slate-500 mt-1">Personelin bu mesafe içinde olmalıdır (örn: 100 metre)</p>
                   </div>
                 </div>
+                
+                {/* Geofence (Sanal Çit) Harita Seçici */}
+                <div className="col-span-1 md:col-span-2 mt-4">
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Şantiye Konumu ve Sanal Çit (Geofence)</label>
+                  <MapLocationPicker 
+                    latitude={editForm.latitude} 
+                    longitude={editForm.longitude} 
+                    radius={editForm.geofenceRadius || 100} 
+                    onChange={(lat, lng, rad) => setEditForm({ ...editForm, latitude: lat, longitude: lng, geofenceRadius: rad })}
+                  />
+                </div>
+                
                 <div className="flex gap-2 pt-4">
                   <button
                     onClick={() => setIsEditing(false)}
@@ -546,6 +545,14 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
           </div>
         )}
 
+        {activeTab === "vaziyet" && (
+          <SiteMasterPlan
+            projectLat={project.latitude || 36.1735}
+            projectLng={project.longitude || 36.5871}
+            projectId={project.id}
+          />
+        )}
+
         {activeTab === "denetim" && (
           <div className="space-y-4">
             <div className="flex justify-between items-center">
@@ -583,7 +590,7 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleEditReport(report.id, report.title || "", report.description || "");
+                          router.push(`/admin/projects/${project.id}/markup/${report.id}`);
                         }}
                         className="p-2 bg-blue-600/80 hover:bg-blue-500 rounded text-white backdrop-blur"
                         title="Düzenle"
@@ -714,9 +721,36 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
                   </div>
                 )}
               </div>
-              <div className="bg-slate-800 rounded-lg p-4">
-                <h4 className="text-sm font-medium text-slate-300 mb-2">Açıklama</h4>
-                <p className="text-white">{selectedReport.description}</p>
+              
+              {/* Rapor Metin Detayları - YENİ DÜZEN */}
+              <div className="flex flex-col gap-4 mt-6">
+                
+                {/* Başlık Kutusu */}
+                <div className="bg-slate-800/80 p-4 rounded-xl border border-slate-700/50">
+                  <h4 className="text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Rapor Başlığı</h4>
+                  <p className="text-white font-medium text-base">
+                    {selectedReport.title || "Belirtilmedi"}
+                  </p>
+                </div>
+
+                {/* Bulgular Kutusu (Eğer varsa göster) */}
+                {selectedReport.findings && (
+                  <div className="bg-slate-800/80 p-4 rounded-xl border border-slate-700/50">
+                    <h4 className="text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Bulgular</h4>
+                    <p className="text-white text-sm whitespace-pre-wrap">
+                      {selectedReport.findings}
+                    </p>
+                  </div>
+                )}
+
+                {/* Açıklama Kutusu */}
+                <div className="bg-slate-800/80 p-4 rounded-xl border border-slate-700/50">
+                  <h4 className="text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Detaylı Açıklama</h4>
+                  <p className="text-white text-sm whitespace-pre-wrap">
+                    {selectedReport.description || "Belirtilmedi"}
+                  </p>
+                </div>
+
               </div>
             </div>
             <div className="p-4 border-t border-slate-800 flex justify-end gap-3">
@@ -728,6 +762,15 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 PDF Olarak İndir
+              </button>
+              <button
+                onClick={() => router.push(`/admin/projects/${project.id}/markup/${selectedReport.id}`)}
+                className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-400 transition-colors flex items-center gap-2 font-medium"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                </svg>
+                Düzenle
               </button>
               {selectedReport.dxfUrl && (
                 <a 
@@ -758,7 +801,7 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
               {/* Antet / Başlık */}
               <div className="border-b-4 border-slate-800 pb-6 mb-8 flex justify-between items-end">
                 <div>
-                  <h1 className="text-3xl font-black text-slate-900 uppercase mb-2">Yapı Denetim Raporu</h1>
+                  <h1 className="text-3xl font-black text-slate-900 uppercase mb-2">{selectedReport.title || "Yapı Denetim Raporu"}</h1>
                   <p className="text-slate-600 font-medium">Tarih: {new Date(selectedReport.createdAt || Date.now()).toLocaleDateString('tr-TR')}</p>
                 </div>
                 <div className="text-right">
@@ -776,9 +819,19 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
                 />
               </div>
 
+              {/* Bulgular */}
+              {selectedReport.findings && (
+                <div className="flex-1 mb-6">
+                  <h3 className="text-lg font-bold mb-3 border-b border-slate-300 pb-2 text-slate-800">Bulgular:</h3>
+                  <p className="text-slate-700 whitespace-pre-wrap text-base leading-relaxed">
+                    {selectedReport.findings}
+                  </p>
+                </div>
+              )}
+
               {/* Açıklama */}
               <div className="flex-1 mb-8">
-                <h3 className="text-lg font-bold mb-3 border-b border-slate-300 pb-2 text-slate-800">Hasar / İnceleme Detayları:</h3>
+                <h3 className="text-lg font-bold mb-3 border-b border-slate-300 pb-2 text-slate-800">Detaylı Açıklama:</h3>
                 <p className="text-slate-700 whitespace-pre-wrap text-base leading-relaxed">
                   {selectedReport.description}
                 </p>
@@ -835,6 +888,45 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
                 className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
               >
                 Kapat
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Delete Confirmation Modal */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-slate-900 rounded-xl border border-slate-700 p-6 max-w-md w-full mx-4 shadow-2xl">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white">Raporu Sil</h3>
+                <p className="text-slate-400 text-sm">Bu işlem geri alınamaz</p>
+              </div>
+            </div>
+            <p className="text-slate-300 mb-6">
+              Bu raporu silmek istediğinize emin misiniz? Bu işlem geri alınamaz.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setIsDeleteModalOpen(false);
+                  setDeleteReportId(null);
+                }}
+                className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
+              >
+                İptal
+              </button>
+              <button
+                onClick={confirmDeleteReport}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-500 transition-colors"
+              >
+                Evet, Sil
               </button>
             </div>
           </div>

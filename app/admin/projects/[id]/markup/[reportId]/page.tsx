@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, use } from "react"
+import { useState, use, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "react-hot-toast"
 import dynamic from "next/dynamic"
@@ -13,7 +13,7 @@ const AnnotatableFloorPlanViewer = dynamic(
   { ssr: false, loading: () => <div className="w-full h-[600px] bg-slate-900 animate-pulse rounded-xl flex items-center justify-center">CAD Yükleniyor...</div> }
 )
 
-export default function MarkupPage({ params }: { params: Promise<{ id: string }> }) {
+export default function EditMarkupPage({ params }: { params: Promise<{ id: string; reportId: string }> }) {
   const unwrappedParams = use(params)
   const router = useRouter()
   
@@ -22,6 +22,7 @@ export default function MarkupPage({ params }: { params: Promise<{ id: string }>
   const [reportDescription, setReportDescription] = useState("")
   const [reportFindings, setReportFindings] = useState("")
   const [isSaving, setIsSaving] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   
   // DWG file URL for CAD viewer
   const [dwgFileUrl, setDwgFileUrl] = useState<string | null>(null)
@@ -35,6 +36,44 @@ export default function MarkupPage({ params }: { params: Promise<{ id: string }>
 
   // Network state for offline support
   const { online } = useNetworkState();
+
+  // Fetch existing report data
+  useEffect(() => {
+    const fetchReport = async () => {
+      try {
+        const response = await fetch(`/api/admin/inspection-reports/${unwrappedParams.reportId}`)
+        if (response.ok) {
+          const report = await response.json()
+          setReportTitle(report.title || "")
+          setReportDescription(report.description || "")
+          setReportFindings(report.findings || "")
+          
+          // Set existing image URLs if available
+          if (report.markedBlueprintUrl) {
+            setMarkedBlueprintBase64(report.markedBlueprintUrl)
+          }
+          if (report.markedPhotoUrl) {
+            setUploadedPhoto(report.markedPhotoUrl)
+            setMarkedPhotoBase64(report.markedPhotoUrl)
+          }
+          if (report.dxfUrl) {
+            setDxfBase64(report.dxfUrl)
+          }
+        } else {
+          toast.error("Rapor yüklenirken hata oluştu")
+          router.push(`/admin/projects/${unwrappedParams.id}`)
+        }
+      } catch (error) {
+        console.error("Error fetching report:", error)
+        toast.error("Rapor yüklenirken hata oluştu")
+        router.push(`/admin/projects/${unwrappedParams.id}`)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchReport()
+  }, [unwrappedParams.reportId, unwrappedParams.id, router])
 
   const handleDwgFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -62,7 +101,7 @@ export default function MarkupPage({ params }: { params: Promise<{ id: string }>
     reader.readAsDataURL(file)
   }
 
-  const handleSaveReport = async () => {
+  const handleUpdateReport = async () => {
     if (!reportTitle.trim()) {
       toast.error("Lütfen bir rapor başlığı girin")
       return
@@ -73,17 +112,13 @@ export default function MarkupPage({ params }: { params: Promise<{ id: string }>
       return
     }
 
-    if (!markedBlueprintBase64 && !markedPhotoBase64) {
-      toast.error("Lütfen en az bir işaretleme yapın")
-      return
-    }
-
     setIsSaving(true)
     try {
       // 🔴 --- OFFLINE (İNTERNETSİZ) DURUM ---
       if (!online) {
         await db.offlineReports.add({
           projectId: unwrappedParams.id,
+          reportId: unwrappedParams.reportId,
           title: reportTitle,
           description: reportDescription,
           findings: reportFindings,
@@ -91,19 +126,20 @@ export default function MarkupPage({ params }: { params: Promise<{ id: string }>
           markedPhotoBase64: markedPhotoBase64 || undefined,
           dxfBase64: dxfBase64 || undefined,
           createdAt: new Date().toISOString(),
-          syncStatus: 'pending'
+          syncStatus: 'pending',
+          operation: 'update'
         });
 
         toast.success("İnternet yok! 📴 Rapor cihazınıza kaydedildi, bağlantı geldiğinde buluta aktarılacak.");
         router.push(`/admin/projects/${unwrappedParams.id}`);
-        return; // İşlemi burada kes, buluta gitmeye çalışma!
+        return;
       }
 
       // 🟢 --- ONLINE (İNTERNET VAR) DURUM ---
       // Upload annotation images to Cloudinary
       const uploadPromises = []
       
-      if (markedBlueprintBase64) {
+      if (markedBlueprintBase64 && !markedBlueprintBase64.startsWith('http')) {
         const blueprintBlob = await (await fetch(markedBlueprintBase64)).blob()
         const blueprintFormData = new FormData()
         blueprintFormData.append("file", blueprintBlob, "blueprint-annotation.png")
@@ -116,7 +152,7 @@ export default function MarkupPage({ params }: { params: Promise<{ id: string }>
         )
       }
       
-      if (markedPhotoBase64) {
+      if (markedPhotoBase64 && !markedPhotoBase64.startsWith('http')) {
         const photoBlob = await (await fetch(markedPhotoBase64)).blob()
         const photoFormData = new FormData()
         photoFormData.append("file", photoBlob, "photo-annotation.png")
@@ -129,7 +165,7 @@ export default function MarkupPage({ params }: { params: Promise<{ id: string }>
         )
       }
 
-      if (dxfBase64) {
+      if (dxfBase64 && !dxfBase64.startsWith('http')) {
         const dxfBlob = new Blob([dxfBase64], { type: 'application/dxf' });
         const dxfFormData = new FormData();
         dxfFormData.append("file", dxfBlob, "rapor-cizimi.dxf");
@@ -140,16 +176,15 @@ export default function MarkupPage({ params }: { params: Promise<{ id: string }>
 
       const uploadResults = await Promise.all(uploadPromises)
       
-      const markedBlueprintUrl = uploadResults[0]?.url || null
-      const markedPhotoUrl = uploadResults[1]?.url || null
-      const dxfUrl = uploadResults[2]?.url || null
+      const markedBlueprintUrl = uploadResults[0]?.url || (markedBlueprintBase64?.startsWith('http') ? markedBlueprintBase64 : null)
+      const markedPhotoUrl = uploadResults[1]?.url || (markedPhotoBase64?.startsWith('http') ? markedPhotoBase64 : null)
+      const dxfUrl = uploadResults[2]?.url || (dxfBase64?.startsWith('http') ? dxfBase64 : null)
 
-      // Save inspection report
-      const reportResponse = await fetch("/api/admin/inspection-reports", {
-        method: "POST",
+      // Update inspection report
+      const reportResponse = await fetch(`/api/admin/inspection-reports/${unwrappedParams.reportId}`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          projectId: unwrappedParams.id,
           title: reportTitle,
           description: reportDescription,
           findings: reportFindings,
@@ -160,17 +195,25 @@ export default function MarkupPage({ params }: { params: Promise<{ id: string }>
       })
 
       if (reportResponse.ok) {
-        toast.success("Rapor başarıyla kaydedildi")
+        toast.success("Rapor başarıyla güncellendi")
         router.push(`/admin/projects/${unwrappedParams.id}`)
       } else {
-        throw new Error("Failed to save report")
+        throw new Error("Failed to update report")
       }
     } catch (error) {
-      console.error("Error saving report:", error)
-      toast.error("Rapor kaydedilirken hata oluştu")
+      console.error("Error updating report:", error)
+      toast.error("Rapor güncellenirken hata oluştu")
     } finally {
       setIsSaving(false)
     }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="text-white">Rapor yükleniyor...</div>
+      </div>
+    )
   }
 
   return (
@@ -186,7 +229,7 @@ export default function MarkupPage({ params }: { params: Promise<{ id: string }>
               >
                 ← Projeye Dön
               </button>
-              <h1 className="text-xl md:text-2xl font-bold text-white">İşaretleme ve Hasar Tespiti</h1>
+              <h1 className="text-xl md:text-2xl font-bold text-white">Rapor Düzenleme</h1>
             </div>
           </div>
         </div>
@@ -207,7 +250,7 @@ export default function MarkupPage({ params }: { params: Promise<{ id: string }>
                       onSaveAnnotation={(dataUrl, dxf) => {
                         setMarkedBlueprintBase64(dataUrl)
                         if(dxf) setDxfBase64(dxf)
-                        toast.success("Çizim hafızaya alındı, Raporu Kaydet'e basabilirsiniz.")
+                        toast.success("Çizim hafızaya alındı, Raporu Güncelle'ye basabilirsiniz.")
                       }}
                     />
                   ) : (
@@ -229,102 +272,102 @@ export default function MarkupPage({ params }: { params: Promise<{ id: string }>
           </div>
         </div>
 
-        {/* Toolbar */}
-        <div className="w-full md:w-80 bg-slate-900 border-l border-slate-800 p-4 md:p-6 flex flex-col gap-4">
-          {/* Tabs */}
-          <div className="flex gap-2">
-            <button
-              onClick={() => setActiveTab("blueprint")}
-              className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
-                activeTab === "blueprint"
-                  ? "bg-blue-600 text-white"
-                  : "bg-slate-800 text-slate-400 hover:bg-slate-700"
-              }`}
-            >
-              📋 Plan Üzerinde Çiz
-            </button>
-            <button
-              onClick={() => setActiveTab("photo")}
-              className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
-                activeTab === "photo"
-                  ? "bg-blue-600 text-white"
-                  : "bg-slate-800 text-slate-400 hover:bg-slate-700"
-              }`}
-            >
-              📸 Sahadan Fotoğraf
-            </button>
-          </div>
+        {/* Sidebar Controls */}
+        <div className="w-full md:w-96 bg-slate-900 border-l border-slate-800 p-4 md:p-6 overflow-y-auto">
+          <div className="space-y-6">
+            {/* Rapor Başlığı */}
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">Rapor Başlığı *</label>
+              <input
+                type="text"
+                value={reportTitle}
+                onChange={(e) => setReportTitle(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Örn: 3. Kat Kolon Donatı Kontrolü"
+              />
+            </div>
 
-          {/* Tab-specific content */}
-          {activeTab === "blueprint" && (
-            <div className="space-y-4">
+            {/* Bulgular */}
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">Bulgular</label>
+              <textarea
+                value={reportFindings}
+                onChange={(e) => setReportFindings(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px]"
+                placeholder="Örn: Paspayı yetersiz, korozyon başlangıcı var..."
+              />
+            </div>
+
+            {/* Detaylı Açıklama */}
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">Detaylı Açıklama</label>
+              <textarea
+                value={reportDescription}
+                onChange={(e) => setReportDescription(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px]"
+                placeholder="Hasar tespiti açıklamasını girin..."
+              />
+            </div>
+
+            {/* Tab Switcher */}
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">İşaretleme Türü</label>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setActiveTab("blueprint")}
+                  className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
+                    activeTab === "blueprint"
+                      ? "bg-blue-600 text-white"
+                      : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                  }`}
+                >
+                  Plan Çizimi
+                </button>
+                <button
+                  onClick={() => setActiveTab("photo")}
+                  className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
+                    activeTab === "photo"
+                      ? "bg-blue-600 text-white"
+                      : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                  }`}
+                >
+                  Fotoğraf
+                </button>
+              </div>
+            </div>
+
+            {/* File Uploads */}
+            {activeTab === "blueprint" && (
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">DWG/DXF Dosyası Yükle</label>
+                <label className="block text-sm font-medium text-slate-300 mb-2">DWG/DXF Dosyası</label>
                 <input
                   type="file"
                   accept=".dwg,.dxf"
                   onChange={handleDwgFileChange}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm"
+                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-            </div>
-          )}
+            )}
 
-          {activeTab === "photo" && (
-            <div className="space-y-4">
+            {activeTab === "photo" && (
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Fotoğraf Çek/Yükle</label>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Fotoğraf Yükle</label>
                 <input
                   type="file"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  capture="environment"
+                  accept="image/jpeg,image/jpg,image/png,application/pdf"
                   onChange={handlePhotoUpload}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm"
+                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Report Form */}
-          <div className="border-t border-slate-700 pt-4 flex-1">
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Rapor Başlığı *</label>
-                <input
-                  type="text"
-                  value={reportTitle}
-                  onChange={(e) => setReportTitle(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 text-white rounded-lg p-3"
-                  placeholder="Örn: 3. Kat Kolon Donatı Kontrolü"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Bulgular</label>
-                <textarea
-                  value={reportFindings}
-                  onChange={(e) => setReportFindings(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 text-white rounded-lg p-3 h-20"
-                  placeholder="Örn: Paspayı yetersiz, korozyon başlangıcı var..."
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">Detaylı Açıklama</label>
-                <textarea
-                  value={reportDescription}
-                  onChange={(e) => setReportDescription(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 text-white rounded-lg p-3 h-24"
-                  placeholder="Hasar tespiti açıklamasını girin..."
-                />
-              </div>
-            </div>
+            {/* Save Button */}
             <button
-              onClick={handleSaveReport}
+              onClick={handleUpdateReport}
               disabled={isSaving}
-              className="w-full mt-3 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors font-medium disabled:opacity-50"
+              className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSaving ? "Kaydediliyor..." : "💾 Raporu Kaydet"}
+              {isSaving ? "Güncelleniyor..." : "Raporu Güncelle"}
             </button>
           </div>
         </div>

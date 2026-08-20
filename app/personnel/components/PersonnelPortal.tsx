@@ -49,10 +49,18 @@ export function PersonnelPortal({ data }: PersonnelPortalProps) {
   const [showQRModal, setShowQRModal] = useState(false)
   const [showRequestModal, setShowRequestModal] = useState(false)
   const [showISGModal, setShowISGModal] = useState(false)
+  const [showNearMissModal, setShowNearMissModal] = useState(false)
   const [isgImage, setIsgImage] = useState<File | null>(null)
   const [isgDescription, setIsgDescription] = useState("")
   const [isgType, setIsgType] = useState("TEHLIKE")
   const [isSubmittingISG, setIsSubmittingISG] = useState(false)
+  const [nearMissFormData, setNearMissFormData] = useState({
+    location: "",
+    category: "",
+    severity: "low",
+    description: ""
+  })
+  const [submittingNearMiss, setSubmittingNearMiss] = useState(false)
   const [showSuccessToast, setShowSuccessToast] = useState(false)
   const [currentAnnouncement, setCurrentAnnouncement] = useState(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -99,6 +107,58 @@ export function PersonnelPortal({ data }: PersonnelPortalProps) {
       hour: '2-digit',
       minute: '2-digit'
     })
+  }
+
+  const handleNearMissSubmit = async () => {
+    if (!nearMissFormData.location.trim() || !nearMissFormData.category || !nearMissFormData.description.trim()) {
+      alert("Lütfen tüm alanları doldurun")
+      return
+    }
+
+    setSubmittingNearMiss(true)
+
+    try {
+      const categoryMap: Record<string, string> = {
+        'fall': 'Düşme Riski',
+        'electrical': 'Elektriksel Tehlike',
+        'machinery': 'Makine Arızası',
+        'chemical': 'Kimyasal Maruz Kalma',
+        'structural': 'Yapısal Sorun',
+        'other': 'Diğer'
+      }
+      
+      const severityMap: Record<string, string> = {
+        'low': 'Düşük',
+        'medium': 'Orta',
+        'high': 'Yüksek'
+      }
+
+      const response = await fetch('/api/admin/near-miss', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          isAnonymous: true,
+          location: nearMissFormData.location,
+          category: categoryMap[nearMissFormData.category] || nearMissFormData.category,
+          severity: severityMap[nearMissFormData.severity] || nearMissFormData.severity,
+          description: nearMissFormData.description
+        })
+      })
+
+      if (response.ok) {
+        setShowSuccessToast(true)
+        setTimeout(() => setShowSuccessToast(false), 3000)
+        setShowNearMissModal(false)
+        setNearMissFormData({ location: '', category: '', severity: 'low', description: '' })
+      } else {
+        throw new Error('Bildirim gönderilemedi')
+      }
+    } catch (error) {
+      console.error('Near-miss report error:', error)
+      alert('Bir hata oluştu, lütfen tekrar deneyin')
+    } finally {
+      setSubmittingNearMiss(false)
+    }
   }
 
   const handleISGReportSubmit = async () => {
@@ -194,7 +254,20 @@ export function PersonnelPortal({ data }: PersonnelPortalProps) {
       </div>
 
       {/* Hero Action Buttons */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <button
+          onClick={() => setShowNearMissModal(true)}
+          className="flex items-center gap-4 p-6 bg-gradient-to-r from-yellow-600 to-amber-600 rounded-2xl hover:from-yellow-500 hover:to-amber-500 transition-all shadow-lg shadow-yellow-500/30"
+        >
+          <div className="p-4 bg-white/20 rounded-xl">
+            <AlertTriangle className="w-8 h-8 text-white" />
+          </div>
+          <div className="text-left">
+            <h3 className="text-lg font-bold text-white">⚠️ Ramak Kala Bildir</h3>
+            <p className="text-yellow-100 text-sm">Anonim tehlike bildirimi</p>
+          </div>
+        </button>
+
         <button
           onClick={() => setShowISGModal(true)}
           className="flex items-center gap-4 p-6 bg-gradient-to-r from-red-600 to-orange-600 rounded-2xl hover:from-red-500 hover:to-orange-500 transition-all shadow-lg shadow-red-500/30"
@@ -539,6 +612,118 @@ export function PersonnelPortal({ data }: PersonnelPortalProps) {
               <p className="text-slate-400 mb-4">Kamerayı QR koda yönlendirin</p>
               <button className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors">
                 Kamerayı Aç
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Near-Miss Report Modal */}
+      {showNearMissModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 rounded-2xl p-6 max-w-md w-full border border-slate-800">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold text-white">⚠️ Ramak Kala Bildir</h3>
+              <button
+                onClick={() => setShowNearMissModal(false)}
+                className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-slate-400" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-yellow-500/10 border border-yellow-500/50 rounded-lg p-3 flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-yellow-100">
+                  Bu bildirim tamamen anonimdir. İsminiz asla paylaşılmaz.
+                </p>
+              </div>
+
+              {/* Location */}
+              <div>
+                <label className="block text-sm text-slate-400 mb-2">Konum *</label>
+                <input
+                  type="text"
+                  value={nearMissFormData.location}
+                  onChange={(e) => setNearMissFormData({...nearMissFormData, location: e.target.value})}
+                  placeholder="Örn: Bina A - 3. Kat"
+                  className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors"
+                />
+              </div>
+
+              {/* Category */}
+              <div>
+                <label className="block text-sm text-slate-400 mb-2">Kategori *</label>
+                <select
+                  value={nearMissFormData.category}
+                  onChange={(e) => setNearMissFormData({...nearMissFormData, category: e.target.value})}
+                  className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-yellow-500 transition-colors"
+                >
+                  <option value="">Seçiniz...</option>
+                  <option value="fall">Düşme Riski</option>
+                  <option value="electrical">Elektriksel Tehlike</option>
+                  <option value="machinery">Makine Arızası</option>
+                  <option value="chemical">Kimyasal Maruz Kalma</option>
+                  <option value="structural">Yapısal Sorun</option>
+                  <option value="other">Diğer</option>
+                </select>
+              </div>
+
+              {/* Severity */}
+              <div>
+                <label className="block text-sm text-slate-400 mb-2">Şiddet Seviyesi *</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { value: 'low', label: 'Düşük', color: 'bg-green-600' },
+                    { value: 'medium', label: 'Orta', color: 'bg-yellow-600' },
+                    { value: 'high', label: 'Yüksek', color: 'bg-red-600' }
+                  ].map((level) => (
+                    <button
+                      key={level.value}
+                      type="button"
+                      onClick={() => setNearMissFormData({...nearMissFormData, severity: level.value})}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                        nearMissFormData.severity === level.value
+                          ? `${level.color} text-white ring-2 ring-white`
+                          : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                      }`}
+                    >
+                      {level.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-sm text-slate-400 mb-2">Açıklama *</label>
+                <textarea
+                  value={nearMissFormData.description}
+                  onChange={(e) => setNearMissFormData({...nearMissFormData, description: e.target.value})}
+                  placeholder="Tehlikeyi detaylı açıklayın..."
+                  className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-colors resize-none"
+                  rows={3}
+                />
+              </div>
+
+              {/* Submit Button */}
+              <button
+                onClick={handleNearMissSubmit}
+                disabled={submittingNearMiss}
+                className="w-full py-3 bg-gradient-to-r from-yellow-600 to-amber-600 text-white rounded-xl hover:from-yellow-500 hover:to-amber-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {submittingNearMiss ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Gönderiliyor...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-5 h-5" />
+                    <span>Anonim Bildir</span>
+                  </>
+                )}
               </button>
             </div>
           </div>

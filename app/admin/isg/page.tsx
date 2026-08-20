@@ -40,9 +40,19 @@ export default function ISGPage() {
     try {
       const response = await fetch('/api/isg')
       const data = await response.json()
-      setIsgReports(data)
+      
+      // API'den gelen veriyi kontrol et
+      if (Array.isArray(data)) {
+        setIsgReports(data)
+      } else if (data && Array.isArray(data.reports)) {
+        setIsgReports(data.reports)
+      } else {
+        setIsgReports([]) // Hata olursa veya boşsa kesinlikle boş dizi yap
+        console.error("Beklenmeyen veri formatı:", data)
+      }
     } catch (error) {
       console.error('Failed to fetch ISG reports:', error)
+      setIsgReports([]) // Hata durumunda boş dizi yap
     } finally {
       setLoading(false)
     }
@@ -179,7 +189,7 @@ export default function ISGPage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-white">
-                {isgReports.filter(r => r.status === 'ACIL').length}
+                {(isgReports || []).filter(r => r.status === 'ACIL').length}
               </p>
               <p className="text-slate-400 text-sm">Acil</p>
             </div>
@@ -192,7 +202,7 @@ export default function ISGPage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-white">
-                {isgReports.filter(r => r.status === 'INCELEMEDE').length}
+                {(isgReports || []).filter(r => r.status === 'INCELEMEDE').length}
               </p>
               <p className="text-slate-400 text-sm">İncelemede</p>
             </div>
@@ -205,7 +215,7 @@ export default function ISGPage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-white">
-                {isgReports.filter(r => r.status === 'COZULDU').length}
+                {(isgReports || []).filter(r => r.status === 'COZULDU').length}
               </p>
               <p className="text-slate-400 text-sm">Çözüldü</p>
             </div>
@@ -217,7 +227,7 @@ export default function ISGPage() {
               <FileText className="w-5 h-5 text-blue-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-white">{isgReports.length}</p>
+              <p className="text-2xl font-bold text-white">{(isgReports || []).length}</p>
               <p className="text-slate-400 text-sm">Toplam</p>
             </div>
           </div>
@@ -226,8 +236,8 @@ export default function ISGPage() {
 
       {/* Hazard Report Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {isgReports.length > 0 ? (
-          isgReports.map((report) => (
+        {(isgReports || []).length > 0 ? (
+          (isgReports || []).map((report) => (
             <div 
               key={report.id} 
               className="bg-slate-900/50 backdrop-blur-lg rounded-2xl border border-slate-800 overflow-hidden hover:border-slate-700 transition-all cursor-pointer"

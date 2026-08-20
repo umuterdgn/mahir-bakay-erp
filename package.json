@@ -10,7 +10,8 @@
     "lint": "eslint",
     "seed": "tsx prisma/seed.ts",
     "seed:contracts": "tsx prisma/seed-contracts.ts",
-    "fix:admin": "tsx scripts/fix-admin-role.ts"
+    "fix:admin": "tsx scripts/fix-admin-role.ts",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",
@@ -22,6 +23,7 @@
     "@react-three/drei": "^10.7.8",
     "@react-three/fiber": "^9.7.0",
     "@types/bcryptjs": "^2.4.6",
+    "@types/leaflet": "^1.9.22",
     "@types/nodemailer": "^8.0.1",
     "@types/pg": "^8.20.3",
     "@velipso/polybool": "^2.0.11",
@@ -41,6 +43,7 @@
     "html5-qrcode": "^2.3.8",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
+    "leaflet": "^1.9.4",
     "lodash-es": "^4.18.1",
     "lucide-react": "^1.31.0",
     "next": "16.2.12",
@@ -55,6 +58,7 @@
     "react-canvas-draw": "^1.2.1",
     "react-dom": "19.2.4",
     "react-hot-toast": "^2.6.0",
+    "react-leaflet": "^5.0.0",
     "react-quill": "^2.0.0",
     "react-use": "^17.6.1",
     "recharts": "^3.10.1",

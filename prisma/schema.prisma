@@ -133,6 +133,7 @@ model Project {
   attachmentEvidences AttachmentEvidence[]
   progressPayments ProgressPayment[]
   inventoryItems InventoryItem[]
+  siteZones SiteZone[]
 
   @@index([isActive, displayOrder])
   @@index([status])
@@ -141,6 +142,26 @@ model Project {
   @@index([category])
   @@index([city])
   @@index([district])
+}
+
+// ============================================================================
+// SITE ZONES (Vaziyet Planı)
+// ============================================================================
+
+model SiteZone {
+  id          String   @id @default(cuid())
+  projectId   String
+  title       String   // Örn: "A Blok Oturumu", "Demir Büküm Alanı"
+  category    String   // RISK, BUILDING, REST_AREA, STORAGE
+  latitude    Float
+  longitude   Float
+  radius      Float    @default(20) // Alanın büyüklüğü
+  createdAt   DateTime @default(now())
+
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([category])
 }
 
 // ============================================================================
@@ -441,6 +462,8 @@ model Personel {
   conversationParticipants ConversationParticipant[]
   sentMessages    Message[] @relation("PersonelSender")
   isgReports      IsgReport[]
+  certificates    Certificate[]
+  ppeDeliveries   PPEDelivery[]
   notes           String?             @db.Text
   createdAt       DateTime            @default(now())
   updatedAt       DateTime            @updatedAt
@@ -885,6 +908,7 @@ model InspectionReport {
   markedPhotoUrl    String? // İşaretlenmiş fotoğrafın URL'si
   dxfUrl            String?  // İşaretlenmiş DXF dosyasının URL'si
   description       String?  @db.Text // Rapor açıklaması
+  findings          String?  @db.Text // Bulgular
   violations        String?  @db.Text // Tespit edilen uygunsuzluklar
   createdAt         DateTime @default(now())
 
@@ -1014,6 +1038,63 @@ enum IsgReportStatus {
   ACIL
   INCELEMEDE
   COZULDU
+}
+
+// ============================================================================
+// İSG PERSONEL SERTİFİKALARI
+// ============================================================================
+
+model Certificate {
+  id          String   @id @default(cuid())
+  name        String   // İSG Eğitim Sertifikası, Yüksekte Çalışma
+  expiryDate  DateTime
+  personelId  String
+  personel    Personel @relation(fields: [personelId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([personelId])
+  @@index([expiryDate])
+}
+
+// ============================================================================
+// RAMAK KALA BİLDİRİM SİSTEMİ
+// ============================================================================
+
+model NearMissReport {
+  id          String   @id @default(cuid())
+  isAnonymous Boolean  @default(true)
+  location    String   
+  category    String   // Düşme Riski, Elektriksel Tehlike, Makine Arızası, Kimyasal Maruz Kalma, Yapısal Sorun, Diğer
+  severity    String   // Düşük, Orta, Yüksek
+  description String   @db.Text
+  status      String   @default("Beklemede") // Çözüldü, Beklemede
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status])
+  @@index([severity])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// KKD (KİŞİSEL KORUYUCU DONANIM) DİJİTAL ZİMMET
+// ============================================================================
+
+model PPEDelivery {
+  id          String   @id @default(cuid())
+  equipment   String   // JSON array of equipment names or comma-separated list
+  signature   String   // Dijital imza metni/hash'i
+  date        DateTime @default(now())
+  status      String   @default("Onaylandı")
+  personelId  String
+  personel    Personel @relation(fields: [personelId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([personelId])
+  @@index([date])
+  @@index([status])
 }
 
 // ============================================================================
@@ -1189,4 +1270,85 @@ model InventoryItem {
   @@index([projectId])
   @@index([locationStatus])
   @@index([bleMacAddress])
+}
+
+// ============================================================================
+// QA/QC - YAPI DENETİM & KALİTE KONTROL
+// ============================================================================
+
+model MaterialSubmittal {
+  id              String   @id @default(cuid())
+  materialName    String   // Demir, Çimento, Seramik vs.
+  brand           String   // Marka
+  batchNumber     String?  // Parti Numarası
+  tseCertificate  Boolean  @default(false)
+  status          String   @default("Onay Bekliyor") // Onay Bekliyor, Onaylandı, Reddedildi
+  inspectorName   String?  // Denetimci Adı
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model NonConformanceReport {
+  id              String   @id @default(cuid())
+  location        String   // Örn: A Blok, 3. Kat
+  issueType       String   // Örn: Paspayı Yetersiz, Donatı Hatası
+  description     String
+  photoUrl        String?  // Hata fotoğrafı
+  subcontractor   String   // İlgili Taşeron (Örn: Demirci Ekibi)
+  status          String   @default("Açık") // Açık, İşlemde, Kapalı
+  dueDate         DateTime? // Çözüm için son tarih
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([status])
+  @@index([subcontractor])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// İLETİŞİM & OPERASYONEL OTOMASYON
+// ============================================================================
+
+model ChatMessage {
+  id              String   @id @default(cuid())
+  senderId        String   // Gönderen Personel ID
+  receiverId      String?  // Alıcı Personel ID (Birebir mesajsa)
+  channelName     String?  // Grup mesajıysa (Örn: "Şantiye Şefleri", "İSG Acil Durum")
+  content         String   @db.Text
+  
+  // Referans Mantığı (Veritabanını şişirmemek için)
+  attachmentType  String?  // "NCR_REPORT", "ISG_ALARM", "MATERIAL_DOC" vb.
+  attachmentRefId String?  // Var olan kaydın ID'si (Örn: NonConformanceReport ID'si)
+  attachmentUrl   String?  // Sistemin içindeki route linki (Örn: /admin/qa-qc/ncr/123)
+  
+  isRead          Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([channelName])
+  @@index([createdAt])
+}
+
+model LogisticsSchedule {
+  id              String   @id @default(cuid())
+  title           String   // Örn: "C30 Beton Dökümü - A Blok"
+  type            String   // Örn: BETON, MALZEME_TESLİMAT, DENETİM
+  location        String   // Şantiye içi konum
+  supplierName    String?  // Tedarikçi/Firma Adı
+  driverContact   String?  // Şoför/İrtibat no
+  status          String   @default("Planlandı") // Planlandı, Yolda, Şantiyede, Tamamlandı, İptal
+  scheduledAt     DateTime // Planlanan varış zamanı
+  completedAt     DateTime?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([status])
+  @@index([scheduledAt])
+  @@index([type])
 }

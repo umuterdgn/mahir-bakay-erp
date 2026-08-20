@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { useParams } from "next/navigation"
 import { toast } from "react-hot-toast"
+import { getDistanceFromLatLonInMeters } from "@/lib/utils"
 
 export default function CheckInPage() {
   const params = useParams()
@@ -43,7 +44,7 @@ export default function CheckInPage() {
           const qrData = JSON.parse(jsonString)
           if (qrData.shiftStart && qrData.shiftEnd) {
             // Update project with shift hours from QR
-            setProject(prev => ({
+            setProject((prev: any) => ({
               ...prev,
               shiftStart: qrData.shiftStart,
               shiftEnd: qrData.shiftEnd
@@ -84,29 +85,68 @@ export default function CheckInPage() {
       return
     }
 
-    try {
-      const response = await fetch("/api/attendance/personnel", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          ...workerForm,
-          projectId
-        })
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        toast.success(data.message || "İşlem başarılı")
-        setWorkerForm({ username: "", password: "" })
-      } else {
-        const error = await response.json()
-        toast.error(error.error || "İşlem başarısız")
-      }
-    } catch (error) {
-      toast.error("İşlem sırasında hata oluştu")
+    // GPS doğrulaması için proje koordinatlarını kontrol et
+    if (!project.latitude || !project.longitude) {
+      toast.error("Bu proje için GPS koordinatları tanımlanmamış. Lütfen yönetici ile iletişime geçin.")
+      return
     }
+
+    if (!navigator.geolocation) {
+      toast.error("GPS desteklenmiyor. Konum teyidi olmadan giriş yapılamaz!")
+      return
+    }
+
+    toast.loading("Kimlik doğrulandı. Konum teyidi alınıyor...", { id: 'qr-geo' })
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const userLat = position.coords.latitude
+        const userLng = position.coords.longitude
+        
+        const projectLat = project.latitude
+        const projectLng = project.longitude
+        const projectGeofenceRadius = project.geofenceRadius || 100
+        
+        const dist = getDistanceFromLatLonInMeters(projectLat, projectLng, userLat, userLng)
+        
+        if (dist <= projectGeofenceRadius) {
+          toast.success(`Konum doğrulandı (${Math.round(dist)}m). Giriş başarılı!`, { id: 'qr-geo' })
+          
+          // Konum doğrulandı, şimdi API'ye check-in isteği at
+          try {
+            const response = await fetch("/api/attendance/personnel", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                ...workerForm,
+                projectId,
+                latitude: userLat,
+                longitude: userLng
+              })
+            })
+
+            if (response.ok) {
+              const data = await response.json()
+              toast.success(data.message || "İşlem başarılı")
+              setWorkerForm({ username: "", password: "" })
+            } else {
+              const error = await response.json()
+              toast.error(error.error || "İşlem başarısız")
+            }
+          } catch (error) {
+            toast.error("İşlem sırasında hata oluştu")
+          }
+        } else {
+          toast.error(`Şantiye sınırları dışındasınız! (Mesafe: ${Math.round(dist)}m). Giriş reddedildi.`, { id: 'qr-geo' })
+        }
+      },
+      (error) => {
+        toast.error("Konum alınamadı. Lütfen GPS izni verin.", { id: 'qr-geo' })
+      },
+      { enableHighAccuracy: true }
+    )
   }
 
   const handleVisitorSubmit = async (e: React.FormEvent) => {
@@ -117,28 +157,67 @@ export default function CheckInPage() {
       return
     }
 
-    try {
-      const response = await fetch("/api/attendance/visitor", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          ...visitorForm,
-          projectId
-        })
-      })
-
-      if (response.ok) {
-        toast.success("Ziyaretçi kaydı başarıyla oluşturuldu")
-        setVisitorForm({ fullName: "", company: "", reason: "" })
-      } else {
-        const error = await response.json()
-        toast.error(error.error || "Kayıt başarısız")
-      }
-    } catch (error) {
-      toast.error("Kayıt sırasında hata oluştu")
+    // GPS doğrulaması için proje koordinatlarını kontrol et
+    if (!project.latitude || !project.longitude) {
+      toast.error("Bu proje için GPS koordinatları tanımlanmamış. Lütfen yönetici ile iletişime geçin.")
+      return
     }
+
+    if (!navigator.geolocation) {
+      toast.error("GPS desteklenmiyor. Konum teyidi olmadan giriş yapılamaz!")
+      return
+    }
+
+    toast.loading("Konum teyidi alınıyor...", { id: 'visitor-geo' })
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const userLat = position.coords.latitude
+        const userLng = position.coords.longitude
+        
+        const projectLat = project.latitude
+        const projectLng = project.longitude
+        const projectGeofenceRadius = project.geofenceRadius || 100
+        
+        const dist = getDistanceFromLatLonInMeters(projectLat, projectLng, userLat, userLng)
+        
+        if (dist <= projectGeofenceRadius) {
+          toast.success(`Konum doğrulandı (${Math.round(dist)}m). Giriş başarılı!`, { id: 'visitor-geo' })
+          
+          // Konum doğrulandı, şimdi API'ye check-in isteği at
+          try {
+            const response = await fetch("/api/attendance/visitor", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                ...visitorForm,
+                projectId,
+                latitude: userLat,
+                longitude: userLng
+              })
+            })
+
+            if (response.ok) {
+              toast.success("Ziyaretçi kaydı başarıyla oluşturuldu")
+              setVisitorForm({ fullName: "", company: "", reason: "" })
+            } else {
+              const error = await response.json()
+              toast.error(error.error || "Kayıt başarısız")
+            }
+          } catch (error) {
+            toast.error("Kayıt sırasında hata oluştu")
+          }
+        } else {
+          toast.error(`Şantiye sınırları dışındasınız! (Mesafe: ${Math.round(dist)}m). Giriş reddedildi.`, { id: 'visitor-geo' })
+        }
+      },
+      (error) => {
+        toast.error("Konum alınamadı. Lütfen GPS izni verin.", { id: 'visitor-geo' })
+      },
+      { enableHighAccuracy: true }
+    )
   }
 
   if (isLoading) {

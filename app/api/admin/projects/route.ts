@@ -91,9 +91,13 @@ export async function POST(request: Request) {
       ada: restData.ada || null,
       parsel: restData.parsel || null,
       clientName: restData.clientName || null,
-      // DİKKAT: Eğer Takvim/Projeler için bu alanlar zorunluysa Prisma patlar.
-      // Şemanda bu alanlar zorunluysa (yanında ? yoksa) aşağıdaki satırların yorumunu kaldır!
-      // status: "AKTIF",
+      // Shift hours
+      shiftStart: restData.shiftStart || "08:00",
+      shiftEnd: restData.shiftEnd || "17:00",
+      // Geofencing (GPS) fields - optional
+      latitude: restData.latitude ? parseFloat(restData.latitude) : null,
+      longitude: restData.longitude ? parseFloat(restData.longitude) : null,
+      geofenceRadius: restData.geofenceRadius ? parseInt(restData.geofenceRadius) : null,
     }
 
     const newProject = await prisma.project.create({
