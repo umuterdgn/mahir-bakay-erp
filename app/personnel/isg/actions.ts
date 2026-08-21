@@ -29,7 +29,6 @@ export async function createISGReport(formData: FormData) {
   }
 
   const type = formData.get("type") as string
-  const date = new Date(formData.get("date") as string)
   const location = formData.get("location") as string
   const description = formData.get("description") as string
 
@@ -38,7 +37,6 @@ export async function createISGReport(formData: FormData) {
     data: {
       personelId: personel.id,
       type: type as any,
-      date,
       location,
       description,
       status: "ACIL"
