@@ -57,7 +57,7 @@ async function getISGData(userId: string) {
       personelId: personel.id
     },
     orderBy: {
-      date: "desc"
+      createdAt: "desc"
     }
   })
 
@@ -67,7 +67,7 @@ async function getISGData(userId: string) {
     type: report.type.toLowerCase(),
     title: report.description?.substring(0, 50) + (report.description?.length > 50 ? "..." : "") || "-",
     location: report.location || "-",
-    date: formatDate(new Date(report.date)),
+    date: formatDate(new Date(report.createdAt)),
     status: report.status.toLowerCase()
   }))
 
