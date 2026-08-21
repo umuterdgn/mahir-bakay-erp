@@ -31,7 +31,7 @@ export default async function PersonnelLayout({
     <NextAuthSessionProvider>
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
         <PersonnelSidebar />
-        <main className="lg:ml-64 p-6 lg:p-8 pt-20 lg:pt-8">
+        <main className="lg:ml-72 p-6 lg:p-8 pt-20 lg:pt-8">
           {children}
         </main>
       </div>

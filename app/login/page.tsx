@@ -65,7 +65,7 @@ export default function LoginPage() {
       if (result?.error) {
         setError("Geçersiz kullanıcı adı veya şifre")
       } else {
-        router.push("/admin/my-tasks")
+        router.push("/personnel")
         router.refresh()
       }
     } catch (error) {

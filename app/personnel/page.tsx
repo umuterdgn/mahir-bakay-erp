@@ -7,7 +7,7 @@
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
-import { PersonnelPortal } from "./components/PersonnelPortal"
+import { PersonnelDashboard } from "./components/PersonnelDashboard"
 
 export default async function PersonnelPage() {
   const session = await auth()
@@ -41,12 +41,21 @@ export default async function PersonnelPage() {
           inventory: true
         },
         where: {
-          returnedAt: null
+          status: { in: ['ACTIVE', 'MAINTENANCE'] }
         }
       },
       payments: {
-        orderBy: { date: 'desc' },
-        take: 5
+        where: {
+          type: 'AVANS',
+          status: 'PENDING'
+        },
+        orderBy: { date: 'desc' }
+      },
+      leaveRequests: {
+        where: {
+          status: 'APPROVED'
+        },
+        orderBy: { startDate: 'desc' }
       }
     }
   })
@@ -58,15 +67,6 @@ export default async function PersonnelPage() {
       </div>
     )
   }
-
-  // Fetch tasks for this personnel
-  const tasks = await (prisma as any).task.findMany({
-    where: {
-      assignedToId: personnel.id
-    },
-    orderBy: { createdAt: 'desc' },
-    take: 10
-  })
 
   // Calculate summary data
   const thisMonthAttendance = personnel.attendanceRecords.filter((record: any) => {
@@ -85,24 +85,64 @@ export default async function PersonnelPage() {
     return sum
   }, 0)
 
-  const portalData = {
-    personnel: {
-      id: personnel.id,
-      name: personnel.name,
-      department: personnel.department,
-      currentSite: personnel.currentSite
-    },
-    summary: {
-      estimatedEarnings,
-      totalHours: Math.round(totalHours * 10) / 10,
-      attendanceCount: thisMonthAttendance.length,
-      equipmentCount: personnel.inventoryAssignments.length
-    },
-    attendanceRecords: personnel.attendanceRecords,
-    equipment: personnel.inventoryAssignments,
-    tasks: tasks,
-    payments: personnel.payments
+  // Calculate leave balance (simplified: 30 days - used approved leave days)
+  const usedLeaveDays = personnel.leaveRequests.reduce((sum: number, req: any) => {
+    const days = Math.ceil((new Date(req.endDate).getTime() - new Date(req.startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1
+    return sum + days
+  }, 0)
+  const leaveBalance = Math.max(0, 30 - usedLeaveDays)
+
+  // Calculate active advance
+  const activeAdvance = personnel.payments.reduce((sum: number, payment: any) => sum + payment.amount, 0)
+
+  // Format recent attendance records (last 3)
+  const recentAttendance = personnel.attendanceRecords.slice(0, 3).map((record: any) => {
+    const date = new Date(record.date)
+    const day = date.getDate()
+    const months = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara']
+    const month = months[date.getMonth()]
+    
+    const checkIn = record.checkIn ? new Date(record.checkIn).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : '-'
+    const checkOut = record.checkOut ? new Date(record.checkOut).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : '-'
+    
+    let hours = 0
+    if (record.checkIn && record.checkOut) {
+      hours = (new Date(record.checkOut).getTime() - new Date(record.checkIn).getTime()) / (1000 * 60 * 60)
+    }
+    
+    return {
+      date: `${day} ${month}`,
+      checkIn,
+      checkOut,
+      hours: Math.round(hours * 10) / 10
+    }
+  })
+
+  // Format equipment data
+  const equipment = personnel.inventoryAssignments.slice(0, 3).map((assignment: any) => ({
+    id: assignment.id,
+    name: assignment.inventory.name,
+    code: assignment.inventory.qrCode || '-',
+    status: assignment.status.toLowerCase()
+  }))
+
+  const personnelData = {
+    id: personnel.id,
+    name: personnel.name,
+    department: personnel.department,
+    currentSite: personnel.currentSite,
+    phone: personnel.phone,
+    email: personnel.email
   }
 
-  return <PersonnelPortal data={portalData} />
+  const summaryData = {
+    estimatedEarnings,
+    totalHours: Math.round(totalHours * 10) / 10,
+    attendanceCount: thisMonthAttendance.length,
+    equipmentCount: personnel.inventoryAssignments.length,
+    leaveBalance,
+    activeAdvance
+  }
+
+  return <PersonnelDashboard personnel={personnelData} summary={summaryData} recentAttendance={recentAttendance} equipment={equipment} />
 }

@@ -5,9 +5,12 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// prisma/schema.prisma
 datasource db {
-  provider = "postgresql"
-  url      = "postgresql://neondb_owner:npg_K4iMd0SvNtQZ@ep-bold-dew-ag5mbbwd-pooler.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require&pgbouncer=true"
+  provider  = "postgresql"
+  url  	    = env("DATABASE_URL")
+  // uncomment next line if you use Prisma <5.10
+  directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
 // ============================================================================
@@ -443,11 +446,15 @@ model Personel {
   sgkPeriod       String?
   sgkPayDay       Int?
   healthStatus    String?
+  bloodType       String?             // Kan grubu
   bonuses         Float               @default(0)
   takim           String?             // Takım (Demirci, Kalıpçı vb.) - DEPRECATED, use professionId
   gunlukYevmiye   Float               @default(0) // Günlük Yevmiye
   userId          String?             // AdminUser ile eşleşme (opsiyonel)
   username        String?             // Kullanıcı adı (login için)
+  emergencyContactName String?        // Acil durum kişisi adı
+  emergencyContactPhone String?       // Acil durum kişisi telefon
+  emergencyContactRelation String?    // Acil durum kişisi yakınlık
   professionId    String?             // Meslek/Birim ID
   profession      Profession?         @relation(fields: [professionId], references: [id], onDelete: SetNull)
   siteHistory     SiteHistory[]
@@ -464,6 +471,7 @@ model Personel {
   isgReports      IsgReport[]
   certificates    Certificate[]
   ppeDeliveries   PPEDelivery[]
+  leaveRequests   LeaveRequest[]
   notes           String?             @db.Text
   createdAt       DateTime            @default(now())
   updatedAt       DateTime            @updatedAt
@@ -497,6 +505,43 @@ enum PersonelStatus {
   RETIRED
 }
 
+// ============================================================================
+// LEAVE REQUEST (İzin Talepleri)
+// ============================================================================
+
+model LeaveRequest {
+  id          String       @id @default(cuid())
+  personelId  String
+  personel    Personel     @relation(fields: [personelId], references: [id], onDelete: Cascade)
+  type        LeaveType    @default(ANNUAL)
+  startDate   DateTime
+  endDate     DateTime
+  days        Int          // İzin gün sayısı
+  reason      String?      @db.Text
+  status      LeaveStatus  @default(PENDING)
+  reviewedBy  String?      // Onaylayan kişi ID
+  reviewedAt  DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([personelId])
+  @@index([status])
+  @@index([startDate])
+}
+
+enum LeaveType {
+  ANNUAL      // Yıllık İzin
+  EXCUSE      // Mazeret İzni
+  SICK        // Hastalık İzni
+  UNPAID      // Ücretsiz İzin
+}
+
+enum LeaveStatus {
+  PENDING     // Bekliyor
+  APPROVED    // Onaylandı
+  REJECTED    // Reddedildi
+}
+
 model SiteHistory {
   id          String   @id @default(cuid())
   personelId  String
@@ -524,6 +569,7 @@ model PersonelPayment {
   period      String?         // Dönem (Ocak 2024, vb.)
   isPaid      Boolean         @default(false)
   paidDate    DateTime?
+  status      PaymentStatus   @default(PENDING) // PENDING, APPROVED, REJECTED (özellikle avans için)
   date        DateTime        @default(now()) // Ödeme/kesinti tarihi
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
@@ -532,6 +578,13 @@ model PersonelPayment {
   @@index([type])
   @@index([isPaid])
   @@index([period])
+  @@index([status])
+}
+
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 
@@ -669,20 +722,30 @@ model InventoryHistory {
 }
 
 model InventoryAssignment {
-  id          String   @id @default(cuid())
+  id          String              @id @default(cuid())
   inventoryId String
-  inventory   Inventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+  inventory   Inventory           @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
   personelId  String?
-  personel    Personel? @relation(fields: [personelId], references: [id], onDelete: SetNull)
-  quantity    Int      // Zimmetlenen miktar
-  assignedAt  DateTime @default(now())
-  returnedAt  DateTime? // Teslim edildiğinde dolacak
-  notes       String?  @db.Text
+  personel    Personel?           @relation(fields: [personelId], references: [id], onDelete: SetNull)
+  quantity    Int                 // Zimmetlenen miktar
+  assignedAt  DateTime            @default(now())
+  returnedAt  DateTime?           // Teslim edildiğinde dolacak
+  status      AssignmentStatus    @default(ACTIVE) // ACTIVE, MAINTENANCE, RETURNED, LOST
+  condition   String?             // İyi, Orta, Kötü, Arızalı
+  notes       String?             @db.Text
 
   @@index([inventoryId])
   @@index([personelId])
   @@index([assignedAt])
   @@index([returnedAt])
+  @@index([status])
+}
+
+enum AssignmentStatus {
+  ACTIVE
+  MAINTENANCE
+  RETURNED
+  LOST
 }
 
 
@@ -777,6 +840,7 @@ model AttendanceRecord {
   date        DateTime // Sadece gün bazlı tarih
   checkIn     DateTime? // Giriş saati
   checkOut    DateTime? // Çıkış saati
+  status      String   @default("PRESENT") // PRESENT, LATE, ABSENT
   dayMultiplier Float   @default(1) // Tam gün için 1, yarım gün için 0.5
   workerName  String?   // GPS bazlı check-in için isim
   latitude    Float?    // GPS check-in koordinatı
@@ -786,6 +850,7 @@ model AttendanceRecord {
   @@index([personelId])
   @@index([projectId])
   @@index([date])
+  @@index([status])
 }
 
 

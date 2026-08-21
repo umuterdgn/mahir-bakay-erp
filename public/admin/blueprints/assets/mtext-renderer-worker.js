@@ -1,9 +1,3 @@
-/**
- * © 2026 NXA Software. All rights reserved.
- * Developer: Umut Erdoğan
- * This code is the property of NXA Software.
- */
-
 var st;
 (function(n) {
   n[n.NONE = 0] = "NONE", n[n.WORD = 1] = "WORD", n[n.STACK = 2] = "STACK", n[n.SPACE = 3] = "SPACE", n[n.NBSP = 4] = "NBSP", n[n.TABULATOR = 5] = "TABULATOR", n[n.NEW_PARAGRAPH = 6] = "NEW_PARAGRAPH", n[n.NEW_COLUMN = 7] = "NEW_COLUMN", n[n.WRAP_AT_DIMLINE = 8] = "WRAP_AT_DIMLINE", n[n.PROPERTIES_CHANGED = 9] = "PROPERTIES_CHANGED", n[n.PERCENT_SYMBOL = 10] = "PERCENT_SYMBOL";
