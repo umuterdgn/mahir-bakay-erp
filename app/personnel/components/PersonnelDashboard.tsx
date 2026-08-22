@@ -260,7 +260,9 @@ export function PersonnelDashboard({ personnel, summary, recentAttendance, equip
 
         try {
           const record = event.message.records[0]
-          const textDecoder = new TextDecoder(record.encoding || "utf-8")
+          
+          // MIME tipinden gelen veriyi decode et
+          const textDecoder = new TextDecoder()
           const rawData = textDecoder.decode(record.data)
 
           // 2. Gelen rawData (şifreli metin) deşifre edilmeye çalışılır
