@@ -432,7 +432,7 @@ export default function PersonelDetailPage({
   }
 
   return (
-    <div className="lg:mt-0 mt-16 w-full max-w-7xl mx-auto px-4 overflow-x-hidden">
+    <div className="lg:mt-0 mt-16 w-full max-w-7xl mx-auto px-2 md:px-4 overflow-x-hidden">
       <div className="mb-6">
         <Link
           href="/admin/personel"
@@ -753,7 +753,7 @@ export default function PersonelDetailPage({
                 Henüz finansal işlem yok
               </div>
             ) : (
-              <table className="w-full min-w-[600px]">
+              <table className="w-full min-w-[500px]">
                 <thead>
                   <tr className="border-b border-slate-700 bg-slate-900/50">
                     <th className="text-left py-3 px-2 md:px-4 text-slate-400 font-medium text-xs md:text-sm">Tarih</th>
@@ -806,7 +806,7 @@ export default function PersonelDetailPage({
                 Henüz yoklama kaydı yok
               </div>
             ) : (
-              <table className="w-full min-w-[600px]">
+              <table className="w-full min-w-[500px]">
                 <thead>
                   <tr className="border-b border-slate-700 bg-slate-900/50">
                     <th className="text-left py-3 px-2 md:px-4 text-slate-400 font-medium text-xs md:text-sm">Tarih</th>
@@ -852,7 +852,7 @@ export default function PersonelDetailPage({
             </div>
           ) : (
             <div className="bg-slate-800 rounded-lg border border-slate-700 overflow-x-auto">
-              <table className="w-full min-w-[600px]">
+              <table className="w-full min-w-[500px]">
                 <thead>
                   <tr className="border-b border-slate-700 bg-slate-800/50">
                     <th className="text-left py-3 px-2 md:px-4 text-slate-400 font-medium text-xs md:text-sm">Malzeme Adı</th>

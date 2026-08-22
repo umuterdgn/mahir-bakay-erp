@@ -10,10 +10,25 @@ import { revalidatePath } from "next/cache"
 
 export async function processNfcAttendance(nfcUid: string, projectId: string) {
   try {
-    // Find personnel by NFC UID
+    console.log("--- NFC ATTENDANCE PROCESSING ---")
+    console.log("Gelen NFC ID:", nfcUid)
+    console.log("Proje ID:", projectId)
+
+    // Find personnel by NFC UID, ID, or nfcId (OR logic)
     const personel = await prisma.personel.findFirst({
-      where: { nfcUid }
+      where: {
+        OR: [
+          { id: nfcUid },       // Yeni sistem: Şifresi çözülmüş CUID
+          { nfcId: nfcUid },     // Eski sistem: Fiziksel seri no
+          { nfcUid: nfcUid }     // Mevcut sistem: nfcUid sütunu
+        ]
+      }
     })
+
+    console.log("Personel Arama Sonucu:", personel ? "Bulundu" : "BULUNAMADI")
+    if (personel) {
+      console.log("Personel Detayları:", { id: personel.id, name: personel.name, nfcId: personel.nfcId, nfcUid: personel.nfcUid })
+    }
 
     if (!personel) {
       return { success: false, error: "Tanımsız Kart" }
