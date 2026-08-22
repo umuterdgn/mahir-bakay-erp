@@ -13,7 +13,9 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { username, password, projectId } = body
 
-    console.log("--- YOKLAMA İSTEĞİ GELDİ ---", { username, projectId })
+    console.log("--- YENİ CHECK-IN İSTEĞİ ---")
+    console.log("Gelen ID:", username)
+    console.log("Proje ID:", projectId)
 
     // ŞEMA ANALİZİ SONUCU:
     // - grant-login API'si username'i Personel tablosuna kaydediyor
@@ -40,7 +42,8 @@ export async function POST(request: Request) {
       }
     })
 
-    console.log("Check-in Arama Sonucu:", { arananUsername: username, bulunanKullanici: personnel || null })
+    console.log("Veritabanı Sonucu:", personnel ? "Bulundu" : "BULUNAMADI")
+    console.log("Personel Detayları:", personnel ? { id: personnel.id, name: personnel.name, username: personnel.username } : null)
 
     if (!personnel) {
       console.error("❌ HATA: Personel veritabanında YOK. Aranan username:", username)

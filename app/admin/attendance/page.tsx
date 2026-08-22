@@ -317,12 +317,18 @@ export default function AttendancePage() {
         try {
           const record = event.message.records[0]
           
+          console.log("1. NFC Okundu, format:", record.recordType)
+          
           // MIME tipinden gelen veriyi decode et
           const textDecoder = new TextDecoder()
           const rawData = textDecoder.decode(record.data)
 
+          console.log("2. Şifreli Metin (Raw):", rawData)
+
           // 2. Gelen rawData (şifreli metin) deşifre edilmeye çalışılır
           const decryptedData = decryptNfcData(rawData)
+
+          console.log("3. Çözülen Data:", decryptedData)
 
           if (decryptedData && decryptedData.id) {
             // 3. ŞİFRE BAŞARIYLA ÇÖZÜLDÜ, GİRİŞ YAP!

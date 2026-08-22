@@ -432,7 +432,7 @@ export default function PersonelDetailPage({
   }
 
   return (
-    <div className="lg:mt-0 mt-16">
+    <div className="lg:mt-0 mt-16 w-full max-w-7xl mx-auto px-4 overflow-x-hidden">
       <div className="mb-6">
         <Link
           href="/admin/personel"
@@ -442,35 +442,35 @@ export default function PersonelDetailPage({
         </Link>
       </div>
 
-      <div className="bg-slate-900 rounded-xl p-6 border border-slate-800">
-        <div className="flex justify-between items-start mb-6">
+      <div className="bg-slate-900 rounded-xl p-4 md:p-6 border border-slate-800">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <div>
-            <h1 className="text-2xl font-semibold text-white mb-2">
+            <h1 className="text-xl md:text-2xl font-semibold text-white mb-2 break-words">
               {person.name}
             </h1>
-            <p className="text-slate-400">Personel No: {person.personnelNo}</p>
+            <p className="text-slate-400 text-sm md:text-base">Personel No: {person.personnelNo}</p>
           </div>
-          <div className="flex items-center space-x-3">
+          <div className="flex flex-wrap items-center gap-2 md:space-x-3">
             <button
               onClick={openEditModal}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors"
+              className="px-3 py-2 md:px-4 md:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors text-sm md:text-base"
             >
               Düzenle
             </button>
             <button
               onClick={() => setIsLoginModalOpen(true)}
-              className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors flex items-center gap-2"
+              className="px-3 py-2 md:px-4 md:py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors flex items-center gap-2 text-sm md:text-base"
             >
               🔑 {person.userId ? "Giriş Bilgilerini Güncelle" : "Sisteme Giriş İzni Ver"}
             </button>
             <button
               onClick={() => setIsNfcModalOpen(true)}
-              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-500 hover:to-blue-500 transition-colors flex items-center gap-2"
+              className="px-3 py-2 md:px-4 md:py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-500 hover:to-blue-500 transition-colors flex items-center gap-2 text-sm md:text-base"
             >
               <Nfc className="w-4 h-4" />
               NFC Karta Programla
             </button>
-            <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+            <span className={`px-3 py-1 rounded-full text-xs md:text-sm font-medium ${
               person.status === "ACTIVE" 
                 ? "bg-green-900/50 text-green-400" 
                 : "bg-red-900/50 text-red-400"
@@ -480,49 +480,49 @@ export default function PersonelDetailPage({
           </div>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-white border-b border-slate-800 pb-2">Kişisel Bilgiler</h3>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3 md:gap-4">
               <div>
                 <label className="block text-sm font-medium text-slate-400 mb-1">Yaş</label>
-                <p className="text-white">{person.age}</p>
+                <p className="text-white break-words">{person.age}</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-400 mb-1">TC Kimlik No</label>
-                <p className="text-white">{person.tcNo || "-"}</p>
+                <p className="text-white break-words">{person.tcNo || "-"}</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-400 mb-1">Doğum Tarihi</label>
-                <p className="text-white">
+                <p className="text-white break-words">
                   {new Date(person.birthDate).toLocaleDateString("tr-TR")}
                 </p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-400 mb-1">Cinsiyet</label>
-                <p className="text-white">{person.gender || "-"}</p>
+                <p className="text-white break-words">{person.gender || "-"}</p>
               </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-slate-400 mb-1">Telefon</label>
-              <p className="text-white">{person.phone || "-"}</p>
+              <p className="text-white break-words">{person.phone || "-"}</p>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-slate-400 mb-1">E-posta</label>
-              <p className="text-white">{person.email || "-"}</p>
+              <p className="text-white break-words">{person.email || "-"}</p>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-slate-400 mb-1">Adres</label>
-              <p className="text-white">{person.address || "-"}</p>
+              <p className="text-white break-words">{person.address || "-"}</p>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-slate-400 mb-1">Sağlık Durumu</label>
-              <p className="text-white">{person.healthStatus || "-"}</p>
+              <p className="text-white break-words">{person.healthStatus || "-"}</p>
             </div>
           </div>
 
@@ -531,29 +531,29 @@ export default function PersonelDetailPage({
             
             <div>
               <label className="block text-sm font-medium text-slate-400 mb-1">Birim</label>
-              <p className="text-white">{person.department}</p>
+              <p className="text-white break-words">{person.department}</p>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-slate-400 mb-1">Görev/Ünvan</label>
-              <p className="text-white">{person.position || "-"}</p>
+              <p className="text-white break-words">{person.position || "-"}</p>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-slate-400 mb-1">Mevcut Şantiye</label>
-              <p className="text-white">{person.currentSite}</p>
+              <p className="text-white break-words">{person.currentSite}</p>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-slate-400 mb-1">İşe Giriş Tarihi</label>
-              <p className="text-white">
+              <p className="text-white break-words">
                 {new Date(person.hireDate).toLocaleDateString("tr-TR")}
               </p>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-slate-400 mb-1">İşten Çıkış Tarihi</label>
-              <p className="text-white">
+              <p className="text-white break-words">
                 {person.leavingDate 
                   ? new Date(person.leavingDate).toLocaleDateString("tr-TR")
                   : "-"
@@ -563,7 +563,7 @@ export default function PersonelDetailPage({
 
             <div>
               <label className="block text-sm font-medium text-slate-400 mb-1">İş Türü</label>
-              <p className="text-white">{person.employmentType || "-"}</p>
+              <p className="text-white break-words">{person.employmentType || "-"}</p>
             </div>
           </div>
         </div>
@@ -572,30 +572,30 @@ export default function PersonelDetailPage({
           <h3 className="text-lg font-semibold text-white border-b border-slate-800 pb-2 mb-4">Finans ve Özlük Bilgileri</h3>
           
           {/* Hakediş Hesaplama */}
-          <div className="bg-slate-800 rounded-lg p-4 border border-slate-700 mb-4">
+          <div className="bg-slate-800 rounded-lg p-3 md:p-4 border border-slate-700 mb-4">
             <h4 className="text-md font-semibold text-white mb-3">Hakediş Hesabı</h4>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 text-sm">
               <div>
                 <label className="block text-slate-400 mb-1">Tam Gün Sayısı</label>
-                <p className="text-white font-medium">
+                <p className="text-white font-medium break-words">
                   {calculatedValues.tamGunSayisi}
                 </p>
               </div>
               <div>
                 <label className="block text-slate-400 mb-1">Yarım Gün Sayısı</label>
-                <p className="text-white font-medium">
+                <p className="text-white font-medium break-words">
                   {calculatedValues.yarimGunSayisi}
                 </p>
               </div>
               <div>
                 <label className="block text-slate-400 mb-1">Günlük Yevmiye</label>
-                <p className="text-white font-medium">
+                <p className="text-white font-medium break-words">
                   {person.gunlukYevmiye?.toLocaleString("tr-TR") || 0} ₺
                 </p>
               </div>
               <div>
                 <label className="block text-slate-400 mb-1">Toplam Gün Çarpanı</label>
-                <p className="text-white font-medium">
+                <p className="text-white font-medium break-words">
                   {calculatedValues.totalDayMultiplier.toFixed(1)}
                 </p>
               </div>
@@ -603,10 +603,10 @@ export default function PersonelDetailPage({
           </div>
           
           {/* Güncel Bakiye Kartı */}
-          <div className="bg-gradient-to-br from-blue-900 to-slate-800 rounded-xl p-6 border border-blue-700 mb-6">
-            <h4 className="text-xl font-bold text-white mb-4">GÜNCEL BAKİYE (ÖDENECEK)</h4>
+          <div className="bg-gradient-to-br from-blue-900 to-slate-800 rounded-xl p-4 md:p-6 border border-blue-700 mb-6">
+            <h4 className="text-lg md:text-xl font-bold text-white mb-4">GÜNCEL BAKİYE (ÖDENECEK)</h4>
             <div className="text-center">
-              <p className="text-5xl font-bold text-blue-400 mb-2">
+              <p className="text-3xl md:text-5xl font-bold text-blue-400 mb-2 break-words">
                 ₺{calculatedValues.netOdenecek.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
               <p className="text-slate-400 text-sm">
@@ -616,64 +616,64 @@ export default function PersonelDetailPage({
           </div>
 
           {/* Hesaplama Detayları */}
-          <div className="grid md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
+            <div className="bg-slate-800 rounded-lg p-3 md:p-4 border border-slate-700">
               <label className="block text-sm font-medium text-slate-400 mb-1">Brüt Hakediş</label>
-              <p className="text-2xl font-bold text-green-400">
+              <p className="text-xl md:text-2xl font-bold text-green-400 break-words">
                 ₺{calculatedValues.grossEntitlement.toLocaleString("tr-TR")}
               </p>
               <p className="text-xs text-slate-500 mt-1">Gün Çarpanı × Yevmiye</p>
             </div>
-            <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
+            <div className="bg-slate-800 rounded-lg p-3 md:p-4 border border-slate-700">
               <label className="block text-sm font-medium text-slate-400 mb-1">Toplam Prim</label>
-              <p className="text-2xl font-bold text-purple-400">
+              <p className="text-xl md:text-2xl font-bold text-purple-400 break-words">
                 ₺{calculatedValues.toplamPrim.toLocaleString("tr-TR")}
               </p>
               <p className="text-xs text-slate-500 mt-1">Prim Ödemeleri</p>
             </div>
-            <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
+            <div className="bg-slate-800 rounded-lg p-3 md:p-4 border border-slate-700">
               <label className="block text-sm font-medium text-slate-400 mb-1">Kesintiler Toplamı</label>
-              <p className="text-2xl font-bold text-red-400">
+              <p className="text-xl md:text-2xl font-bold text-red-400 break-words">
                 ₺{calculatedValues.kesintilerToplami.toLocaleString("tr-TR")}
               </p>
               <p className="text-xs text-slate-500 mt-1">Maaş + Avans + Elden</p>
             </div>
-            <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
+            <div className="bg-slate-800 rounded-lg p-3 md:p-4 border border-slate-700">
               <label className="block text-sm font-medium text-slate-400 mb-1">Toplam Kazanılan</label>
-              <p className="text-2xl font-bold text-green-400">
+              <p className="text-xl md:text-2xl font-bold text-green-400 break-words">
                 ₺{calculatedValues.toplamKazanilan.toLocaleString("tr-TR")}
               </p>
               <p className="text-xs text-slate-500 mt-1">Brüt + Prim</p>
             </div>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-6">
+            <div className="bg-slate-800 rounded-lg p-3 md:p-4 border border-slate-700">
               <label className="block text-sm font-medium text-slate-400 mb-1">Kesintiler Toplamı</label>
-              <p className="text-2xl font-bold text-red-400">
+              <p className="text-xl md:text-2xl font-bold text-red-400 break-words">
                 ₺{calculatedValues.kesintilerToplami.toLocaleString("tr-TR")}
               </p>
               <p className="text-xs text-slate-500 mt-1">Maaş + Avans + Elden</p>
             </div>
-            <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
+            <div className="bg-slate-800 rounded-lg p-3 md:p-4 border border-slate-700">
               <label className="block text-sm font-medium text-slate-400 mb-1">Net Ödenecek</label>
-              <p className="text-2xl font-bold text-blue-400">
+              <p className="text-xl md:text-2xl font-bold text-blue-400 break-words">
                 ₺{calculatedValues.netOdenecek.toLocaleString("tr-TR")}
               </p>
               <p className="text-xs text-slate-500 mt-1">Kalan Bakiye</p>
             </div>
-            <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
+            <div className="bg-slate-800 rounded-lg p-3 md:p-4 border border-slate-700">
               <label className="block text-sm font-medium text-slate-400 mb-1">Hakediş Formülü</label>
-              <p className="text-xs text-slate-300 mt-1">
+              <p className="text-xs text-slate-300 mt-1 break-words">
                 (Gün Çarpanı × Yevmiye + Prim) - Kesintiler
               </p>
             </div>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-4">
-            <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+            <div className="bg-slate-800 rounded-lg p-3 md:p-4 border border-slate-700">
               <label className="block text-sm font-medium text-slate-400 mb-1">Maaş</label>
-              <p className="text-2xl font-bold text-white mb-2">
+              <p className="text-xl md:text-2xl font-bold text-white mb-2 break-words">
                 {person.salary.toLocaleString("tr-TR")} ₺
               </p>
               {person.salaryPayDay && (
@@ -697,9 +697,9 @@ export default function PersonelDetailPage({
               </button>
             </div>
             
-            <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
+            <div className="bg-slate-800 rounded-lg p-3 md:p-4 border border-slate-700">
               <label className="block text-sm font-medium text-slate-400 mb-1">SGK Durumu / Dönemi</label>
-              <p className="text-2xl font-bold text-white mb-2">
+              <p className="text-xl md:text-2xl font-bold text-white mb-2 break-words">
                 {person.sgkPeriod || "Belirtilmedi"}
               </p>
               {person.sgkPayDay && (
@@ -723,9 +723,9 @@ export default function PersonelDetailPage({
               </button>
             </div>
             
-            <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
+            <div className="bg-slate-800 rounded-lg p-3 md:p-4 border border-slate-700">
               <label className="block text-sm font-medium text-slate-400 mb-1">Primler / Avans</label>
-              <p className="text-2xl font-bold text-white mb-2">
+              <p className="text-xl md:text-2xl font-bold text-white mb-2 break-words">
                 {person.bonuses.toLocaleString("tr-TR")} ₺
               </p>
               <button
@@ -747,28 +747,28 @@ export default function PersonelDetailPage({
         {/* Finansal İşlem Geçmişi */}
         <div className="mt-8 pt-6 border-t border-slate-800">
           <h3 className="text-lg font-semibold text-white border-b border-slate-800 pb-2 mb-4">Finansal İşlem Geçmişi</h3>
-          <div className="bg-slate-800 rounded-lg border border-slate-700 overflow-hidden">
+          <div className="bg-slate-800 rounded-lg border border-slate-700 overflow-x-auto">
             {payments.length === 0 ? (
               <div className="text-center py-8 text-slate-500">
                 Henüz finansal işlem yok
               </div>
             ) : (
-              <table className="w-full">
+              <table className="w-full min-w-[600px]">
                 <thead>
                   <tr className="border-b border-slate-700 bg-slate-900/50">
-                    <th className="text-left py-3 px-4 text-slate-400 font-medium">Tarih</th>
-                    <th className="text-left py-3 px-4 text-slate-400 font-medium">İşlem Tipi</th>
-                    <th className="text-left py-3 px-4 text-slate-400 font-medium">Açıklama</th>
-                    <th className="text-right py-3 px-4 text-slate-400 font-medium">Tutar</th>
+                    <th className="text-left py-3 px-2 md:px-4 text-slate-400 font-medium text-xs md:text-sm">Tarih</th>
+                    <th className="text-left py-3 px-2 md:px-4 text-slate-400 font-medium text-xs md:text-sm">İşlem Tipi</th>
+                    <th className="text-left py-3 px-2 md:px-4 text-slate-400 font-medium text-xs md:text-sm">Açıklama</th>
+                    <th className="text-right py-3 px-2 md:px-4 text-slate-400 font-medium text-xs md:text-sm">Tutar</th>
                   </tr>
                 </thead>
                 <tbody>
                   {payments.map((payment) => (
                     <tr key={payment.id} className="border-b border-slate-700 hover:bg-slate-700/50">
-                      <td className="py-3 px-4 text-white">
+                      <td className="py-3 px-2 md:px-4 text-white text-xs md:text-sm break-words">
                         {new Date(payment.date).toLocaleDateString("tr-TR")}
                       </td>
-                      <td className="py-3 px-4">
+                      <td className="py-3 px-2 md:px-4">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                           payment.type === "MAAS" ? "bg-blue-900/50 text-blue-400" :
                           payment.type === "SGK" ? "bg-purple-900/50 text-purple-400" :
@@ -779,10 +779,10 @@ export default function PersonelDetailPage({
                           {payment.type}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-white text-sm">
+                      <td className="py-3 px-2 md:px-4 text-white text-xs md:text-sm break-words">
                         {payment.description || "-"}
                       </td>
-                      <td className="py-3 px-4 text-right font-medium">
+                      <td className="py-3 px-2 md:px-4 text-right font-medium text-xs md:text-sm break-words">
                         <span className={
                           payment.type === "PRIM" ? "text-green-400" : "text-white"
                         }>
@@ -800,38 +800,38 @@ export default function PersonelDetailPage({
         {/* Yoklama Kayıtları */}
         <div className="mt-8 pt-6 border-t border-slate-800">
           <h3 className="text-lg font-semibold text-white border-b border-slate-800 pb-2 mb-4">Yoklama Kayıtları</h3>
-          <div className="bg-slate-800 rounded-lg border border-slate-700 overflow-hidden">
+          <div className="bg-slate-800 rounded-lg border border-slate-700 overflow-x-auto">
             {!attendanceRecords || attendanceRecords.length === 0 ? (
               <div className="text-center py-8 text-slate-500">
                 Henüz yoklama kaydı yok
               </div>
             ) : (
-              <table className="w-full">
+              <table className="w-full min-w-[600px]">
                 <thead>
                   <tr className="border-b border-slate-700 bg-slate-900/50">
-                    <th className="text-left py-3 px-4 text-slate-400 font-medium">Tarih</th>
-                    <th className="text-left py-3 px-4 text-slate-400 font-medium">Proje</th>
-                    <th className="text-left py-3 px-4 text-slate-400 font-medium">Giriş</th>
-                    <th className="text-left py-3 px-4 text-slate-400 font-medium">Çıkış</th>
-                    <th className="text-left py-3 px-4 text-slate-400 font-medium">Gün Çarpanı</th>
+                    <th className="text-left py-3 px-2 md:px-4 text-slate-400 font-medium text-xs md:text-sm">Tarih</th>
+                    <th className="text-left py-3 px-2 md:px-4 text-slate-400 font-medium text-xs md:text-sm">Proje</th>
+                    <th className="text-left py-3 px-2 md:px-4 text-slate-400 font-medium text-xs md:text-sm">Giriş</th>
+                    <th className="text-left py-3 px-2 md:px-4 text-slate-400 font-medium text-xs md:text-sm">Çıkış</th>
+                    <th className="text-left py-3 px-2 md:px-4 text-slate-400 font-medium text-xs md:text-sm">Gün Çarpanı</th>
                   </tr>
                 </thead>
                 <tbody>
                   {attendanceRecords?.map((record: any) => (
                     <tr key={record.id} className="border-b border-slate-700 hover:bg-slate-700/50">
-                      <td className="py-3 px-4 text-white">
+                      <td className="py-3 px-2 md:px-4 text-white text-xs md:text-sm break-words">
                         {new Date(record.date).toLocaleDateString("tr-TR")}
                       </td>
-                      <td className="py-3 px-4 text-white">
+                      <td className="py-3 px-2 md:px-4 text-white text-xs md:text-sm break-words">
                         {record.project?.name || record.project?.title || "-"}
                       </td>
-                      <td className="py-3 px-4 text-green-400">
+                      <td className="py-3 px-2 md:px-4 text-green-400 text-xs md:text-sm break-words">
                         {record.checkIn ? new Date(record.checkIn).toLocaleTimeString("tr-TR") : "-"}
                       </td>
-                      <td className="py-3 px-4 text-red-400">
+                      <td className="py-3 px-2 md:px-4 text-red-400 text-xs md:text-sm break-words">
                         {record.checkOut ? new Date(record.checkOut).toLocaleTimeString("tr-TR") : "-"}
                       </td>
-                      <td className="py-3 px-4 text-white">
+                      <td className="py-3 px-2 md:px-4 text-white text-xs md:text-sm break-words">
                         {record.dayMultiplier || 0}
                       </td>
                     </tr>
@@ -847,29 +847,29 @@ export default function PersonelDetailPage({
           <h3 className="text-lg font-semibold text-white border-b border-slate-800 pb-2 mb-4">Zimmetli Ekipmanlar</h3>
           
           {assignedInventory.length === 0 ? (
-            <div className="bg-slate-800 rounded-lg p-6 border border-slate-700 text-center text-slate-400">
+            <div className="bg-slate-800 rounded-lg p-4 md:p-6 border border-slate-700 text-center text-slate-400">
               Zimmetli ekipman bulunmuyor
             </div>
           ) : (
-            <div className="bg-slate-800 rounded-lg border border-slate-700 overflow-hidden">
-              <table className="w-full">
+            <div className="bg-slate-800 rounded-lg border border-slate-700 overflow-x-auto">
+              <table className="w-full min-w-[600px]">
                 <thead>
                   <tr className="border-b border-slate-700 bg-slate-800/50">
-                    <th className="text-left py-3 px-4 text-slate-400 font-medium">Malzeme Adı</th>
-                    <th className="text-left py-3 px-4 text-slate-400 font-medium">Miktar</th>
-                    <th className="text-left py-3 px-4 text-slate-400 font-medium">Birim</th>
-                    <th className="text-left py-3 px-4 text-slate-400 font-medium">Proje</th>
-                    <th className="text-left py-3 px-4 text-slate-400 font-medium">Zimmet Tarihi</th>
+                    <th className="text-left py-3 px-2 md:px-4 text-slate-400 font-medium text-xs md:text-sm">Malzeme Adı</th>
+                    <th className="text-left py-3 px-2 md:px-4 text-slate-400 font-medium text-xs md:text-sm">Miktar</th>
+                    <th className="text-left py-3 px-2 md:px-4 text-slate-400 font-medium text-xs md:text-sm">Birim</th>
+                    <th className="text-left py-3 px-2 md:px-4 text-slate-400 font-medium text-xs md:text-sm">Proje</th>
+                    <th className="text-left py-3 px-2 md:px-4 text-slate-400 font-medium text-xs md:text-sm">Zimmet Tarihi</th>
                   </tr>
                 </thead>
                 <tbody>
                   {assignedInventory.map((item) => (
                     <tr key={item.id} className="border-b border-slate-700 hover:bg-slate-800/50">
-                      <td className="py-3 px-4 text-white">{item.name}</td>
-                      <td className="py-3 px-4 text-white">{item.quantity}</td>
-                      <td className="py-3 px-4 text-white">{item.unit}</td>
-                      <td className="py-3 px-4 text-white">{item.project?.name || "-"}</td>
-                      <td className="py-3 px-4 text-white text-sm">
+                      <td className="py-3 px-2 md:px-4 text-white text-xs md:text-sm break-words">{item.name}</td>
+                      <td className="py-3 px-2 md:px-4 text-white text-xs md:text-sm break-words">{item.quantity}</td>
+                      <td className="py-3 px-2 md:px-4 text-white text-xs md:text-sm break-words">{item.unit}</td>
+                      <td className="py-3 px-2 md:px-4 text-white text-xs md:text-sm break-words">{item.project?.name || "-"}</td>
+                      <td className="py-3 px-2 md:px-4 text-white text-xs md:text-sm break-words">
                         {new Date(item.createdAt).toLocaleDateString("tr-TR")}
                       </td>
                     </tr>
@@ -881,10 +881,10 @@ export default function PersonelDetailPage({
         </div>
 
         <div className="mt-8 pt-6 border-t border-slate-800">
-          <div className="flex space-x-4">
+          <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4">
             <Link
               href="/admin/personel"
-              className="px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors"
+              className="px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors text-center"
             >
               Kapat
             </Link>

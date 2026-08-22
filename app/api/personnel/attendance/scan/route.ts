@@ -14,6 +14,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { qrData, latitude, longitude, gpsRequired } = body
 
+    console.log("--- YENİ NFC SCAN İSTEĞİ ---")
+    console.log("Gelen QR/NFC Data:", qrData)
+    console.log("GPS Koordinatları:", { latitude, longitude })
+    console.log("GPS Zorunlu mu:", gpsRequired)
+
     if (!qrData) {
       return NextResponse.json(
         { error: "QR data is required" },
@@ -36,6 +41,11 @@ export async function POST(request: NextRequest) {
         userId: session.user.id 
       } as any
     })
+
+    console.log("Personel Arama Sonucu:", personel ? "Bulundu" : "BULUNAMADI")
+    if (personel) {
+      console.log("Personel Detayları:", { id: personel.id, name: personel.name, userId: personel.userId })
+    }
 
     if (!personel) {
       return NextResponse.json(
