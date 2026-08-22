@@ -6,11 +6,12 @@
  */
 
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { toast } from "react-hot-toast"
 import { QRCodeSVG } from "qrcode.react"
 import * as XLSX from "xlsx"
 import GeofencedCheckIn from "@/components/GeofencedCheckIn"
+import { processNfcAttendance } from "./actions"
 
 export default function AttendancePage() {
   const [projects, setProjects] = useState<any[]>([])
@@ -26,6 +27,14 @@ export default function AttendancePage() {
   const [selectedProjectForQR, setSelectedProjectForQR] = useState("")
   const [showQRModal, setShowQRModal] = useState(false)
 
+  // GPS Settings state
+  const [gpsSettings, setGpsSettings] = useState({
+    gpsRequired: false,
+    latitude: "",
+    longitude: "",
+    gpsRadius: "100"
+  })
+
   // Manual attendance form state
   const [isManualAttendanceOpen, setIsManualAttendanceOpen] = useState(false)
   const [manualAttendanceForm, setManualAttendanceForm] = useState({
@@ -37,6 +46,13 @@ export default function AttendancePage() {
   })
   const [personelSearchTerm, setPersonelSearchTerm] = useState("")
   const [isPersonelDropdownOpen, setIsPersonelDropdownOpen] = useState(false)
+
+  // NFC Terminal state
+  const [isNfcModalOpen, setIsNfcModalOpen] = useState(false)
+  const [nfcInput, setNfcInput] = useState("")
+  const [selectedProjectForNfc, setSelectedProjectForNfc] = useState("")
+  const [isWebNfcScanning, setIsWebNfcScanning] = useState(false)
+  const nfcInputRef = useRef<HTMLInputElement>(null)
 
   // Turkish character normalization function
   const normalizeTurkishChars = (text: string) => {
@@ -219,6 +235,134 @@ export default function AttendancePage() {
     setShowQRModal(true)
   }
 
+  const handleProjectChange = (projectId: string) => {
+    setSelectedProjectForQR(projectId)
+    // Load GPS settings for selected project
+    const project = projects.find(p => p.id === projectId)
+    if (project) {
+      setGpsSettings({
+        gpsRequired: project.gpsRequired || false,
+        latitude: project.latitude?.toString() || "",
+        longitude: project.longitude?.toString() || "",
+        gpsRadius: project.gpsRadius?.toString() || "100"
+      })
+    }
+  }
+
+  const handleNfcSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!nfcInput.trim()) {
+      toast.error("Kart UID boş")
+      return
+    }
+
+    if (!selectedProjectForNfc) {
+      toast.error("Lütfen bir proje seçin")
+      return
+    }
+
+    const result = await processNfcAttendance(nfcInput.trim(), selectedProjectForNfc)
+
+    if (result.success) {
+      const actionText = result.action === "checkin" ? "Giriş" : "Çıkış"
+      toast.success(`${result.personelName} - ${actionText} Başarılı (${result.time})`)
+      setNfcInput("")
+      fetchAttendanceRecords()
+      // Re-focus input for next scan
+      setTimeout(() => {
+        nfcInputRef.current?.focus()
+      }, 100)
+    } else {
+      toast.error(result.error || "İşlem başarısız")
+      setNfcInput("")
+      setTimeout(() => {
+        nfcInputRef.current?.focus()
+      }, 100)
+    }
+  }
+
+  const handleNfcKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleNfcSubmit(e)
+    }
+  }
+
+  const startWebNfcScan = async () => {
+    if (!('NDEFReader' in window)) {
+      toast.error("Tarayıcınız Web NFC özelliğini desteklemiyor (iOS veya desteklenmeyen tarayıcı).")
+      return
+    }
+
+    if (!selectedProjectForNfc) {
+      toast.error("Lütfen önce bir proje seçin")
+      return
+    }
+
+    try {
+      setIsWebNfcScanning(true)
+      const ndef = new (window as any).NDEFReader()
+      await ndef.scan()
+      toast.success("NFC okuma başlatıldı. Kartı okutun...")
+
+      ndef.onreading = async (event: any) => {
+        const serialNumber = event.serialNumber
+        setNfcInput(serialNumber)
+        setIsWebNfcScanning(false)
+        
+        // Auto-submit after reading
+        const result = await processNfcAttendance(serialNumber, selectedProjectForNfc)
+        if (result.success) {
+          const actionText = result.action === "checkin" ? "Giriş" : "Çıkış"
+          toast.success(`${result.personelName} - ${actionText} Başarılı (${result.time})`)
+          setNfcInput("")
+          fetchAttendanceRecords()
+        } else {
+          toast.error(result.error || "İşlem başarısız")
+          setNfcInput("")
+        }
+      }
+
+      ndef.onreadingerror = () => {
+        toast.error("NFC okuma hatası")
+        setIsWebNfcScanning(false)
+      }
+    } catch (error) {
+      console.error("Web NFC error:", error)
+      toast.error("NFC başlatılamadı")
+      setIsWebNfcScanning(false)
+    }
+  }
+
+  const handleSaveGpsSettings = async () => {
+    if (!selectedProjectForQR) {
+      toast.error("Lütfen bir proje seçin")
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/admin/projects/${selectedProjectForQR}/gps-settings`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          gpsRequired: gpsSettings.gpsRequired,
+          latitude: gpsSettings.latitude ? parseFloat(gpsSettings.latitude) : null,
+          longitude: gpsSettings.longitude ? parseFloat(gpsSettings.longitude) : null,
+          gpsRadius: gpsSettings.gpsRadius ? parseInt(gpsSettings.gpsRadius) : 100
+        })
+      })
+
+      if (response.ok) {
+        toast.success("GPS ayarları kaydedildi")
+        fetchProjects()
+      } else {
+        toast.error("GPS ayarları kaydedilemedi")
+      }
+    } catch (error) {
+      toast.error("GPS ayarları kaydedilemedi")
+    }
+  }
+
   const handleVisitorCheckout = async (visitorId: string) => {
     try {
       const response = await fetch(`/api/attendance/visitor/${visitorId}`, {
@@ -274,13 +418,13 @@ export default function AttendancePage() {
         </h1>
       </div>
 
-      {/* QR Code Generator Section */}
+      {/* QR Code Generator & GPS Settings Section */}
       <div className="bg-slate-900 rounded-xl p-6 border border-slate-800 mb-6">
-        <h2 className="text-xl font-semibold text-white mb-4">📱 Şantiye QR'ı Oluştur</h2>
-        <div className="flex gap-4">
+        <h2 className="text-xl font-semibold text-white mb-4">� Şantiye Giriş ve Güvenlik Ayarları</h2>
+        <div className="flex gap-4 mb-6">
           <select
             value={selectedProjectForQR}
-            onChange={(e) => setSelectedProjectForQR(e.target.value)}
+            onChange={(e) => handleProjectChange(e.target.value)}
             className="flex-1 px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
           >
             <option value="">Proje Seçin</option>
@@ -292,49 +436,85 @@ export default function AttendancePage() {
           </select>
           <button
             onClick={handleGenerateQR}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors"
+            disabled={!selectedProjectForQR}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            QR Oluştur
+            QR Kod Üret
           </button>
         </div>
-      </div>
 
-      {/* GPS Geofencing Check-in */}
-      <div className="mb-6">
-        <div className="bg-slate-900 rounded-xl p-4 border border-slate-800">
-          <h2 className="text-xl font-semibold text-white mb-4">📍 GPS Bazlı Giriş (Geofencing)</h2>
-          <div className="mb-4">
-            <select
-              value={selectedProjectForQR}
-              onChange={(e) => setSelectedProjectForQR(e.target.value)}
-              className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+        {selectedProjectForQR && (
+          <div className="border-t border-slate-700 pt-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-white">Girişlerde GPS Doğrulaması Zorunlu Kıl</h3>
+              <button
+                onClick={() => setGpsSettings(prev => ({ ...prev, gpsRequired: !prev.gpsRequired }))}
+                className={`relative w-14 h-7 rounded-full transition-colors ${gpsSettings.gpsRequired ? 'bg-blue-600' : 'bg-slate-700'}`}
+              >
+                <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-transform ${gpsSettings.gpsRequired ? 'translate-x-7' : 'translate-x-1'}`} />
+              </button>
+            </div>
+
+            {gpsSettings.gpsRequired && (
+              <div className="grid md:grid-cols-3 gap-4 mb-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Enlem (Latitude)</label>
+                  <input
+                    type="number"
+                    step="any"
+                    value={gpsSettings.latitude}
+                    onChange={(e) => setGpsSettings(prev => ({ ...prev, latitude: e.target.value }))}
+                    className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                    placeholder="Örn: 41.0082"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Boylam (Longitude)</label>
+                  <input
+                    type="number"
+                    step="any"
+                    value={gpsSettings.longitude}
+                    onChange={(e) => setGpsSettings(prev => ({ ...prev, longitude: e.target.value }))}
+                    className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                    placeholder="Örn: 28.9784"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Yarıçap (metre)</label>
+                  <input
+                    type="number"
+                    value={gpsSettings.gpsRadius}
+                    onChange={(e) => setGpsSettings(prev => ({ ...prev, gpsRadius: e.target.value }))}
+                    className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                    placeholder="Örn: 100"
+                  />
+                </div>
+              </div>
+            )}
+
+            <button
+              onClick={handleSaveGpsSettings}
+              className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-500 transition-colors"
             >
-              <option value="">Proje Seçin</option>
-              {projects.map((project) => (
-                <option key={project.id} value={project.id}>
-                  {project.name || project.title}
-                </option>
-              ))}
-            </select>
+              Ayarları Kaydet
+            </button>
           </div>
-          {selectedProjectForQR && (
-            <GeofencedCheckIn 
-              projectId={selectedProjectForQR}
-              projectLat={projects.find(p => p.id === selectedProjectForQR)?.latitude}
-              projectLng={projects.find(p => p.id === selectedProjectForQR)?.longitude}
-              radius={projects.find(p => p.id === selectedProjectForQR)?.geofenceRadius}
-            />
-          )}
-        </div>
+        )}
       </div>
 
       {/* Action Buttons */}
-      <div className="grid md:grid-cols-2 gap-4 mb-6">
+      <div className="grid md:grid-cols-3 gap-4 mb-6">
         <button
           onClick={() => setIsManualAttendanceOpen(true)}
           className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors font-medium"
         >
           📝 Manuel Yoklama Girişi
+        </button>
+        <button
+          onClick={() => setIsNfcModalOpen(true)}
+          className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-500 transition-colors font-medium"
+        >
+          📡 NFC ile Hızlı Yoklama
         </button>
         <div className="flex gap-2">
           <button
@@ -716,6 +896,86 @@ export default function AttendancePage() {
                 Yazdır
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* NFC Terminal Modal */}
+      {isNfcModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-slate-900 rounded-xl p-6 border border-slate-800 w-full max-w-md mx-4 shadow-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-semibold text-white">📡 NFC Terminal</h3>
+              <button
+                onClick={() => setIsNfcModalOpen(false)}
+                className="text-slate-400 hover:text-white transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <form onSubmit={handleNfcSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Proje *</label>
+                <select
+                  value={selectedProjectForNfc}
+                  onChange={(e) => setSelectedProjectForNfc(e.target.value)}
+                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                  required
+                >
+                  <option value="">Proje Seçin</option>
+                  {projects.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.name || project.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">NFC Kart Okutun</label>
+                <input
+                  ref={nfcInputRef}
+                  type="text"
+                  value={nfcInput}
+                  onChange={(e) => setNfcInput(e.target.value)}
+                  onKeyDown={handleNfcKeyDown}
+                  autoFocus
+                  placeholder="Kartı okutun..."
+                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-white"
+                />
+                <p className="text-xs text-slate-500 mt-2">
+                  USB NFC okuyucuyu bağlayın ve kartı okutun. Otomatik olarak işlenecektir.
+                </p>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={startWebNfcScan}
+                  disabled={isWebNfcScanning}
+                  className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-500 disabled:bg-purple-700 disabled:cursor-not-allowed transition-colors font-medium"
+                >
+                  {isWebNfcScanning ? "Okunuyor..." : "📱 Mobilden Okut"}
+                </button>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsNfcModalOpen(false)}
+                  className="flex-1 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
+                >
+                  Kapat
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-500 transition-colors"
+                >
+                  İşle
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

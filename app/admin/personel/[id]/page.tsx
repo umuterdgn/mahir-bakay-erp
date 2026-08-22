@@ -41,6 +41,7 @@ export default function PersonelDetailPage({
     personnelNo: "",
     name: "",
     tcNo: "",
+    nfcUid: "",
     age: "",
     birthDate: "",
     department: "",
@@ -259,6 +260,7 @@ export default function PersonelDetailPage({
       personnelNo: person.personnelNo || "",
       name: person.name,
       tcNo: person.tcNo || "",
+      nfcUid: person.nfcUid || "",
       age: person.age?.toString() || "",
       birthDate: person.birthDate ? new Date(person.birthDate).toISOString().split('T')[0] : "",
       department: person.department || "",
@@ -285,6 +287,7 @@ export default function PersonelDetailPage({
       personnelNo: "",
       name: "",
       tcNo: "",
+      nfcUid: "",
       age: "",
       birthDate: "",
       department: "",
@@ -892,13 +895,14 @@ export default function PersonelDetailPage({
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Yaş</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">NFC Kart UID</label>
                   <input
-                    type="number"
-                    name="age"
-                    value={editFormData.age}
-                    onChange={(e) => setEditFormData(prev => ({ ...prev, age: e.target.value }))}
+                    type="text"
+                    name="nfcUid"
+                    value={editFormData.nfcUid}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, nfcUid: e.target.value }))}
                     className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+                    placeholder="NFC kart benzersiz kimliği (opsiyonel)"
                   />
                 </div>
               </div>
@@ -915,6 +919,19 @@ export default function PersonelDetailPage({
                   />
                 </div>
                 <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Yaş</label>
+                  <input
+                    type="number"
+                    name="age"
+                    value={editFormData.age}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, age: e.target.value }))}
+                    className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">İşe Giriş Tarihi</label>
                   <input
                     type="date"
@@ -924,9 +941,6 @@ export default function PersonelDetailPage({
                     className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
                   />
                 </div>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">Birim</label>
                   <input
@@ -937,6 +951,9 @@ export default function PersonelDetailPage({
                     className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
                   />
                 </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">Mevcut Şantiye</label>
                   <input
@@ -947,9 +964,6 @@ export default function PersonelDetailPage({
                     className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
                   />
                 </div>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">Telefon</label>
                   <input
@@ -960,16 +974,17 @@ export default function PersonelDetailPage({
                     className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">E-posta</label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={editFormData.email}
-                    onChange={(e) => setEditFormData(prev => ({ ...prev, email: e.target.value }))}
-                    className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
-                  />
-                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">E-posta</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={editFormData.email}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, email: e.target.value }))}
+                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+                />
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">

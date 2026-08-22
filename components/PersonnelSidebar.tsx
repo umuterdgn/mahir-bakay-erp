@@ -25,7 +25,8 @@ import {
   LogOut,
   Menu,
   X,
-  ChevronDown
+  ChevronDown,
+  ClipboardList
 } from "lucide-react"
 
 export default function PersonnelSidebar() {
@@ -36,6 +37,7 @@ export default function PersonnelSidebar() {
 
   const navItems = [
     { href: "/personnel", label: "Ana Sayfa", icon: Home },
+    { href: "/personnel/tasks", label: "Görevlerim / İş Emirleri", icon: ClipboardList },
     { href: "/personnel/profile", label: "Profil ve Ayarlar", icon: User },
     { href: "/personnel/qr-checkin", label: "QR Giriş/Çıkış", icon: QrCode },
     { href: "/personnel/attendance", label: "Mesai Geçmişi", icon: Clock },

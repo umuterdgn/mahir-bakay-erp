@@ -126,6 +126,21 @@ export default async function PersonnelPage() {
     status: assignment.status.toLowerCase()
   }))
 
+  // Fetch today's menu
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const tomorrow = new Date(today)
+  tomorrow.setDate(tomorrow.getDate() + 1)
+
+  const todayMenu = await (prisma as any).foodMenu.findFirst({
+    where: {
+      date: {
+        gte: today,
+        lt: tomorrow
+      }
+    }
+  })
+
   const personnelData = {
     id: personnel.id,
     name: personnel.name,
@@ -144,5 +159,16 @@ export default async function PersonnelPage() {
     activeAdvance
   }
 
-  return <PersonnelDashboard personnel={personnelData} summary={summaryData} recentAttendance={recentAttendance} equipment={equipment} />
+  return (
+    <PersonnelDashboard 
+      personnel={personnelData} 
+      summary={summaryData} 
+      recentAttendance={recentAttendance} 
+      equipment={equipment}
+      todayMenu={todayMenu ? {
+        items: todayMenu.items,
+        date: todayMenu.date
+      } : null}
+    />
+  )
 }

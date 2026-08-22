@@ -608,7 +608,8 @@ export default function FinancePage() {
 
       {/* Transactions Table */}
       <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
-        <table className="w-full">
+        <div className="overflow-x-auto">
+          <table className="w-full">
           <thead className="bg-slate-800">
             <tr>
               <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">Tarih</th>
@@ -672,6 +673,7 @@ export default function FinancePage() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* Modal */}

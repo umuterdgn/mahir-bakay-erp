@@ -10,7 +10,7 @@ datasource db {
   provider  = "postgresql"
   url  	    = env("DATABASE_URL")
   // uncomment next line if you use Prisma <5.10
-  directUrl = env("DATABASE_URL_UNPOOLED")
+  // directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
 // ============================================================================
@@ -107,9 +107,10 @@ model Project {
   shiftStart   String    @default("08:00") // Mesai Başlangıç Saati
   shiftEnd     String    @default("17:00") // Mesai Bitiş Saati
   // Geofencing (GPS) fields
+  gpsRequired    Boolean  @default(false) // Girişlerde GPS doğrulaması zorunlu mu?
   latitude       Float?   // Proje merkezi enlem
   longitude      Float?   // Proje merkezi boylam
-  geofenceRadius Int?     @default(100) // Metre cinsinden izin verilen çap
+  gpsRadius      Int?     @default(100) // Metre cinsinden izin verilen çap
   // Relations
   archives    Archive[]
   transactions Transaction[]
@@ -134,9 +135,9 @@ model Project {
   projectBlueprints ProjectBlueprint[]
   reinforcementInspections ReinforcementInspection[]
   attachmentEvidences AttachmentEvidence[]
-  progressPayments ProgressPayment[]
   inventoryItems InventoryItem[]
   siteZones SiteZone[]
+  workOrders WorkOrder[]
 
   @@index([isActive, displayOrder])
   @@index([status])
@@ -428,6 +429,7 @@ model Personel {
   personnelNo     String              @unique // Personel no (P001, P002, vb.)
   name            String              // Ad Soyad
   tcNo            String?             @unique // TC Kimlik No
+  sgkNo           String?             // SGK No
   age             Int
   birthDate       DateTime
   gender          Gender?
@@ -455,6 +457,9 @@ model Personel {
   emergencyContactName String?        // Acil durum kişisi adı
   emergencyContactPhone String?       // Acil durum kişisi telefon
   emergencyContactRelation String?    // Acil durum kişisi yakınlık
+  nfcUid          String?             @unique // NFC Kart UID (Gelecekteki mobil NFC entegrasyonu için)
+  bankName        String?             // Banka Adı
+  iban            String?             // IBAN
   professionId    String?             // Meslek/Birim ID
   profession      Profession?         @relation(fields: [professionId], references: [id], onDelete: SetNull)
   siteHistory     SiteHistory[]
@@ -472,6 +477,7 @@ model Personel {
   certificates    Certificate[]
   ppeDeliveries   PPEDelivery[]
   leaveRequests   LeaveRequest[]
+  assignedTasks   WorkOrder[] @relation("PersonelTasks")
   notes           String?             @db.Text
   createdAt       DateTime            @default(now())
   updatedAt       DateTime            @updatedAt
@@ -503,6 +509,32 @@ enum PersonelStatus {
   ON_LEAVE
   RESIGNED
   RETIRED
+}
+
+// ============================================================================
+// WORK ORDERS (İş Emirleri)
+// ============================================================================
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  REVIEW
+  DONE
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum Department {
+  MIMARI
+  MEKANIK
+  ELEKTRIK
+  INSAAT
+  GENEL
 }
 
 // ============================================================================
@@ -665,9 +697,6 @@ model Transaction {
   personnelId String?
   personnel   Personel? @relation(fields: [personnelId], references: [id])
 
-  progressPaymentId String? @unique
-  progressPayment   ProgressPayment? @relation(fields: [progressPaymentId], references: [id])
-
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -677,7 +706,6 @@ model Transaction {
   @@index([projectId])
   @@index([companyId])
   @@index([personnelId])
-  @@index([progressPaymentId])
 }
 
 // ============================================================================
@@ -1291,24 +1319,19 @@ model AttachmentEvidence {
 
 model ProgressPayment {
   id              String   @id @default(cuid())
-  projectId       String
-  subcontractor   String   // Taşeron Firma / Kişi Adı
-  workType        String   // Yapılan İş (Örn: Kalıp, Demir, Beton)
-  unit            String   // Birim (m2, m3, ton, kg, adet)
-  quantity        Float    // Miktar (Metraj)
-  unitPrice       Float    // Birim Fiyat
-  totalAmount     Float    // Toplam Tutar (quantity * unitPrice)
-  status          String   @default("BEKLIYOR") // BEKLIYOR, ONAYLANDI, REDDEDILDI
+  title           String   // Örn: "B Blok 3. Kat Boya İşlemi"
   description     String?
+  quantity        Float    // Örn: 150 (Metraj)
+  unit            String   // Örn: "m2", "m3", "Adet"
+  unitPrice       Float?   // Birim Fiyat (Örn: 120 TL)
+  totalPrice      Float?   // quantity * unitPrice
+  status          String   @default("BEKLIYOR") // BEKLIYOR, ONAYLANDI, ODENDI
+  date            DateTime @default(now())
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  financeTransaction Transaction?
-
-  @@index([projectId])
   @@index([status])
-  @@index([subcontractor])
+  @@index([date])
 }
 
 // ============================================================================
@@ -1416,4 +1439,47 @@ model LogisticsSchedule {
   @@index([status])
   @@index([scheduledAt])
   @@index([type])
+}
+
+// ============================================================================
+// YEMEK MENÜSÜ
+// ============================================================================
+
+model FoodMenu {
+  id        String   @id @default(cuid())
+  date      DateTime @unique // Her gün için tek bir menü
+  items     String   // Yemekler (Virgülle veya alt alta ayrılmış metin)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+}
+
+// ============================================================================
+// WORK ORDERS (İş Emirleri)
+// ============================================================================
+
+model WorkOrder {
+  id          String       @id @default(cuid())
+  title       String
+  description String?      @db.Text
+  status      TaskStatus   @default(TODO)
+  priority    TaskPriority @default(MEDIUM)
+  department  Department   @default(GENEL)
+  
+  projectId   String
+  project     Project      @relation(fields: [projectId], references: [id])
+  
+  assignedToId String?
+  assignedTo   Personel?   @relation("PersonelTasks", fields: [assignedToId], references: [id])
+  
+  dueDate     DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([status])
+  @@index([priority])
+  @@index([department])
+  @@index([projectId])
+  @@index([assignedToId])
 }

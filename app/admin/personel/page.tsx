@@ -106,7 +106,8 @@ export default function AdminPersonelPage() {
           {isLoading ? (
             <div className="p-8 text-center text-slate-400">Yükleniyor...</div>
           ) : (
-            <table className="w-full">
+            <div className="overflow-x-auto">
+              <table className="w-full">
               <thead className="bg-slate-800">
                 <tr>
                   <th className="px-6 py-3 text-left text-sm font-medium text-slate-300">Personel No</th>
@@ -152,6 +153,7 @@ export default function AdminPersonelPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
       )}
@@ -175,6 +177,7 @@ function PersonelForm({ onSave, onCancel }: { onSave: () => void; onCancel: () =
     personnelNo: "",
     name: "",
     tcNo: "",
+    nfcUid: "",
     age: "",
     birthDate: "",
     department: "",
@@ -306,6 +309,17 @@ function PersonelForm({ onSave, onCancel }: { onSave: () => void; onCancel: () =
               onChange={(e) => setFormData({ ...formData, tcNo: e.target.value })}
               className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
               placeholder="11 haneli TC no"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">NFC Kart UID</label>
+            <input
+              type="text"
+              value={formData.nfcUid}
+              onChange={(e) => setFormData({ ...formData, nfcUid: e.target.value })}
+              className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+              placeholder="NFC kart benzersiz kimliği (opsiyonel)"
             />
           </div>
 

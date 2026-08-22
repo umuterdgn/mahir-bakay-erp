@@ -42,11 +42,17 @@ import {
   AlertTriangle,
   CheckCircle,
   AlertOctagon,
-  Truck
+  Truck,
+  ClipboardCheck,
+  Megaphone,
+  Utensils,
+  Search,
+  Calculator
 } from "lucide-react"
 
 export default function AdminSidebar() {
   const [isOpen, setIsOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
   const pathname = usePathname()
   const { data: session, status } = useSession()
 
@@ -60,10 +66,13 @@ export default function AdminSidebar() {
     { href: "/admin/site-reports", label: "Şantiye Günlüğü", requiredPermission: null, icon: ClipboardList, category: "ANA MENÜ" },
     { href: "/admin/personel", label: "Personeller", requiredPermission: "PERSONNEL", icon: Users, category: "İNSAN KAYNAKLARI" },
     { href: "/admin/attendance", label: "Puantaj & Mesai", requiredPermission: "ATTENDANCE", icon: UserCheck, category: "İNSAN KAYNAKLARI" },
+    { href: "/admin/approvals", label: "Onay Bekleyenler", requiredPermission: null, icon: ClipboardCheck, category: "İNSAN KAYNAKLARI" },
+    { href: "/admin/food-menu", label: "Yemek Menüsü", requiredPermission: null, icon: Utensils, category: "İNSAN KAYNAKLARI" },
     { href: "/admin/finance", label: "Kasa & Finans", requiredPermission: "FINANCE", icon: DollarSign, category: "FİNANS & TEDARİK" },
     { href: "/admin/inventory", label: "Ambar & Karekod", requiredPermission: "INVENTORY", icon: PackageSearch, category: "FİNANS & TEDARİK" },
     { href: "/admin/equipments", label: "Demirbaş", requiredPermission: null, icon: Wrench, category: "FİNANS & TEDARİK" },
     { href: "/admin/contracts", label: "Sözleşmeler", requiredPermission: null, icon: FileSignature, category: "FİNANS & TEDARİK" },
+    { href: "/admin/progress-payments", label: "Hakediş ve Metraj", requiredPermission: null, icon: Calculator, category: "FİNANS & TEDARİK" },
     { href: "/admin/projects", label: "Projeler", requiredPermission: "PROJECTS", icon: FolderKanban, category: "YAPI DENETİM & KONTROL" },
     { href: "/admin/inspection/reports/create", label: "Hasar Tespit & Rapor", requiredPermission: null, icon: FileSearch, category: "YAPI DENETİM & KONTROL" },
     { href: "/admin/inspection", label: "Numune & Karot Takip", requiredPermission: null, icon: TestTube, category: "YAPI DENETİM & KONTROL" },
@@ -81,10 +90,12 @@ export default function AdminSidebar() {
     { href: "/admin/isg/ppe-forms", label: "KKD Zimmet Formları", requiredPermission: null, icon: Shield, category: "İSG & Risk Yönetimi" },
     { href: "/admin/crm", label: "CRM / Firmalar", requiredPermission: null, icon: Building2, category: "PROJE & CRM" },
     { href: "/admin/cms", label: "İçerik Yönetimi", requiredPermission: null, icon: FileText, category: "PROJE & CRM" },
+    { href: "/admin/work-orders", label: "İş Emirleri (Kanban)", requiredPermission: null, icon: ClipboardList, category: "PROJE & CRM" },
     { href: "/admin/communication/chat", label: "İç Haberleşme", requiredPermission: null, icon: MessageSquare, category: "İLETİŞİM & OPERASYON" },
     { href: "/admin/communication/logistics", label: "Lojistik & Randevu Ağı", requiredPermission: null, icon: Truck, category: "İLETİŞİM & OPERASYON" },
     { href: "/admin/users", label: "Kullanıcılar", requiredPermission: null, icon: Users, category: "İLETİŞİM & SİSTEM" },
     { href: "/admin/logs", label: "Sistem Logları", requiredPermission: null, icon: FileLog, category: "İLETİŞİM & SİSTEM" },
+    { href: "/admin/announcements", label: "Duyuru Yönetimi", requiredPermission: null, icon: Megaphone, category: "İLETİŞİM & SİSTEM" },
     { href: "/admin/ayarlar", label: "Ayarlar", requiredPermission: null, icon: Settings, category: "İLETİŞİM & SİSTEM" },
     { href: "/admin/my-tasks", label: "Görevlerim", requiredPermission: null, icon: CheckSquare, personnelOnly: true, category: "PERSONEL" },
     { href: "/admin/my-salary", label: "Maaş/Avans", requiredPermission: null, icon: Wallet, personnelOnly: true, category: "PERSONEL" },
@@ -109,15 +120,23 @@ export default function AdminSidebar() {
     return userPermissions.includes(item.requiredPermission as string)
   })
 
+  // Arama filtreleme
+  const filteredNavItems = navItems.filter(item => {
+    if (!searchQuery.trim()) return true
+    const query = searchQuery.toLowerCase()
+    return item.label.toLowerCase().includes(query) || 
+           item.category.toLowerCase().includes(query)
+  })
+
   // Group items by category
-  const groupedNavItems = navItems.reduce((acc, item) => {
+  const groupedNavItems = filteredNavItems.reduce((acc, item) => {
     const category = item.category || "DİĞER"
     if (!acc[category]) {
       acc[category] = []
     }
     acc[category].push(item)
     return acc
-  }, {} as Record<string, typeof navItems>)
+  }, {} as Record<string, typeof filteredNavItems>)
 
   return (
     <>
@@ -153,9 +172,21 @@ export default function AdminSidebar() {
       >
         <div className="flex flex-col h-full p-6">
           {/* Header */}
-          <div className="mb-8">
+          <div className="mb-6">
             <h1 className="text-xl font-bold text-white mb-1">Şantiye Asistanı</h1>
-            <p className="text-slate-400 text-sm">Mahir Bakay Mühendislik</p>
+            <p className="text-slate-400 text-sm mb-4">Mahir Bakay Mühendislik</p>
+            
+            {/* Search Bar */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Menü ara..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all"
+              />
+            </div>
           </div>
 
           {/* Navigation */}

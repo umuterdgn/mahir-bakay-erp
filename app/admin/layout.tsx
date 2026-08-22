@@ -25,7 +25,7 @@ export default async function AdminLayout({
     <NextAuthSessionProvider>
       <div className="min-h-screen bg-slate-950">
         <AdminSidebar />
-        <main className="lg:ml-64 p-6 lg:p-8">
+        <main className="lg:ml-64 pt-16 lg:pt-0 p-6 lg:p-8">
           {children}
         </main>
         <Toaster position="bottom-right" />

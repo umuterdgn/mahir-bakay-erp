@@ -4,12 +4,14 @@
  * This code is the property of NXA Software.
  */
 
-import { User, Mail, Phone, MapPin, Briefcase, Droplet, AlertCircle, Bell, Lock, Camera } from "lucide-react"
+import { User, Mail, Phone, MapPin, Briefcase, Droplet, AlertCircle, Bell, Lock, Camera, CreditCard, Shield, Calendar, FileText } from "lucide-react"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import ContactInfoForm from "./ContactInfoForm"
 import EmergencyContactForm from "./EmergencyContactForm"
+import BankInfoForm from "./BankInfoForm"
+import PasswordChangeForm from "./PasswordChangeForm"
 
 // Tarih formatlama (dd MMMM yyyy)
 function formatDate(date: Date): string {
@@ -34,6 +36,11 @@ async function getProfileData(userId: string) {
       currentSite: true,
       bloodType: true,
       hireDate: true,
+      tcNo: true,
+      sgkNo: true,
+      birthDate: true,
+      bankName: true,
+      iban: true,
       emergencyContactName: true,
       emergencyContactPhone: true,
       emergencyContactRelation: true
@@ -71,7 +78,12 @@ async function getProfileData(userId: string) {
       location: personel.currentSite || "-",
       bloodType: personel.bloodType || "-",
       employeeId: personel.personnelNo || "-",
-      joinDate: personel.hireDate ? formatDate(new Date(personel.hireDate)) : "-"
+      joinDate: personel.hireDate ? formatDate(new Date(personel.hireDate)) : "-",
+      tcNo: personel.tcNo || "-",
+      sgkNo: personel.sgkNo || "-",
+      birthDate: personel.birthDate ? formatDate(new Date(personel.birthDate)) : "-",
+      bankName: personel.bankName || "",
+      iban: personel.iban || ""
     },
     emergencyContact: {
       name: personel.emergencyContactName || "-",
@@ -99,7 +111,7 @@ export default async function ProfilePage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Profile Card */}
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-1 space-y-6">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
             <div className="text-center mb-6">
               <div className="relative inline-block">
@@ -145,8 +157,33 @@ export default async function ProfilePage() {
             </div>
           </div>
 
+          {/* Official Information Card */}
+          <div className="bg-gradient-to-br from-blue-600/10 to-purple-600/10 border border-blue-500/30 rounded-2xl p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <FileText className="w-5 h-5 text-blue-400" />
+              <h3 className="text-lg font-semibold text-white">Resmi Bilgiler</h3>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <p className="text-slate-400 text-xs mb-1">T.C. Kimlik No</p>
+                <p className="text-white font-medium">{profile.tcNo}</p>
+              </div>
+              <div>
+                <p className="text-slate-400 text-xs mb-1">SGK No</p>
+                <p className="text-white">{profile.sgkNo}</p>
+              </div>
+              <div>
+                <p className="text-slate-400 text-xs mb-1">Doğum Tarihi</p>
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-slate-500" />
+                  <p className="text-white">{profile.birthDate}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Emergency Contact Card */}
-          <div className="bg-gradient-to-br from-red-600/10 to-orange-600/10 border border-red-500/30 rounded-2xl p-6 mt-6">
+          <div className="bg-gradient-to-br from-red-600/10 to-orange-600/10 border border-red-500/30 rounded-2xl p-6">
             <div className="flex items-center gap-3 mb-4">
               <AlertCircle className="w-5 h-5 text-red-400" />
               <h3 className="text-lg font-semibold text-white">Acil Durum Kişisi</h3>
@@ -174,7 +211,11 @@ export default async function ProfilePage() {
           {/* Contact Information */}
           <ContactInfoForm currentData={profile} />
 
+          {/* Bank Information */}
+          <BankInfoForm currentData={profile} />
 
+          {/* Account Security */}
+          <PasswordChangeForm />
         </div>
       </div>
     </div>

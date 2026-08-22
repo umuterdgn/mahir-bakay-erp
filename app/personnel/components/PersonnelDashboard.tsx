@@ -29,7 +29,8 @@ import {
   Phone,
   Mail,
   Settings,
-  ChevronRight
+  ChevronRight,
+  ChefHat
 } from "lucide-react"
 
 interface PersonnelDashboardProps {
@@ -61,9 +62,13 @@ interface PersonnelDashboardProps {
     code: string
     status: string
   }[]
+  todayMenu?: {
+    items: string
+    date: Date
+  } | null
 }
 
-export function PersonnelDashboard({ personnel, summary, recentAttendance, equipment }: PersonnelDashboardProps) {
+export function PersonnelDashboard({ personnel, summary, recentAttendance, equipment, todayMenu }: PersonnelDashboardProps) {
   const router = useRouter()
   const [showQRModal, setShowQRModal] = useState(false)
   const [showLeaveModal, setShowLeaveModal] = useState(false)
@@ -74,6 +79,7 @@ export function PersonnelDashboard({ personnel, summary, recentAttendance, equip
   const [isScanning, setIsScanning] = useState(false)
   const [scanResult, setScanResult] = useState<string | null>(null)
   const [cameraError, setCameraError] = useState<string | null>(null)
+  const [isWebNfcScanning, setIsWebNfcScanning] = useState(false)
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null)
   const qrCodeElementId = "qr-reader"
 
@@ -114,6 +120,9 @@ export function PersonnelDashboard({ personnel, summary, recentAttendance, equip
   const startCamera = async () => {
     setCameraError(null)
     setIsScanning(true)
+    
+    // Wait for DOM to be ready
+    await new Promise(resolve => setTimeout(resolve, 100))
     
     try {
       const html5QrCode = new Html5Qrcode(qrCodeElementId)
@@ -158,7 +167,7 @@ export function PersonnelDashboard({ personnel, summary, recentAttendance, equip
       )
     } catch (error) {
       console.error('Camera start error:', error)
-      setCameraError('Kamera başlatılamadı. Lütfen kamera izni verin.')
+      setCameraError('Kamera başlatılamadı. Lütfen tarayıcınızın adres çubuğundaki kilit simgesine (veya site ayarlarına) tıklayarak kamera iznini manuel olarak verin.')
       setIsScanning(false)
     }
   }
@@ -177,6 +186,40 @@ export function PersonnelDashboard({ personnel, summary, recentAttendance, equip
 
   const handleCameraClick = () => {
     startCamera()
+  }
+
+  const startWebNfcScan = async () => {
+    if (!('NDEFReader' in window)) {
+      setCameraError("Tarayıcınız Web NFC özelliğini desteklemiyor (iOS veya desteklenmeyen tarayıcı).")
+      return
+    }
+
+    try {
+      setIsWebNfcScanning(true)
+      setCameraError(null)
+      const ndef = new (window as any).NDEFReader()
+      await ndef.scan()
+      
+      ndef.onreading = async (event: any) => {
+        const serialNumber = event.serialNumber
+        setIsWebNfcScanning(false)
+        
+        // Use the NFC UID as QR data for check-in
+        const success = await handleCheckIn(serialNumber)
+        if (success) {
+          setIsScanning(false)
+        }
+      }
+
+      ndef.onreadingerror = () => {
+        setCameraError("NFC okuma hatası")
+        setIsWebNfcScanning(false)
+      }
+    } catch (error) {
+      console.error("Web NFC error:", error)
+      setCameraError("NFC başlatılamadı")
+      setIsWebNfcScanning(false)
+    }
   }
 
   // Modal kapatıldığında kamerayı durdur
@@ -319,6 +362,36 @@ export function PersonnelDashboard({ personnel, summary, recentAttendance, equip
             Avans Talep Et
           </button>
         </div>
+      </div>
+
+      {/* Today's Menu Card */}
+      <div className="bg-gradient-to-br from-orange-600/10 to-red-600/10 border border-orange-500/30 rounded-2xl p-6 mb-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 bg-orange-500/20 rounded-xl flex items-center justify-center">
+            <ChefHat className="w-5 h-5 text-orange-400" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-white">Günün Menüsü</h3>
+            <p className="text-slate-400 text-sm">
+              {todayMenu 
+                ? new Date(todayMenu.date).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                : new Date().toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+              }
+            </p>
+          </div>
+        </div>
+        {todayMenu ? (
+          <div className="space-y-2">
+            {todayMenu.items.split(',').map((item, index) => (
+              <div key={index} className="flex items-center gap-2 text-slate-300">
+                <div className="w-2 h-2 bg-orange-400 rounded-full" />
+                <span>{item.trim()}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-slate-400 text-sm">Bugün için menü bilgisi girilmedi.</p>
+        )}
       </div>
 
       {/* Stats Grid */}
@@ -590,15 +663,26 @@ export function PersonnelDashboard({ personnel, summary, recentAttendance, equip
               </div>
             )}
 
-            <button 
-              onClick={handleCameraClick}
-              disabled={isScanning}
-              className={`w-full py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl transition-all font-medium text-lg shadow-lg shadow-blue-500/30 ${
-                isScanning ? 'opacity-50 cursor-not-allowed' : 'hover:from-blue-500 hover:to-purple-500'
-              }`}
-            >
-              {isScanning ? 'Taranıyor...' : 'Kamerayı Aç'}
-            </button>
+            <div className="flex gap-3">
+              <button 
+                onClick={handleCameraClick}
+                disabled={isScanning}
+                className={`flex-1 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl transition-all font-medium text-lg shadow-lg shadow-blue-500/30 ${
+                  isScanning ? 'opacity-50 cursor-not-allowed' : 'hover:from-blue-500 hover:to-purple-500'
+                }`}
+              >
+                {isScanning ? 'Taranıyor...' : '📷 QR ile Okut'}
+              </button>
+              <button 
+                onClick={startWebNfcScan}
+                disabled={isWebNfcScanning}
+                className={`flex-1 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl transition-all font-medium text-lg shadow-lg shadow-green-500/30 ${
+                  isWebNfcScanning ? 'opacity-50 cursor-not-allowed' : 'hover:from-green-500 hover:to-emerald-500'
+                }`}
+              >
+                {isWebNfcScanning ? 'Okunuyor...' : '📱 NFC ile Okut'}
+              </button>
+            </div>
           </div>
         </div>
       )}

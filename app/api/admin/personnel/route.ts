@@ -36,6 +36,7 @@ export async function POST(request: Request) {
         personnelNo: body.personnelNo,
         name: body.name,
         tcNo: body.tcNo || null,
+        nfcUid: body.nfcUid || null,
         age: body.age ? Number(body.age) : 0,
         birthDate: new Date(body.birthDate),
         department: body.department,
