@@ -221,6 +221,7 @@ model Equipment {
   id               String   @id @default(cuid())
   name             String
   type             String   // ARAC, IS_MAKINESI, ELEKTRONIK, DIGER
+  category         String?  // Kategori
   status           String   @default("AVAILABLE") // AVAILABLE, ASSIGNED, MAINTENANCE
   serialNumber     String?  @unique // BLE MAC adresi veya Seri No (zorunlu)
   plateOrSerialNo  String?  // @deprecated - Use serialNumber instead
