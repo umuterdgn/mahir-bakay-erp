@@ -13,10 +13,6 @@ export async function GET(req: Request) {
     const projectId = searchParams.get("projectId");
     
     const payments = await prisma.progressPayment.findMany({
-      where: projectId ? { projectId } : undefined,
-      include: {
-        project: true
-      },
       orderBy: {
         createdAt: 'desc'
       }
@@ -32,23 +28,19 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const data = await req.json();
-    const { projectId, subcontractor, workType, unit, quantity, unitPrice, description } = data;
+    const { title, description, quantity, unit, unitPrice, date } = data;
     
-    const totalAmount = quantity * unitPrice;
+    const totalPrice = unitPrice ? quantity * unitPrice : null;
 
     const payment = await prisma.progressPayment.create({
       data: { 
-        projectId, 
-        subcontractor, 
-        workType, 
-        unit, 
-        quantity, 
-        unitPrice, 
-        totalAmount, 
-        description 
-      },
-      include: {
-        project: true
+        title,
+        description,
+        quantity,
+        unit,
+        unitPrice,
+        totalPrice,
+        date: date ? new Date(date) : new Date()
       }
     });
     

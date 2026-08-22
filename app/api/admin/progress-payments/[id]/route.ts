@@ -25,10 +25,7 @@ export async function PATCH(
 
     const payment = await prisma.progressPayment.update({
       where: { id: resolvedParams.id },
-      data: { status },
-      include: {
-        project: true
-      }
+      data: { status }
     });
 
     // Eğer onaylandıysa otomatik olarak finans kaydı oluştur
@@ -36,10 +33,9 @@ export async function PATCH(
       await prisma.transaction.create({
         data: {
           type: "GIDER",
-          amount: payment.totalAmount,
-          description: `Hakediş: ${payment.subcontractor} - ${payment.workType}`,
+          amount: payment.totalPrice || 0,
+          description: `Hakediş: ${payment.title}`,
           category: "HAKEDIS",
-          projectId: payment.projectId,
           date: new Date()
         }
       });
