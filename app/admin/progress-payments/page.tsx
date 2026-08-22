@@ -55,7 +55,7 @@ export default function ProgressPaymentsPage() {
   const fetchPayments = async () => {
     const result = await getProgressPayments()
     if (result.success) {
-      setPayments(result.progressPayments)
+      setPayments(result.progressPayments || [])
     }
   }
 
