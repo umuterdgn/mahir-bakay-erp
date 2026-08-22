@@ -212,7 +212,13 @@ export default async function ProfilePage() {
           <ContactInfoForm currentData={profile} />
 
           {/* Bank Information */}
-          <BankInfoForm currentData={profile} />
+          <BankInfoForm 
+            currentData={{
+              ...profile,
+              bankName: profile.bankName || "",
+              iban: profile.iban || ""
+            }} 
+          />
 
           {/* Account Security */}
           <PasswordChangeForm />
