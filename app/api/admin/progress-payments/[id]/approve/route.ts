@@ -28,10 +28,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         data: {
           type: "GIDER",
           category: "Taşeron Hakediş",
-          amount: updatedPayment.totalAmount,
-          description: `${updatedPayment.subcontractor} - ${updatedPayment.workType} Hakedişi`,
-          date: new Date(),
-          progressPaymentId: updatedPayment.id // İlişkiyi kuruyoruz (Çifte veri girişini engeller)
+          amount: updatedPayment.totalPrice || 0,
+          description: `${updatedPayment.title} Hakediş Ödemesi`,
+          date: new Date()
         }
       });
       return updatedPayment;
