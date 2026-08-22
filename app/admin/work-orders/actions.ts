@@ -35,8 +35,8 @@ export async function createWorkOrder(formData: FormData) {
         description: description || null,
         projectId,
         assignedToId: assignedToId || null,
-        department: department || "GENEL",
-        priority: priority || "MEDIUM",
+        department: (department || "GENEL") as any,
+        priority: (priority || "MEDIUM") as any,
         dueDate: dueDate ? new Date(dueDate) : null
       },
       include: {
