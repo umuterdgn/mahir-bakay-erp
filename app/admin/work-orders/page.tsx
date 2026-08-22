@@ -81,7 +81,7 @@ export default function WorkOrdersPage() {
   const fetchWorkOrders = async () => {
     const result = await getWorkOrders()
     if (result.success) {
-      setWorkOrders(result.workOrders)
+      setWorkOrders(result.workOrders || [])
     }
   }
 
