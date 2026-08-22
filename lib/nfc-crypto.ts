@@ -28,7 +28,23 @@ export function encryptNfcData(payload: NfcPayload): string {
  */
 export function decryptNfcData(encryptedData: string): NfcPayload | null {
   try {
-    const bytes = CryptoJS.AES.decrypt(encryptedData, SECRET_KEY)
+    if (!encryptedData) return null;
+
+    // CryptoJS AES çıktıları her zaman "U2FsdGVkX1" (Salted__) ile başlar.
+    // NDEF Text Record'un eklediği baştaki dil kodlarını atlamak için metni buradan kesiyoruz.
+    const magicString = "U2FsdGVkX1";
+    const startIndex = encryptedData.indexOf(magicString);
+    
+    if (startIndex === -1) {
+      // Eğer bu kelime yoksa, bu bizim şifreli kartımız değildir.
+      return null; 
+    }
+
+    // Baştaki ıvır zıvırı (Örn: "en", "tr") atıp gerçek şifreli metni alıyoruz
+    const cleanEncryptedData = encryptedData.substring(startIndex);
+
+    // Şimdi güvenle şifreyi çözebiliriz
+    const bytes = CryptoJS.AES.decrypt(cleanEncryptedData, SECRET_KEY)
     const decryptedString = bytes.toString(CryptoJS.enc.Utf8)
     const payload = JSON.parse(decryptedString) as NfcPayload
     

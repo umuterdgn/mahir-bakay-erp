@@ -91,6 +91,42 @@ export default function CheckInPage() {
       return
     }
 
+    // GPS zorunluluğunu kontrol et
+    const gpsRequired = project.gpsRequired || false
+    const geofenceRadius = project.geofenceRadius || 0
+
+    // EĞER GPS ZORUNLU DEĞİLSE veya GPS yarıçapı 0 ise
+    if (!gpsRequired || geofenceRadius === 0) {
+      // HİÇ KONUM İSTEME! Direkt veriyi gönder.
+      try {
+        const response = await fetch("/api/attendance/personnel", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            ...workerForm,
+            projectId,
+            latitude: null,
+            longitude: null
+          })
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          toast.success(data.message || "İşlem başarılı")
+          setWorkerForm({ username: "", password: "" })
+        } else {
+          const error = await response.json()
+          toast.error(error.error || "İşlem başarısız")
+        }
+      } catch (error) {
+        toast.error("İşlem sırasında hata oluştu")
+      }
+      return
+    }
+
+    // EĞER GPS ZORUNLUYSA
     // GPS doğrulaması için proje koordinatlarını kontrol et
     if (!project.latitude || !project.longitude) {
       toast.error("Bu proje için GPS koordinatları tanımlanmamış. Lütfen yönetici ile iletişime geçin.")
@@ -163,6 +199,41 @@ export default function CheckInPage() {
       return
     }
 
+    // GPS zorunluluğunu kontrol et
+    const gpsRequired = project.gpsRequired || false
+    const geofenceRadius = project.geofenceRadius || 0
+
+    // EĞER GPS ZORUNLU DEĞİLSE veya GPS yarıçapı 0 ise
+    if (!gpsRequired || geofenceRadius === 0) {
+      // HİÇ KONUM İSTEME! Direkt veriyi gönder.
+      try {
+        const response = await fetch("/api/attendance/visitor", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            ...visitorForm,
+            projectId,
+            latitude: null,
+            longitude: null
+          })
+        })
+
+        if (response.ok) {
+          toast.success("Ziyaretçi kaydı başarıyla oluşturuldu")
+          setVisitorForm({ fullName: "", company: "", reason: "" })
+        } else {
+          const error = await response.json()
+          toast.error(error.error || "Kayıt başarısız")
+        }
+      } catch (error) {
+        toast.error("Kayıt sırasında hata oluştu")
+      }
+      return
+    }
+
+    // EĞER GPS ZORUNLUYSA
     // GPS doğrulaması için proje koordinatlarını kontrol et
     if (!project.latitude || !project.longitude) {
       toast.error("Bu proje için GPS koordinatları tanımlanmamış. Lütfen yönetici ile iletişime geçin.")

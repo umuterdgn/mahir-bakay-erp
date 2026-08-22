@@ -393,7 +393,7 @@ export function PersonnelDashboard({ personnel, summary, recentAttendance, equip
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {/* QR Check-in - Large Action Button */}
         <button
-          onClick={() => setShowQRModal(true)}
+          onClick={() => router.push('/personnel/qr-checkin')}
           className="col-span-1 md:col-span-2 lg:col-span-1 bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 rounded-2xl p-6 transition-all shadow-lg shadow-blue-500/30 group"
         >
           <div className="flex flex-col items-center text-center gap-4">
