@@ -21,6 +21,52 @@ export default function QRCheckinPage() {
 
   const handleCheckIn = async (qrData: string) => {
     try {
+      // First, check if GPS is required for this project
+      let coordinates = null
+      let gpsRequired = false
+      
+      try {
+        // Parse QR data to get projectId
+        let projectId = null
+        try {
+          const parsed = JSON.parse(qrData)
+          projectId = parsed.projectId
+        } catch {
+          // QR is not JSON, might be just personnel ID
+        }
+        
+        if (projectId) {
+          // Fetch project settings to check GPS requirement
+          const projectResponse = await fetch(`/api/admin/projects/${projectId}`)
+          if (projectResponse.ok) {
+            const projectData = await projectResponse.json()
+            gpsRequired = projectData.gpsRequired || false
+            
+            // Only get location if GPS is required
+            if (gpsRequired && navigator.geolocation) {
+              coordinates = await new Promise<GeolocationPosition | null>((resolve) => {
+                navigator.geolocation.getCurrentPosition(
+                  (position) => resolve(position),
+                  (error) => {
+                    console.error("GPS error:", error)
+                    resolve(null)
+                  },
+                  { enableHighAccuracy: true, timeout: 10000 }
+                )
+              })
+              
+              if (!coordinates) {
+                setError("Konum alınamadı. Lütfen GPS'i açın.")
+                return false
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error checking GPS requirement:", error)
+        // Continue without GPS if we can't check the setting
+      }
+
       const response = await fetch('/api/personnel/attendance/scan', {
         method: 'POST',
         headers: {
@@ -28,6 +74,9 @@ export default function QRCheckinPage() {
         },
         body: JSON.stringify({
           qrData,
+          latitude: coordinates?.coords.latitude || null,
+          longitude: coordinates?.coords.longitude || null,
+          gpsRequired
         }),
       })
 

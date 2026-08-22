@@ -12,7 +12,7 @@ import { prisma } from "@/lib/prisma"
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { qrData } = body
+    const { qrData, latitude, longitude, gpsRequired } = body
 
     if (!qrData) {
       return NextResponse.json(
@@ -32,7 +32,9 @@ export async function POST(request: NextRequest) {
     }
 
     const personel = await prisma.personel.findFirst({
-      where: { userId: session.user.id }
+      where: { 
+        userId: session.user.id 
+      } as any
     })
 
     if (!personel) {
@@ -70,6 +72,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Validate GPS coordinates if required
+    if (gpsRequired && (latitude === null || longitude === null)) {
+      return NextResponse.json(
+        { error: "GPS doğrulaması zorunlu. Lütfen konum izni verin." },
+        { status: 400 }
+      )
+    }
+
     // Get today's date (start of day)
     const today = new Date()
     today.setHours(0, 0, 0, 0)
@@ -84,19 +94,21 @@ export async function POST(request: NextRequest) {
           lt: new Date(today.getTime() + 24 * 60 * 60 * 1000)
         }
       }
-    })
+    } as any)
 
     const now = new Date()
 
     // Case 1: No record exists - Check-in
     if (!existingRecord) {
-      const newRecord = await prisma.attendanceRecord.create({
+      const newRecord = await (prisma as any).attendanceRecord.create({
         data: {
           personelId,
           projectId,
           date: today,
           checkIn: now,
-          status: "PRESENT"
+          status: "PRESENT",
+          latitude: latitude || null,
+          longitude: longitude || null
         }
       })
 
@@ -111,10 +123,12 @@ export async function POST(request: NextRequest) {
 
     // Case 2: Record exists but checkOut is null - Check-out
     if (existingRecord && !existingRecord.checkOut) {
-      const updatedRecord = await prisma.attendanceRecord.update({
+      const updatedRecord = await (prisma as any).attendanceRecord.update({
         where: { id: existingRecord.id },
         data: {
-          checkOut: now
+          checkOut: now,
+          latitude: latitude || existingRecord.latitude,
+          longitude: longitude || existingRecord.longitude
         }
       })
 
