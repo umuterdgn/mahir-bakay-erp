@@ -37,8 +37,11 @@ export default function InventoryPage() {
   }
 
   const [inventory, setInventory] = useState<any[]>([])
+  const [equipment, setEquipment] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState<'materials' | 'equipment'>('materials')
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isEquipmentModalOpen, setIsEquipmentModalOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isStockModalOpen, setIsStockModalOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState<any>(null)
@@ -49,6 +52,13 @@ export default function InventoryPage() {
     quantity: "",
     unit: "",
     location: ""
+  })
+
+  const [equipmentFormData, setEquipmentFormData] = useState({
+    name: "",
+    type: "",
+    serialNumber: "",
+    category: ""
   })
 
   const [stockFormData, setStockFormData] = useState({
@@ -68,6 +78,7 @@ export default function InventoryPage() {
 
   useEffect(() => {
     fetchInventory()
+    fetchEquipment()
     fetchPersonnel()
   }, [])
 
@@ -82,6 +93,18 @@ export default function InventoryPage() {
       console.error("Failed to fetch inventory:", error)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const fetchEquipment = async () => {
+    try {
+      const response = await fetch("/api/admin/equipments")
+      if (response.ok) {
+        const data = await response.json()
+        setEquipment(data)
+      }
+    } catch (error) {
+      console.error("Failed to fetch equipment:", error)
     }
   }
 
@@ -143,6 +166,94 @@ export default function InventoryPage() {
       location: ""
     })
     setIsModalOpen(true)
+  }
+
+  const openEquipmentModal = () => {
+    setEquipmentFormData({
+      name: "",
+      type: "",
+      serialNumber: "",
+      category: ""
+    })
+    setIsEquipmentModalOpen(true)
+  }
+
+  const closeEquipmentModal = () => {
+    setIsEquipmentModalOpen(false)
+    setEquipmentFormData({
+      name: "",
+      type: "",
+      serialNumber: "",
+      category: ""
+    })
+  }
+
+  const handleBleScan = async () => {
+    try {
+      // Check if Web Bluetooth API is supported
+      if (!navigator.bluetooth) {
+        toast.error("Web Bluetooth API bu tarayıcıda desteklenmiyor. Lütfen Chrome veya Edge kullanın.")
+        return
+      }
+
+      // Request device from user
+      const device = await navigator.bluetooth.requestDevice({
+        acceptAllDevices: true
+      })
+
+      // Use device.id or device.name as serial number
+      const deviceId = device.id || device.name
+      
+      if (deviceId) {
+        setEquipmentFormData({ ...equipmentFormData, serialNumber: deviceId })
+        toast.success(`Cihaz tarandı: ${device.name || deviceId}`)
+      }
+    } catch (error) {
+      console.error("BLE scan error:", error)
+      if (error instanceof Error) {
+        if (error.name === 'NotFoundError') {
+          toast.error("Cihaz seçilmedi")
+        } else if (error.message.includes('User cancelled')) {
+          toast("İptal edildi")
+        } else {
+          toast.error(`BLE tarama hatası: ${error.message}`)
+        }
+      } else {
+        toast.error("BLE tarama hatası oluştu")
+      }
+    }
+  }
+
+  const handleEquipmentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!equipmentFormData.name || !equipmentFormData.serialNumber) {
+      toast.error("Demirbaş adı ve seri numarası zorunludur")
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      const response = await fetch("/api/admin/equipments", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(equipmentFormData)
+      })
+
+      if (response.ok) {
+        toast.success("Demirbaş başarıyla eklendi")
+        fetchEquipment()
+        closeEquipmentModal()
+      } else {
+        toast.error("Demirbaş eklenirken hata oluştu")
+      }
+    } catch (error) {
+      toast.error("Demirbaş eklenirken hata oluştu")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const closeModal = () => {
@@ -357,93 +468,210 @@ export default function InventoryPage() {
   }
 
   return (
-    <div className="lg:mt-0 mt-16">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl lg:text-3xl font-bold text-white">
-          Ambar & Karekod
-        </h1>
+    <div className="lg:mt-0 mt-16 p-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-white bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
+            Ambar & Karekod
+          </h1>
+          <p className="text-slate-400 mt-1">Sarf malzemeleri ve takipli demirbaş yönetimi</p>
+        </div>
         <div className="flex gap-3">
-          <button
-            onClick={openModal}
-            className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-500 transition-colors font-medium flex items-center gap-2"
-          >
-            ➕ Yeni Malzeme Ekle
-          </button>
+          {activeTab === 'materials' ? (
+            <button
+              onClick={openModal}
+              className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-500 hover:to-emerald-500 transition-all font-medium flex items-center gap-2 shadow-lg shadow-green-900/20"
+            >
+              ➕ Yeni Malzeme Ekle
+            </button>
+          ) : (
+            <button
+              onClick={openEquipmentModal}
+              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-500 hover:to-indigo-500 transition-all font-medium flex items-center gap-2 shadow-lg shadow-blue-900/20"
+            >
+              ➕ Yeni Demirbaş Ekle
+            </button>
+          )}
           <button 
             onClick={startQrScanner}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors font-medium flex items-center gap-2"
+            className="px-6 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-xl hover:from-cyan-500 hover:to-blue-500 transition-all font-medium flex items-center gap-2 shadow-lg shadow-cyan-900/20"
           >
             📷 QR ile Çıkış Yap
           </button>
         </div>
       </div>
 
-      <div className="bg-slate-900 rounded-xl p-6 border border-slate-800">
-        <h2 className="text-xl font-semibold text-white mb-6">Stoktaki Malzemeler</h2>
-        
-        {inventory.length === 0 ? (
-          <div className="text-center py-12 text-slate-400">
-            Henüz stok kaydı yok
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-slate-700 bg-slate-800/50">
-                  <th className="text-left py-3 px-4 text-slate-400 font-medium">Malzeme Adı</th>
-                  <th className="text-left py-3 px-4 text-slate-400 font-medium">Miktar</th>
-                  <th className="text-left py-3 px-4 text-slate-400 font-medium">Birim</th>
-                  <th className="text-left py-3 px-4 text-slate-400 font-medium">Kategori</th>
-                  <th className="text-left py-3 px-4 text-slate-400 font-medium">Lokasyon</th>
-                  <th className="text-left py-3 px-4 text-slate-400 font-medium">Zimmetli</th>
-                  <th className="text-left py-3 px-4 text-slate-400 font-medium">İşlemler</th>
-                </tr>
-              </thead>
-              <tbody>
-                {inventory.map((item) => (
-                  <tr key={item.id} className="border-b border-slate-700 hover:bg-slate-800/50">
-                    <td className="py-3 px-4 text-white">{item.name}</td>
-                    <td className="py-3 px-4 text-white">{item.quantity}</td>
-                    <td className="py-3 px-4 text-white">{item.unit}</td>
-                    <td className="py-3 px-4 text-white">{item.category || "-"}</td>
-                    <td className="py-3 px-4 text-white">{item.location || "-"}</td>
-                    <td className="py-3 px-4 text-white">
-                      {item.assignments && item.assignments.length > 0 ? (
-                        <div className="text-xs">
-                          {item.assignments.map((assignment: any, idx: number) => (
-                            <div key={assignment.id} className="flex items-center gap-1">
-                              <span className="px-1 py-0.5 bg-blue-900/50 text-blue-400 rounded">
-                                {assignment.worker?.firstName} {assignment.worker?.lastName}
-                              </span>
-                              <span className="text-slate-400">({assignment.quantity})</span>
-                              {idx < item.assignments.length - 1 && <span className="text-slate-600">, </span>}
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-slate-500">-</span>
-                      )}
-                    </td>
-                    <td className="py-3 px-4">
-                      <Link
-                        href={`/admin/inventory/${item.id}`}
-                        className="px-3 py-1.5 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors text-sm font-medium flex items-center gap-2"
-                      >
-                        🔍 İncele / Detay
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+      {/* Tab Navigation */}
+      <div className="flex gap-2 mb-6">
+        <button
+          onClick={() => setActiveTab('materials')}
+          className={`px-6 py-3 rounded-xl font-medium transition-all ${
+            activeTab === 'materials'
+              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-900/20'
+              : 'bg-slate-800/50 text-slate-400 hover:bg-slate-800 border border-slate-700/50'
+          }`}
+        >
+          📦 Sarf Malzemeler
+        </button>
+        <button
+          onClick={() => setActiveTab('equipment')}
+          className={`px-6 py-3 rounded-xl font-medium transition-all ${
+            activeTab === 'equipment'
+              ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-900/20'
+              : 'bg-slate-800/50 text-slate-400 hover:bg-slate-800 border border-slate-700/50'
+          }`}
+        >
+          🔧 Takipli Demirbaşlar
+        </button>
       </div>
+
+      {/* Materials Tab */}
+      {activeTab === 'materials' && (
+        <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50 shadow-lg">
+          <h2 className="text-xl font-semibold text-white mb-6">Stoktaki Malzemeler</h2>
+          
+          {inventory.length === 0 ? (
+            <div className="text-center py-12 text-slate-400">
+              Henüz stok kaydı yok
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-slate-700/50 bg-slate-900/50">
+                    <th className="text-left py-4 px-4 text-slate-400 font-medium">Malzeme Adı</th>
+                    <th className="text-left py-4 px-4 text-slate-400 font-medium">Miktar</th>
+                    <th className="text-left py-4 px-4 text-slate-400 font-medium">Birim</th>
+                    <th className="text-left py-4 px-4 text-slate-400 font-medium">Kategori</th>
+                    <th className="text-left py-4 px-4 text-slate-400 font-medium">Lokasyon</th>
+                    <th className="text-left py-4 px-4 text-slate-400 font-medium">Zimmetli</th>
+                    <th className="text-left py-4 px-4 text-slate-400 font-medium">İşlemler</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {inventory.map((item) => (
+                    <tr key={item.id} className="border-b border-slate-700/30 hover:bg-slate-700/30 transition-colors">
+                      <td className="py-4 px-4 text-white font-medium">{item.name}</td>
+                      <td className="py-4 px-4 text-white">
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                          item.quantity > 10 ? 'bg-emerald-900/50 text-emerald-400' : 
+                          item.quantity > 0 ? 'bg-yellow-900/50 text-yellow-400' : 
+                          'bg-red-900/50 text-red-400'
+                        }`}>
+                          {item.quantity}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4 text-white">{item.unit}</td>
+                      <td className="py-4 px-4 text-white">{item.category || "-"}</td>
+                      <td className="py-4 px-4 text-white">{item.location || "-"}</td>
+                      <td className="py-4 px-4 text-white">
+                        {item.assignments && item.assignments.length > 0 ? (
+                          <div className="text-xs">
+                            {item.assignments.map((assignment: any, idx: number) => (
+                              <div key={assignment.id} className="flex items-center gap-1">
+                                <span className="px-2 py-1 bg-blue-900/50 text-blue-400 rounded">
+                                  {assignment.worker?.firstName} {assignment.worker?.lastName}
+                                </span>
+                                <span className="text-slate-400">({assignment.quantity})</span>
+                                {idx < item.assignments.length - 1 && <span className="text-slate-600">, </span>}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-slate-500">-</span>
+                        )}
+                      </td>
+                      <td className="py-4 px-4">
+                        <Link
+                          href={`/admin/inventory/${item.id}`}
+                          className="px-4 py-2 bg-slate-700/50 text-white rounded-lg hover:bg-slate-700 transition-colors text-sm font-medium flex items-center gap-2 border border-slate-600/50"
+                        >
+                          🔍 İncele / Detay
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Equipment Tab */}
+      {activeTab === 'equipment' && (
+        <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50 shadow-lg">
+          <h2 className="text-xl font-semibold text-white mb-6">Takipli Demirbaşlar (BLE Hazırlığı)</h2>
+          
+          {equipment.length === 0 ? (
+            <div className="text-center py-12 text-slate-400">
+              Henüz demirbaş kaydı yok
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-slate-700/50 bg-slate-900/50">
+                    <th className="text-left py-4 px-4 text-slate-400 font-medium">Demirbaş Adı</th>
+                    <th className="text-left py-4 px-4 text-slate-400 font-medium">Seri No / MAC</th>
+                    <th className="text-left py-4 px-4 text-slate-400 font-medium">Tür</th>
+                    <th className="text-left py-4 px-4 text-slate-400 font-medium">Kategori</th>
+                    <th className="text-left py-4 px-4 text-slate-400 font-medium">Durum</th>
+                    <th className="text-left py-4 px-4 text-slate-400 font-medium">Zimmetli</th>
+                    <th className="text-left py-4 px-4 text-slate-400 font-medium">İşlemler</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {equipment.map((item) => (
+                    <tr key={item.id} className="border-b border-slate-700/30 hover:bg-slate-700/30 transition-colors">
+                      <td className="py-4 px-4 text-white font-medium">{item.name}</td>
+                      <td className="py-4 px-4 text-white font-mono text-sm">{item.serialNumber}</td>
+                      <td className="py-4 px-4 text-white">{item.type || "-"}</td>
+                      <td className="py-4 px-4 text-white">{item.category || "-"}</td>
+                      <td className="py-4 px-4">
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          item.status === 'AVAILABLE' ? 'bg-emerald-900/50 text-emerald-400' :
+                          item.status === 'ASSIGNED' ? 'bg-blue-900/50 text-blue-400' :
+                          item.status === 'MAINTENANCE' ? 'bg-orange-900/50 text-orange-400' :
+                          'bg-slate-700/50 text-slate-400'
+                        }`}>
+                          {item.status === 'AVAILABLE' ? 'Müsait' :
+                           item.status === 'ASSIGNED' ? 'Zimmetli' :
+                           item.status === 'MAINTENANCE' ? 'Bakımda' : item.status}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4 text-white">
+                        {item.assignedTo ? (
+                          <span className="px-2 py-1 bg-blue-900/50 text-blue-400 rounded text-sm">
+                            {item.assignedTo.name}
+                          </span>
+                        ) : (
+                          <span className="text-slate-500">-</span>
+                        )}
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => openAssignModal(item)}
+                            className="px-3 py-2 bg-blue-600/20 text-blue-400 rounded-lg hover:bg-blue-600/30 transition-colors text-sm font-medium border border-blue-600/30"
+                          >
+                            👤 Zimmetle
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Add Item Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-slate-900 rounded-xl p-6 border border-slate-800 w-full max-w-lg mx-4 shadow-2xl">
+          <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50 w-full max-w-lg mx-4 shadow-2xl">
             <h3 className="text-xl font-semibold text-white mb-6">Yeni Malzeme Ekle</h3>
             
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -454,7 +682,7 @@ export default function InventoryPage() {
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-white"
+                  className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-white"
                   required
                 />
               </div>
@@ -466,7 +694,7 @@ export default function InventoryPage() {
                   name="category"
                   value={formData.category}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-white"
+                  className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-white"
                   placeholder="Örn: Çimento, Demir vb."
                 />
               </div>
@@ -479,7 +707,7 @@ export default function InventoryPage() {
                     name="quantity"
                     value={formData.quantity}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-white"
+                    className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-white"
                     required
                     step="0.01"
                   />
@@ -490,7 +718,7 @@ export default function InventoryPage() {
                     name="unit"
                     value={formData.unit}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-white"
+                    className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-white"
                     required
                   >
                     <option value="">Birim Seçin</option>
@@ -513,7 +741,7 @@ export default function InventoryPage() {
                   name="location"
                   value={formData.location}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-white"
+                  className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-white"
                   placeholder="Örn: Ambar A1"
                 />
               </div>
@@ -522,14 +750,107 @@ export default function InventoryPage() {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="flex-1 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
+                  className="flex-1 px-4 py-3 bg-slate-700/50 text-white rounded-xl hover:bg-slate-700 transition-colors"
                   disabled={isSubmitting}
                 >
                   İptal
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-500 transition-colors"
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-500 hover:to-emerald-500 transition-all"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Ekleniyor..." : "Ekle"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Equipment Modal */}
+      {isEquipmentModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50 w-full max-w-lg mx-4 shadow-2xl">
+            <h3 className="text-xl font-semibold text-white mb-6">Yeni Demirbaş Ekle</h3>
+            
+            <form onSubmit={handleEquipmentSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Demirbaş Adı *</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={equipmentFormData.name}
+                  onChange={(e) => setEquipmentFormData({ ...equipmentFormData, name: e.target.value })}
+                  className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                  required
+                  placeholder="Örn: Bosch Kırıcı Delici 1"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Seri No / MAC Adresi *</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    name="serialNumber"
+                    value={equipmentFormData.serialNumber}
+                    onChange={(e) => setEquipmentFormData({ ...equipmentFormData, serialNumber: e.target.value })}
+                    className="flex-1 px-4 py-3 bg-slate-900/50 border border-slate-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-white font-mono"
+                    required
+                    placeholder="Örn: AA:BB:CC:DD:EE:FF veya SN123456"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleBleScan}
+                    className="px-4 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-xl hover:from-cyan-500 hover:to-blue-500 transition-all font-medium flex items-center gap-2 shadow-lg shadow-cyan-900/20"
+                    title="BLE Cihaz Tara"
+                  >
+                    📡 BLE Tara
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Tür</label>
+                <select
+                  name="type"
+                  value={equipmentFormData.type}
+                  onChange={(e) => setEquipmentFormData({ ...equipmentFormData, type: e.target.value })}
+                  className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                >
+                  <option value="">Tür Seçin</option>
+                  <option value="ARAC">Araç</option>
+                  <option value="IS_MAKINESI">İş Makinesi</option>
+                  <option value="ELEKTRONIK">Elektronik</option>
+                  <option value="DIGER">Diğer</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Kategori</label>
+                <input
+                  type="text"
+                  name="category"
+                  value={equipmentFormData.category}
+                  onChange={(e) => setEquipmentFormData({ ...equipmentFormData, category: e.target.value })}
+                  className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                  placeholder="Örn: Hilti, Drone, Jeneratör vb."
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={closeEquipmentModal}
+                  className="flex-1 px-4 py-3 bg-slate-700/50 text-white rounded-xl hover:bg-slate-700 transition-colors"
+                  disabled={isSubmitting}
+                >
+                  İptal
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-500 hover:to-indigo-500 transition-all"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? "Ekleniyor..." : "Ekle"}

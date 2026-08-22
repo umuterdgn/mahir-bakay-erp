@@ -13,7 +13,14 @@ export async function GET() {
   try {
     const equipments = await prisma.equipment.findMany({
       include: {
-        project: true
+        project: true,
+        assignedTo: {
+          select: {
+            id: true,
+            name: true,
+            department: true
+          }
+        }
       },
       orderBy: { createdAt: 'desc' }
     })
@@ -34,19 +41,27 @@ export async function POST(request: Request) {
     const userName = session?.user?.name || "Bilinmeyen Kullanıcı"
     
     const body = await request.json()
-    const { name, type, status, plateOrSerialNo, nextMaintenance, projectId } = body
+    const { name, type, serialNumber, category, assignedToId, projectId } = body
 
     const equipment = await prisma.equipment.create({
       data: {
         name,
         type: type || "DIGER",
-        status: status || "AKTIF",
-        plateOrSerialNo: plateOrSerialNo || null,
-        nextMaintenance: nextMaintenance ? new Date(nextMaintenance) : null,
+        status: "AVAILABLE",
+        serialNumber: serialNumber || "",
+        category: category || null,
+        assignedToId: assignedToId || null,
         projectId: projectId || null
       },
       include: {
-        project: true
+        project: true,
+        assignedTo: {
+          select: {
+            id: true,
+            name: true,
+            department: true
+          }
+        }
       }
     })
 

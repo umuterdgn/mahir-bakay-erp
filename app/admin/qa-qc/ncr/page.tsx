@@ -18,8 +18,8 @@ interface NonConformanceReport {
   photoUrl?: string
   subcontractor: string
   status: "Açık" | "İşlemde" | "Kapalı"
-  dueDate?: Date
-  createdAt: Date
+  dueDate?: string | Date
+  createdAt: string | Date
 }
 
 export default function NCRPage() {
@@ -122,8 +122,9 @@ export default function NCRPage() {
     }
   }
 
-  const getDueDateColor = (dueDate?: Date) => {
-    if (!dueDate) return "text-slate-400"
+  const getDueDateColor = (dueDateString?: string | Date | null) => {
+    if (!dueDateString) return "text-slate-400"
+    const dueDate = new Date(dueDateString)
     const today = new Date()
     const diffDays = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
     if (diffDays < 0) return "text-red-400"

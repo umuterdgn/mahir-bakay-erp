@@ -29,6 +29,30 @@ interface SiteZone {
   supervisor?: string;
 }
 
+interface Personnel {
+  id: string;
+  name: string;
+  department?: string;
+  position?: string;
+  currentSite?: string;
+  lastCheckIn?: string;
+}
+
+interface Equipment {
+  id: string;
+  name: string;
+  serialNumber?: string;
+  type?: string;
+  category?: string;
+  status: string;
+  assignedTo?: {
+    id: string;
+    name: string;
+  };
+  lastLat?: number;
+  lastLng?: number;
+}
+
 interface Props {
   projectLat: number;
   projectLng: number;
@@ -81,16 +105,28 @@ export default function SiteMasterPlan({ projectLat, projectLng, projectId }: Pr
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isLiveTracking, setIsLiveTracking] = useState(false);
-  const [personnel, setPersonnel] = useState<any[]>([]);
+  const [personnel, setPersonnel] = useState<Personnel[]>([]);
+  const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [workers, setWorkers] = useState<{
-    id: number, 
-    name: string, 
-    role: keyof typeof ROLE_COLORS,
-    lat: number, 
-    lng: number, 
+    id: string,
+    name: string,
+    department?: string,
+    position?: string,
+    lat: number,
+    lng: number,
     inDanger: boolean,
-    heartRate: number,
-    fatigue: number
+    timeOnSite: string
+  }[]>([]);
+  const [trackedEquipment, setTrackedEquipment] = useState<{
+    id: string,
+    name: string,
+    serialNumber?: string,
+    type?: string,
+    category?: string,
+    assignedToName?: string,
+    lat: number,
+    lng: number,
+    inDanger: boolean
   }[]>([]);
   const [zoneModal, setZoneModal] = useState({ isOpen: false, lat: 0, lng: 0 });
   const [deleteModal, setDeleteModal] = useState<{ isOpen: false, zoneId: string } | { isOpen: true, zoneId: string }>({ isOpen: false, zoneId: '' });
@@ -100,6 +136,7 @@ export default function SiteMasterPlan({ projectLat, projectLng, projectId }: Pr
   useEffect(() => {
     fetchZones();
     fetchPersonnel();
+    fetchEquipment();
   }, [projectId]);
 
   const fetchPersonnel = async () => {
@@ -111,6 +148,18 @@ export default function SiteMasterPlan({ projectLat, projectLng, projectId }: Pr
       }
     } catch (error) {
       console.error('Failed to fetch personnel:', error);
+    }
+  };
+
+  const fetchEquipment = async () => {
+    try {
+      const response = await fetch('/api/admin/equipments');
+      if (response.ok) {
+        const data = await response.json();
+        setEquipment(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch equipment:', error);
     }
   };
 
@@ -241,56 +290,112 @@ export default function SiteMasterPlan({ projectLat, projectLng, projectId }: Pr
     setMounted(true);
   }, []);
 
-  // Worker simulation useEffect
+  // Worker and Equipment simulation useEffect - uses real data
   useEffect(() => {
     let interval: NodeJS.Timeout;
     
     if (isLiveTracking && projectLat && projectLng) {
-      // Başlangıçta gerçek personel verilerinden işçi oluştur
-      if (workers.length === 0 && personnel.length > 0) {
-        const initialWorkers = personnel.slice(0, 10).map((person, i) => ({
-          id: i,
-          name: person.name,
-          role: (person.role || 'İşçi') as keyof typeof ROLE_COLORS,
-          lat: projectLat + (Math.random() - 0.5) * 0.002,
-          lng: projectLng + (Math.random() - 0.5) * 0.002,
-          inDanger: false,
-          heartRate: Math.floor(Math.random() * (100 - 70 + 1)) + 70,
-          fatigue: Math.floor(Math.random() * 30)
-        }));
+      // Filter personnel who are at the current site
+      const sitePersonnel = personnel.filter(p => 
+        p.currentSite && p.currentSite.toLowerCase().includes('şantiye') || p.currentSite === 'Aktif'
+      );
+      
+      // Filter equipment with location data
+      const trackedEquip = equipment.filter(e => e.lastLat && e.lastLng);
+      
+      // Create workers from real personnel data
+      if (workers.length === 0 && sitePersonnel.length > 0) {
+        const initialWorkers = sitePersonnel.slice(0, 15).map((person) => {
+          // Calculate time on site from last check-in
+          let timeOnSite = 'Bilinmiyor';
+          if (person.lastCheckIn) {
+            const checkInTime = new Date(person.lastCheckIn);
+            const now = new Date();
+            const diffMs = now.getTime() - checkInTime.getTime();
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+            const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+            timeOnSite = diffHours > 0 ? `${diffHours}sa ${diffMins}dk` : `${diffMins}dk`;
+          }
+          
+          return {
+            id: person.id,
+            name: person.name,
+            department: person.department,
+            position: person.position,
+            lat: projectLat + (Math.random() - 0.5) * 0.002,
+            lng: projectLng + (Math.random() - 0.5) * 0.002,
+            inDanger: false,
+            timeOnSite
+          };
+        });
         setWorkers(initialWorkers);
       }
 
-      // Her 2 saniyede bir işçileri rastgele hareket ettir
+      // Create tracked equipment from real equipment data
+      if (trackedEquipment.length === 0 && trackedEquip.length > 0) {
+        const initialTrackedEquipment = trackedEquip.map((eq) => ({
+          id: eq.id,
+          name: eq.name,
+          serialNumber: eq.serialNumber,
+          type: eq.type,
+          category: eq.category,
+          assignedToName: eq.assignedTo?.name,
+          lat: eq.lastLat!,
+          lng: eq.lastLng!,
+          inDanger: false
+        }));
+        setTrackedEquipment(initialTrackedEquipment);
+      }
+
+      // Her 2 saniyede bir personeli ve ekipmanı rastgele hareket ettir
       interval = setInterval(() => {
         setWorkers(prevWorkers => prevWorkers.map(worker => {
           const newLat = worker.lat + (Math.random() - 0.5) * 0.0001;
           const newLng = worker.lng + (Math.random() - 0.5) * 0.0001;
-          const newHeartRate = worker.heartRate + (Math.random() > 0.5 ? 1 : -1);
-          const newFatigue = Math.min(100, worker.fatigue + (Math.random() * 0.5));
           
-          // İşçi herhangi bir RISK alanının içine girdi mi?
+          // Personel herhangi bir RISK alanının içine girdi mi?
           const riskZones = zones.filter(z => z.category === 'RISK');
           const inDanger = riskZones.some(zone => getDistance(newLat, newLng, zone.lat, zone.lng) <= zone.radius);
           
           // Tehlike bölgesine YENİ girildiyse
           if (inDanger && !worker.inDanger) {
             playAlarm(); // Sesli Sireni Çal!
-            toast.error(`⚠️ DİKKAT! ${worker.role} ${worker.name} tehlikeli bölgeye girdi!`, { 
+            toast.error(`⚠️ DİKKAT! ${worker.name} tehlikeli bölgeye girdi!`, { 
               id: `danger-${worker.id}`,
               duration: 5000 
             });
           }
 
-          return { ...worker, lat: newLat, lng: newLng, inDanger, heartRate: newHeartRate, fatigue: newFatigue };
+          return { ...worker, lat: newLat, lng: newLng, inDanger };
+        }));
+
+        setTrackedEquipment(prevEquip => prevEquip.map(eq => {
+          const newLat = eq.lat + (Math.random() - 0.5) * 0.00005;
+          const newLng = eq.lng + (Math.random() - 0.5) * 0.00005;
+          
+          // Ekipman herhangi bir RISK alanının içine girdi mi?
+          const riskZones = zones.filter(z => z.category === 'RISK');
+          const inDanger = riskZones.some(zone => getDistance(newLat, newLng, zone.lat, zone.lng) <= zone.radius);
+          
+          // Tehlike bölgesine YENİ girildiyse
+          if (inDanger && !eq.inDanger) {
+            playAlarm(); // Sesli Sireni Çal!
+            toast.error(`⚠️ DİKKAT! ${eq.name} (${eq.serialNumber}) tehlikeli bölgeye girdi!`, { 
+              id: `danger-eq-${eq.id}`,
+              duration: 5000 
+            });
+          }
+
+          return { ...eq, lat: newLat, lng: newLng, inDanger };
         }));
       }, 2000);
     } else {
-      setWorkers([]); // Kapatılınca işçileri temizle
+      setWorkers([]); // Kapatılınca personeli temizle
+      setTrackedEquipment([]); // Kapatılınca ekipmanı temizle
     }
 
     return () => clearInterval(interval);
-  }, [isLiveTracking, projectLat, projectLng, zones]);
+  }, [isLiveTracking, projectLat, projectLng, zones, personnel, equipment]);
 
   if (!mounted) {
     return (
@@ -361,8 +466,8 @@ export default function SiteMasterPlan({ projectLat, projectLng, projectId }: Pr
                 radius={worker.inDanger ? 10 : 6}
                 interactive={true}
                 pathOptions={{
-                  color: worker.inDanger ? '#ef4444' : ROLE_COLORS[worker.role],
-                  fillColor: worker.inDanger ? '#ef4444' : ROLE_COLORS[worker.role],
+                  color: worker.inDanger ? '#ef4444' : '#3b82f6',
+                  fillColor: worker.inDanger ? '#ef4444' : '#3b82f6',
                   fillOpacity: 1,
                   className: worker.inDanger ? 'animate-ping transition-all duration-1000' : 'transition-all duration-1000'
                 }}
@@ -374,30 +479,105 @@ export default function SiteMasterPlan({ projectLat, projectLng, projectId }: Pr
                 }}
               >
                 <Popup className="iot-popup">
-                  <div className="flex flex-col gap-2 min-w-[150px]">
-                    <div className="font-bold text-slate-800 border-b pb-1 flex justify-between">
-                      <span>{worker.name}</span>
-                      <span className="text-xs px-2 py-0.5 rounded-full text-white" style={{backgroundColor: ROLE_COLORS[worker.role]}}>{worker.role}</span>
+                  <div className="flex flex-col gap-2 min-w-[200px]">
+                    <div className="font-bold text-slate-800 border-b pb-2">
+                      {worker.name}
                     </div>
                     
                     {worker.inDanger && (
-                      <div className="bg-red-100 text-red-700 text-xs font-bold p-1 rounded text-center animate-pulse">
+                      <div className="bg-red-100 text-red-700 text-xs font-bold p-1.5 rounded text-center animate-pulse">
                         ⚠️ TEHLİKELİ BÖLGEDE
                       </div>
                     )}
                     
-                    <div className="grid grid-cols-2 gap-2 mt-1 text-xs">
-                      <div className="bg-slate-100 p-1.5 rounded flex flex-col items-center">
-                        <span className="text-[10px] text-slate-500 uppercase">Nabız</span>
-                        <span className="font-bold text-slate-700">❤️ {worker.heartRate} bpm</span>
+                    <div className="space-y-1 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">Birim:</span>
+                        <span className="font-medium text-slate-700">{worker.department || '-'}</span>
                       </div>
-                      <div className="bg-slate-100 p-1.5 rounded flex flex-col items-center">
-                        <span className="text-[10px] text-slate-500 uppercase">Yorgunluk</span>
-                        <span className={`font-bold ${worker.fatigue > 80 ? 'text-red-500' : 'text-slate-700'}`}>
-                          🔋 %{worker.fatigue.toFixed(0)}
-                        </span>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">Görev:</span>
+                        <span className="font-medium text-slate-700">{worker.position || '-'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">Şantiyede Süre:</span>
+                        <span className="font-medium text-slate-700">{worker.timeOnSite}</span>
                       </div>
                     </div>
+                    
+                    <a
+                      href={`/admin/personel/${worker.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-2 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 text-center transition-colors"
+                    >
+                      Detaya Git
+                    </a>
+                  </div>
+                </Popup>
+              </CircleMarker>
+            ))}
+            
+            {trackedEquipment.map((eq) => (
+              <CircleMarker 
+                center={[eq.lat, eq.lng]} 
+                radius={eq.inDanger ? 10 : 6}
+                interactive={true}
+                pathOptions={{
+                  color: eq.inDanger ? '#ef4444' : '#f97316',
+                  fillColor: eq.inDanger ? '#ef4444' : '#f97316',
+                  fillOpacity: 1,
+                  className: eq.inDanger ? 'animate-ping transition-all duration-1000' : 'transition-all duration-1000'
+                }}
+                key={eq.id}
+                eventHandlers={{
+                  click: (e) => {
+                    e.target.openPopup();
+                  }
+                }}
+              >
+                <Popup className="iot-popup">
+                  <div className="flex flex-col gap-2 min-w-[200px]">
+                    <div className="font-bold text-slate-800 border-b pb-2 flex items-center gap-2">
+                      <span>🔧</span>
+                      <span>{eq.name}</span>
+                    </div>
+                    
+                    {eq.inDanger && (
+                      <div className="bg-red-100 text-red-700 text-xs font-bold p-1.5 rounded text-center animate-pulse">
+                        ⚠️ TEHLİKELİ BÖLGEDE
+                      </div>
+                    )}
+                    
+                    <div className="space-y-1 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">Seri No / MAC:</span>
+                        <span className="font-mono font-medium text-slate-700">{eq.serialNumber || '-'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">Tür:</span>
+                        <span className="font-medium text-slate-700">{eq.type || '-'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">Kategori:</span>
+                        <span className="font-medium text-slate-700">{eq.category || '-'}</span>
+                      </div>
+                      {eq.assignedToName && (
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Zimmetli:</span>
+                          <span className="font-medium text-slate-700">{eq.assignedToName}</span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <a
+                      href={`/admin/inventory`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-2 px-3 py-1.5 bg-orange-600 text-white text-xs font-medium rounded hover:bg-orange-700 text-center transition-colors"
+                    >
+                      Demirbaşa Git
+                    </a>
                   </div>
                 </Popup>
               </CircleMarker>

@@ -138,6 +138,9 @@ model Project {
   inventoryItems InventoryItem[]
   siteZones SiteZone[]
   workOrders WorkOrder[]
+  droneMedia DroneMedia[]
+  chatThreads ChatThread[]
+  announcements Announcement[]
 
   @@index([isActive, displayOrder])
   @@index([status])
@@ -211,19 +214,27 @@ model SiteReport {
 }
 
 // ============================================================================
-// EQUIPMENT (Demirbaş Takibi)
+// EQUIPMENT (Demirbaş Takibi - BLE Hazırlığı)
 // ============================================================================
 
 model Equipment {
   id               String   @id @default(cuid())
   name             String
   type             String   // ARAC, IS_MAKINESI, ELEKTRONIK, DIGER
-  status           String   @default("AKTIF") // AKTIF, BAKIMDA, ARIZALI
-  plateOrSerialNo  String?
+  status           String   @default("AVAILABLE") // AVAILABLE, ASSIGNED, MAINTENANCE
+  serialNumber     String?  @unique // BLE MAC adresi veya Seri No (zorunlu)
+  plateOrSerialNo  String?  // @deprecated - Use serialNumber instead
   nextMaintenance  DateTime?
+  
+  assignedToId     String?  // Kime zimmetli
+  assignedTo       Personel? @relation(fields: [assignedToId], references: [id])
+  
+  lastLat          Float?   // Son BLE konumu (Enlem)
+  lastLng          Float?   // Son BLE konumu (Boylam)
   
   projectId        String?
   project          Project? @relation(fields: [projectId], references: [id])
+  locationLogs     LocationLog[]
 
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
@@ -231,6 +242,107 @@ model Equipment {
   @@index([projectId])
   @@index([status])
   @@index([type])
+  @@index([assignedToId])
+  @@index([serialNumber])
+}
+
+// ============================================================================
+// LOCATION LOG (Konum Geçmişi)
+// ============================================================================
+
+model LocationLog {
+  id          String     @id @default(cuid())
+  lat         Float
+  lng         Float
+  personelId  String?
+  personel    Personel?  @relation(fields: [personelId], references: [id])
+  equipmentId String?
+  equipment   Equipment? @relation(fields: [equipmentId], references: [id])
+  timestamp   DateTime   @default(now())
+
+  @@index([personelId])
+  @@index([equipmentId])
+  @@index([timestamp])
+}
+
+// ============================================================================
+// DRONE MEDIA (Drone Çekim Arşivi)
+// ============================================================================
+
+model DroneMedia {
+  id          String   @id @default(cuid())
+  title       String   // Örn: "A Blok Temel Atımı"
+  url         String   // Cloudinary veya AWS S3 linki
+  mediaType   String   // "IMAGE" veya "VIDEO"
+  date        DateTime // Çekim tarihi
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id])
+  description String?
+  createdAt   DateTime @default(now())
+
+  @@index([projectId])
+  @@index([date])
+  @@index([mediaType])
+}
+
+// ============================================================================
+// CHAT THREAD (Konu Bazlı Odalar)
+// ============================================================================
+
+model ChatThread {
+  id          String    @id @default(cuid())
+  title       String    // Örn: "B Blok 3. Kat Kolon Çatlağı"
+  status      String    @default("OPEN") // OPEN, RESOLVED, ARCHIVED
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id])
+  createdById String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  messages    ThreadMessage[]
+  participants ChatParticipant[]
+
+  @@index([projectId])
+  @@index([status])
+  @@index([createdById])
+}
+
+model ThreadMessage {
+  id          String     @id @default(cuid())
+  content     String
+  threadId    String
+  thread      ChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  senderId    String     // Gönderenin Personel ID'si veya Admin User ID'si
+  senderName  String     // UI'da kolay göstermek için
+  createdAt   DateTime   @default(now())
+
+  @@index([threadId])
+  @@index([senderId])
+  @@index([createdAt])
+}
+
+model ChatParticipant {
+  id          String     @id @default(cuid())
+  threadId    String
+  thread      ChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  personelId  String
+  personel    Personel   @relation(fields: [personelId], references: [id])
+
+  @@index([threadId])
+  @@index([personelId])
+}
+
+model Announcement {
+  id          String   @id @default(cuid())
+  title       String
+  content     String
+  severity    String   @default("INFO") // INFO, WARNING, URGENT
+  projectId   String?  // Null ise tüm projelere (şirket geneli)
+  project     Project? @relation(fields: [projectId], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@index([projectId])
+  @@index([severity])
+  @@index([createdAt])
 }
 
 // ============================================================================
@@ -478,6 +590,9 @@ model Personel {
   ppeDeliveries   PPEDelivery[]
   leaveRequests   LeaveRequest[]
   assignedTasks   WorkOrder[] @relation("PersonelTasks")
+  assignedEquipment Equipment[]
+  locationLogs    LocationLog[]
+  chatParticipants ChatParticipant[]
   notes           String?             @db.Text
   createdAt       DateTime            @default(now())
   updatedAt       DateTime            @updatedAt
@@ -634,7 +749,25 @@ enum PaymentType {
   ELDEN
 }
 
+// ============================================================================
+// CERTIFICATE (Sertifikalar ve Belgeler)
+// ============================================================================
 
+model Certificate {
+  id          String   @id @default(cuid())
+  personelId  String
+  personel    Personel @relation(fields: [personelId], references: [id], onDelete: Cascade)
+  name        String   // Sertifika/Belge adı
+  expiryDate  DateTime // Bitiş tarihi
+  documentUrl String?  // Belge URL (Cloudinary/AWS)
+  type        String   @default("SERTIFIKA") // SERTIFIKA, BELGE, LISANS, DİĞER
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([personelId])
+  @@index([expiryDate])
+  @@index([type])
+}
 
 model Insurance {
   id                  String   @id @default(cuid())
@@ -1131,23 +1264,6 @@ enum IsgReportStatus {
   ACIL
   INCELEMEDE
   COZULDU
-}
-
-// ============================================================================
-// İSG PERSONEL SERTİFİKALARI
-// ============================================================================
-
-model Certificate {
-  id          String   @id @default(cuid())
-  name        String   // İSG Eğitim Sertifikası, Yüksekte Çalışma
-  expiryDate  DateTime
-  personelId  String
-  personel    Personel @relation(fields: [personelId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([personelId])
-  @@index([expiryDate])
 }
 
 // ============================================================================

@@ -23,6 +23,7 @@ export default function PersonelDetailPage({
   const [payments, setPayments] = useState<any[]>([])
   const [assignedInventory, setAssignedInventory] = useState<any[]>([])
   const [attendanceRecords, setAttendanceRecords] = useState<any[]>([])
+  const [certificates, setCertificates] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [calculatedValues, setCalculatedValues] = useState({
     toplamKazanilan: 0,
@@ -39,8 +40,10 @@ export default function PersonelDetailPage({
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [isNfcModalOpen, setIsNfcModalOpen] = useState(false)
+  const [isCertificateModalOpen, setIsCertificateModalOpen] = useState(false)
   const [isNfcWriting, setIsNfcWriting] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [selectedCertificate, setSelectedCertificate] = useState<any>(null)
   const [editFormData, setEditFormData] = useState({
     personnelNo: "",
     name: "",
@@ -73,6 +76,12 @@ export default function PersonelDetailPage({
     password: "",
     role: "STAFF"
   })
+  const [certificateForm, setCertificateForm] = useState({
+    name: "",
+    expiryDate: "",
+    documentUrl: "",
+    type: "SERTIFIKA"
+  })
   const router = useRouter()
 
   useEffect(() => {
@@ -88,6 +97,7 @@ export default function PersonelDetailPage({
       fetchPerson()
       fetchPayments()
       fetchAssignedInventory()
+      fetchCertificates()
     }
   }, [resolvedParams])
 
@@ -188,6 +198,18 @@ export default function PersonelDetailPage({
       }
     } catch (error) {
       console.error("Failed to fetch assigned inventory:", error)
+    }
+  }
+
+  const fetchCertificates = async () => {
+    try {
+      const response = await fetch(`/api/admin/personnel/${resolvedParams?.id}/certificates`)
+      if (response.ok) {
+        const data = await response.json()
+        setCertificates(data)
+      }
+    } catch (error) {
+      console.error("Failed to fetch certificates:", error)
     }
   }
 
@@ -416,6 +438,126 @@ export default function PersonelDetailPage({
       toast.error("NFC kart yazma hatası oluştu")
     } finally {
       setIsNfcWriting(false)
+    }
+  }
+
+  const handleCertificateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!person || !certificateForm.name || !certificateForm.expiryDate) {
+      toast.error("Sertifika adı ve bitiş tarihi zorunludur")
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      const response = await fetch("/api/admin/certificates", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          personelId: person.id,
+          name: certificateForm.name,
+          expiryDate: new Date(certificateForm.expiryDate),
+          documentUrl: certificateForm.documentUrl || null,
+          type: certificateForm.type
+        })
+      })
+
+      if (response.ok) {
+        toast.success("Sertifika başarıyla eklendi")
+        setIsCertificateModalOpen(false)
+        setCertificateForm({ name: "", expiryDate: "", documentUrl: "", type: "SERTIFIKA" })
+        fetchCertificates()
+      } else {
+        toast.error("Sertifika eklenirken hata oluştu")
+      }
+    } catch (error) {
+      toast.error("Sertifika eklenirken hata oluştu")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleCertificateEdit = (certificate: any) => {
+    setSelectedCertificate(certificate)
+    setCertificateForm({
+      name: certificate.name,
+      expiryDate: certificate.expiryDate ? new Date(certificate.expiryDate).toISOString().split('T')[0] : "",
+      documentUrl: certificate.documentUrl || "",
+      type: certificate.type || "SERTIFIKA"
+    })
+    setIsCertificateModalOpen(true)
+  }
+
+  const handleCertificateUpdate = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedCertificate || !certificateForm.name || !certificateForm.expiryDate) {
+      toast.error("Sertifika adı ve bitiş tarihi zorunludur")
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      const response = await fetch(`/api/admin/certificates/${selectedCertificate.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          name: certificateForm.name,
+          expiryDate: new Date(certificateForm.expiryDate),
+          documentUrl: certificateForm.documentUrl || null,
+          type: certificateForm.type
+        })
+      })
+
+      if (response.ok) {
+        toast.success("Sertifika başarıyla güncellendi")
+        setIsCertificateModalOpen(false)
+        setSelectedCertificate(null)
+        setCertificateForm({ name: "", expiryDate: "", documentUrl: "", type: "SERTIFIKA" })
+        fetchCertificates()
+      } else {
+        toast.error("Sertifika güncellenirken hata oluştu")
+      }
+    } catch (error) {
+      toast.error("Sertifika güncellenirken hata oluştu")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleCertificateDelete = async (certificateId: string) => {
+    if (!confirm("Bu sertifikayı silmek istediğinize emin misiniz?")) return
+
+    try {
+      const response = await fetch(`/api/admin/certificates/${certificateId}`, {
+        method: "DELETE"
+      })
+
+      if (response.ok) {
+        toast.success("Sertifika silindi")
+        fetchCertificates()
+      } else {
+        toast.error("Sertifika silinirken hata oluştu")
+      }
+    } catch (error) {
+      toast.error("Sertifika silinirken hata oluştu")
+    }
+  }
+
+  const getCertificateStatus = (expiryDate: string | Date) => {
+    const today = new Date()
+    const expiry = new Date(expiryDate)
+    const diffDays = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+    
+    if (diffDays < 0) {
+      return { label: "Süresi Geçmiş", color: "bg-red-900/50 text-red-400", critical: true }
+    } else if (diffDays <= 30) {
+      return { label: "Kritik", color: "bg-orange-900/50 text-orange-400", critical: true }
+    } else {
+      return { label: "Geçerli", color: "bg-green-900/50 text-green-400", critical: false }
     }
   }
 
@@ -880,6 +1022,106 @@ export default function PersonelDetailPage({
           )}
         </div>
 
+        {/* Sertifikalar ve Belgeler */}
+        <div className="mt-8 pt-6 border-t border-slate-800">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold text-white border-b border-slate-800 pb-2">Sertifikalar ve Belgeler</h3>
+            <button
+              onClick={() => {
+                setSelectedCertificate(null)
+                setCertificateForm({ name: "", expiryDate: "", documentUrl: "", type: "SERTIFIKA" })
+                setIsCertificateModalOpen(true)
+              }}
+              className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors text-sm"
+            >
+              + Yeni Ekle
+            </button>
+          </div>
+          
+          {certificates.length === 0 ? (
+            <div className="bg-slate-800 rounded-lg p-4 md:p-6 border border-slate-700 text-center text-slate-400">
+              Sertifika veya belge bulunmuyor
+            </div>
+          ) : (
+            <div className="bg-slate-800 rounded-lg border border-slate-700 overflow-x-auto">
+              <table className="w-full min-w-[600px]">
+                <thead>
+                  <tr className="border-b border-slate-700 bg-slate-800/50">
+                    <th className="text-left py-3 px-2 md:px-4 text-slate-400 font-medium text-xs md:text-sm">Sertifika/Belge Adı</th>
+                    <th className="text-left py-3 px-2 md:px-4 text-slate-400 font-medium text-xs md:text-sm">Bitiş Tarihi</th>
+                    <th className="text-left py-3 px-2 md:px-4 text-slate-400 font-medium text-xs md:text-sm">Kalan Gün</th>
+                    <th className="text-left py-3 px-2 md:px-4 text-slate-400 font-medium text-xs md:text-sm">Durum</th>
+                    <th className="text-center py-3 px-2 md:px-4 text-slate-400 font-medium text-xs md:text-sm">İşlemler</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {certificates.map((cert: any) => {
+                    const status = getCertificateStatus(cert.expiryDate)
+                    const today = new Date()
+                    const expiry = new Date(cert.expiryDate)
+                    const diffDays = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+                    
+                    return (
+                      <tr key={cert.id} className="border-b border-slate-700 hover:bg-slate-800/50">
+                        <td className="py-3 px-2 md:px-4 text-white text-xs md:text-sm break-words font-medium">
+                          {cert.name}
+                        </td>
+                        <td className="py-3 px-2 md:px-4 text-white text-xs md:text-sm break-words">
+                          {new Date(cert.expiryDate).toLocaleDateString("tr-TR")}
+                        </td>
+                        <td className="py-3 px-2 md:px-4 text-white text-xs md:text-sm break-words">
+                          {diffDays < 0 ? `${Math.abs(diffDays)} gün geçmiş` : `${diffDays} gün`}
+                        </td>
+                        <td className="py-3 px-2 md:px-4">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${status.color}`}>
+                            {status.label}
+                          </span>
+                        </td>
+                        <td className="py-3 px-2 md:px-4">
+                          <div className="flex items-center justify-center gap-2">
+                            {cert.documentUrl && (
+                              <a
+                                href={cert.documentUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-1.5 bg-blue-900/50 hover:bg-blue-900 text-blue-400 rounded transition-colors"
+                                title="Görüntüle/İndir"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                              </a>
+                            )}
+                            <button
+                              onClick={() => handleCertificateEdit(cert)}
+                              className="p-1.5 bg-amber-900/50 hover:bg-amber-900 text-amber-400 rounded transition-colors"
+                              title="Düzenle"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => handleCertificateDelete(cert.id)}
+                              className="p-1.5 bg-red-900/50 hover:bg-red-900 text-red-400 rounded transition-colors"
+                              title="Sil"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
         <div className="mt-8 pt-6 border-t border-slate-800">
           <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4">
             <Link
@@ -1200,6 +1442,89 @@ export default function PersonelDetailPage({
                   className="flex-1 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-500 transition-colors"
                 >
                   Öde
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Certificate Modal */}
+      {isCertificateModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-slate-900 rounded-xl p-6 border border-slate-800 w-full max-w-lg mx-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <h3 className="text-xl font-semibold text-white mb-6">
+              {selectedCertificate ? "Sertifika Düzenle" : "Yeni Sertifika Ekle"}
+            </h3>
+            
+            <form onSubmit={selectedCertificate ? handleCertificateUpdate : handleCertificateSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Sertifika/Belge Adı *</label>
+                <input
+                  type="text"
+                  value={certificateForm.name}
+                  onChange={(e) => setCertificateForm(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                  required
+                  placeholder="Örn: İSG Sertifikası"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Bitiş Tarihi *</label>
+                <input
+                  type="date"
+                  value={certificateForm.expiryDate}
+                  onChange={(e) => setCertificateForm(prev => ({ ...prev, expiryDate: e.target.value }))}
+                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Belge URL (Opsiyonel)</label>
+                <input
+                  type="url"
+                  value={certificateForm.documentUrl}
+                  onChange={(e) => setCertificateForm(prev => ({ ...prev, documentUrl: e.target.value }))}
+                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                  placeholder="https://..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Tür</label>
+                <select
+                  value={certificateForm.type}
+                  onChange={(e) => setCertificateForm(prev => ({ ...prev, type: e.target.value }))}
+                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                >
+                  <option value="SERTIFIKA">Sertifika</option>
+                  <option value="BELGE">Belge</option>
+                  <option value="LISANS">Lisans</option>
+                  <option value="DİĞER">Diğer</option>
+                </select>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCertificateModalOpen(false)
+                    setSelectedCertificate(null)
+                    setCertificateForm({ name: "", expiryDate: "", documentUrl: "", type: "SERTIFIKA" })
+                  }}
+                  className="flex-1 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
+                  disabled={isSubmitting}
+                >
+                  İptal
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Kaydediliyor..." : selectedCertificate ? "Güncelle" : "Ekle"}
                 </button>
               </div>
             </form>

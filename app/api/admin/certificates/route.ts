@@ -54,13 +54,15 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { name, expiryDate, personelId } = body
+    const { name, expiryDate, personelId, documentUrl, type } = body
 
     const certificate = await prisma.certificate.create({
       data: {
         name,
         expiryDate: new Date(expiryDate),
-        personelId
+        personelId,
+        documentUrl: documentUrl || null,
+        type: type || "SERTIFIKA"
       },
       include: {
         personel: {
