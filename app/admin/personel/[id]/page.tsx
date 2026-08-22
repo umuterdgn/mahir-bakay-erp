@@ -403,8 +403,7 @@ export default function PersonelDetailPage({
       
       await ndef.write({
         records: [{
-          recordType: "mime",
-          mediaType: "application/vnd.mahirbakay.erp",
+          recordType: "text",
           data: new TextEncoder().encode(encryptedData)
         }]
       })

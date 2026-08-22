@@ -309,44 +309,53 @@ export default function AttendancePage() {
       ndef.onreading = async (event: any) => {
         setIsWebNfcScanning(false)
         
-        // Check if the record is our encrypted format
-        const record = event.message.records[0]
+        // Try to decrypt data from any record type
         let personnelId = null
+        const textDecoder = new TextDecoder()
         
-        if (record.recordType === "mime" && record.mediaType === "application/vnd.mahirbakay.erp") {
-          // Decrypt the NFC data
-          const textDecoder = new TextDecoder()
-          const encryptedData = textDecoder.decode(record.data)
-          const payload = decryptNfcData(encryptedData)
-          
-          if (payload && payload.id) {
-            personnelId = payload.id
-          } else {
-            toast.error("Geçersiz NFC kart verisi")
-            return
+        // Try to read from the first record
+        const record = event.message.records[0]
+        if (record) {
+          try {
+            const data = textDecoder.decode(record.data)
+            const payload = decryptNfcData(data)
+            
+            if (payload && payload.id) {
+              personnelId = payload.id
+            }
+          } catch {
+            // If decryption fails, try serial number fallback
           }
-        } else {
-          // Fallback to serial number for old cards
+        }
+        
+        // Fallback to serial number for old cards
+        if (!personnelId) {
           personnelId = event.serialNumber
         }
         
         setNfcInput(personnelId)
         
         // Auto-submit after reading
-        const result = await processNfcAttendance(personnelId, selectedProjectForNfc)
-        if (result.success) {
-          const actionText = result.action === "checkin" ? "Giriş" : "Çıkış"
-          toast.success(`${result.personelName} - ${actionText} Başarılı (${result.time})`)
-          setNfcInput("")
-          fetchAttendanceRecords()
+        if (personnelId) {
+          const result = await processNfcAttendance(personnelId, selectedProjectForNfc)
+          if (result.success) {
+            const actionText = result.action === "checkin" ? "Giriş" : "Çıkış"
+            toast.success(`${result.personelName} - ${actionText} Başarılı (${result.time})`)
+            setNfcInput("")
+            fetchAttendanceRecords()
+          } else {
+            toast.error(result.error || "İşlem başarısız")
+            setNfcInput("")
+          }
         } else {
-          toast.error(result.error || "İşlem başarısız")
-          setNfcInput("")
+          // Silent fail - don't show error toast
+          console.log("No valid personnel ID found in NFC data")
         }
       }
 
       ndef.onreadingerror = () => {
-        toast.error("NFC okuma hatası")
+        // Silent error - don't show toast, just log
+        console.log("NFC reading error")
         setIsWebNfcScanning(false)
       }
     } catch (error) {

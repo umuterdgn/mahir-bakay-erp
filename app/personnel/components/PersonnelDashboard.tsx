@@ -204,35 +204,48 @@ export function PersonnelDashboard({ personnel, summary, recentAttendance, equip
       ndef.onreading = async (event: any) => {
         setIsWebNfcScanning(false)
         
-        // Check if the record is our encrypted format
+        // Try to decrypt data from any record type
+        let personnelId = null
+        const textDecoder = new TextDecoder()
+        
+        // Try to read from the first record
         const record = event.message.records[0]
-        if (record.recordType === "mime" && record.mediaType === "application/vnd.mahirbakay.erp") {
-          // Decrypt the NFC data
-          const textDecoder = new TextDecoder()
-          const encryptedData = textDecoder.decode(record.data)
-          const payload = decryptNfcData(encryptedData)
-          
-          if (payload && payload.id) {
-            // Use the decrypted personnel ID for check-in
-            const success = await handleCheckIn(payload.id)
-            if (success) {
-              setIsScanning(false)
+        if (record) {
+          try {
+            const data = textDecoder.decode(record.data)
+            const payload = decryptNfcData(data)
+            
+            if (payload && payload.id) {
+              personnelId = payload.id
             }
-          } else {
-            setCameraError("Geçersiz NFC kart verisi")
+          } catch {
+            // If decryption fails, try serial number fallback
           }
-        } else {
-          // Fallback to serial number for old cards
-          const serialNumber = event.serialNumber
-          const success = await handleCheckIn(serialNumber)
+        }
+        
+        // Fallback to serial number for old cards
+        if (!personnelId) {
+          personnelId = event.serialNumber
+        }
+        
+        // Attempt check-in with the ID we found
+        if (personnelId) {
+          const success = await handleCheckIn(personnelId)
           if (success) {
             setIsScanning(false)
+          } else {
+            // Silent fail - don't show error toast
+            console.log("Check-in failed for ID:", personnelId)
           }
+        } else {
+          // Silent fail - don't show error toast
+          console.log("No valid personnel ID found in NFC data")
         }
       }
 
       ndef.onreadingerror = () => {
-        setCameraError("NFC okuma hatası")
+        // Silent error - don't show toast, just log
+        console.log("NFC reading error")
         setIsWebNfcScanning(false)
       }
     } catch (error) {
