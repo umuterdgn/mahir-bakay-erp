@@ -11,6 +11,8 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { toast } from "react-hot-toast"
+import { Nfc } from "lucide-react"
+import { createPersonnelNfcPayload } from "@/lib/nfc-crypto"
 
 export default function PersonelDetailPage({
   params
@@ -36,6 +38,8 @@ export default function PersonelDetailPage({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
+  const [isNfcModalOpen, setIsNfcModalOpen] = useState(false)
+  const [isNfcWriting, setIsNfcWriting] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [editFormData, setEditFormData] = useState({
     personnelNo: "",
@@ -386,6 +390,35 @@ export default function PersonelDetailPage({
     }
   }
 
+  const handleNfcWrite = async () => {
+    if (!person || !('NDEFReader' in window)) {
+      toast.error("Bu tarayıcı Web NFC'yi desteklemiyor. Lütfen Android Chrome kullanın.")
+      return
+    }
+
+    setIsNfcWriting(true)
+    try {
+      const ndef = new (window as any).NDEFReader()
+      const encryptedData = createPersonnelNfcPayload(person.id)
+      
+      await ndef.write({
+        records: [{
+          recordType: "mime",
+          mediaType: "application/vnd.mahirbakay.erp",
+          data: new TextEncoder().encode(encryptedData)
+        }]
+      })
+      
+      toast.success("NFC Kart başarıyla programlandı ve şifrelendi!")
+      setIsNfcModalOpen(false)
+    } catch (error) {
+      console.error("NFC write error:", error)
+      toast.error("NFC kart yazma hatası oluştu")
+    } finally {
+      setIsNfcWriting(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="lg:mt-0 mt-16">
@@ -429,6 +462,13 @@ export default function PersonelDetailPage({
               className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors flex items-center gap-2"
             >
               🔑 {person.userId ? "Giriş Bilgilerini Güncelle" : "Sisteme Giriş İzni Ver"}
+            </button>
+            <button
+              onClick={() => setIsNfcModalOpen(true)}
+              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-500 hover:to-blue-500 transition-colors flex items-center gap-2"
+            >
+              <Nfc className="w-4 h-4" />
+              NFC Karta Programla
             </button>
             <span className={`px-3 py-1 rounded-full text-sm font-medium ${
               person.status === "ACTIVE" 
@@ -1232,6 +1272,54 @@ export default function PersonelDetailPage({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* NFC Programming Modal */}
+      {isNfcModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-slate-900 rounded-xl p-6 border border-slate-800 w-full max-w-lg mx-4 shadow-2xl">
+            <h3 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
+              <Nfc className="w-5 h-5" />
+              NFC Karta Programla (Şifreli)
+            </h3>
+            
+            <div className="space-y-4">
+              <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
+                <p className="text-slate-300 text-sm mb-2">
+                  <strong>Personel:</strong> {person?.name}
+                </p>
+                <p className="text-slate-400 text-xs">
+                  Personel ID şifrelenecek şekilde NFC kartına yazılacak.
+                </p>
+              </div>
+
+              <div className="bg-purple-900/20 rounded-lg p-4 border border-purple-700">
+                <p className="text-purple-300 text-sm">
+                  ⚠️ Lütfen personelin NFC kartını telefonun arkasına dokundurun...
+                </p>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsNfcModalOpen(false)}
+                  className="flex-1 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
+                  disabled={isNfcWriting}
+                >
+                  İptal
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNfcWrite}
+                  className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-500 hover:to-blue-500 transition-colors"
+                  disabled={isNfcWriting}
+                >
+                  {isNfcWriting ? "Yazılıyor..." : "Karta Yaz"}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

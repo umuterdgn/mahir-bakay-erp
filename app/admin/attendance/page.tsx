@@ -12,6 +12,7 @@ import { QRCodeSVG } from "qrcode.react"
 import * as XLSX from "xlsx"
 import GeofencedCheckIn from "@/components/GeofencedCheckIn"
 import { processNfcAttendance } from "./actions"
+import { decryptNfcData } from "@/lib/nfc-crypto"
 
 export default function AttendancePage() {
   const [projects, setProjects] = useState<any[]>([])
@@ -306,12 +307,33 @@ export default function AttendancePage() {
       toast.success("NFC okuma başlatıldı. Kartı okutun...")
 
       ndef.onreading = async (event: any) => {
-        const serialNumber = event.serialNumber
-        setNfcInput(serialNumber)
         setIsWebNfcScanning(false)
         
+        // Check if the record is our encrypted format
+        const record = event.message.records[0]
+        let personnelId = null
+        
+        if (record.recordType === "mime" && record.mediaType === "application/vnd.mahirbakay.erp") {
+          // Decrypt the NFC data
+          const textDecoder = new TextDecoder()
+          const encryptedData = textDecoder.decode(record.data)
+          const payload = decryptNfcData(encryptedData)
+          
+          if (payload && payload.id) {
+            personnelId = payload.id
+          } else {
+            toast.error("Geçersiz NFC kart verisi")
+            return
+          }
+        } else {
+          // Fallback to serial number for old cards
+          personnelId = event.serialNumber
+        }
+        
+        setNfcInput(personnelId)
+        
         // Auto-submit after reading
-        const result = await processNfcAttendance(serialNumber, selectedProjectForNfc)
+        const result = await processNfcAttendance(personnelId, selectedProjectForNfc)
         if (result.success) {
           const actionText = result.action === "checkin" ? "Giriş" : "Çıkış"
           toast.success(`${result.personelName} - ${actionText} Başarılı (${result.time})`)

@@ -9,6 +9,7 @@ import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { signOut } from "next-auth/react"
 import { Html5Qrcode } from "html5-qrcode"
+import { decryptNfcData } from "@/lib/nfc-crypto"
 import { 
   User, 
   QrCode, 
@@ -201,13 +202,32 @@ export function PersonnelDashboard({ personnel, summary, recentAttendance, equip
       await ndef.scan()
       
       ndef.onreading = async (event: any) => {
-        const serialNumber = event.serialNumber
         setIsWebNfcScanning(false)
         
-        // Use the NFC UID as QR data for check-in
-        const success = await handleCheckIn(serialNumber)
-        if (success) {
-          setIsScanning(false)
+        // Check if the record is our encrypted format
+        const record = event.message.records[0]
+        if (record.recordType === "mime" && record.mediaType === "application/vnd.mahirbakay.erp") {
+          // Decrypt the NFC data
+          const textDecoder = new TextDecoder()
+          const encryptedData = textDecoder.decode(record.data)
+          const payload = decryptNfcData(encryptedData)
+          
+          if (payload && payload.id) {
+            // Use the decrypted personnel ID for check-in
+            const success = await handleCheckIn(payload.id)
+            if (success) {
+              setIsScanning(false)
+            }
+          } else {
+            setCameraError("Geçersiz NFC kart verisi")
+          }
+        } else {
+          // Fallback to serial number for old cards
+          const serialNumber = event.serialNumber
+          const success = await handleCheckIn(serialNumber)
+          if (success) {
+            setIsScanning(false)
+          }
         }
       }
 
