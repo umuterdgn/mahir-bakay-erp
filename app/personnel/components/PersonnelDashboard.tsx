@@ -82,6 +82,7 @@ export function PersonnelDashboard({ personnel, summary, recentAttendance, equip
   const [cameraError, setCameraError] = useState<string | null>(null)
   const [isWebNfcScanning, setIsWebNfcScanning] = useState(false)
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
   const qrCodeElementId = "qr-reader"
 
   const handleCheckIn = async (qrData: string) => {
@@ -198,10 +199,14 @@ export function PersonnelDashboard({ personnel, summary, recentAttendance, equip
     try {
       setIsWebNfcScanning(true)
       setCameraError(null)
+      const abortController = new AbortController()
+      abortControllerRef.current = abortController
       const ndef = new (window as any).NDEFReader()
-      await ndef.scan()
+      await ndef.scan({ signal: abortController.signal })
       
       ndef.onreading = async (event: any) => {
+        // HIZLI YAKALAMA: Okunduğu an önce okuyucuyu durdur ki Android araya girmesin
+        abortController.abort()
         setIsWebNfcScanning(false)
         
         // Try to decrypt data from any record type

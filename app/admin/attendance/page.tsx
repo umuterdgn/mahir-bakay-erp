@@ -54,6 +54,7 @@ export default function AttendancePage() {
   const [selectedProjectForNfc, setSelectedProjectForNfc] = useState("")
   const [isWebNfcScanning, setIsWebNfcScanning] = useState(false)
   const nfcInputRef = useRef<HTMLInputElement>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   // Turkish character normalization function
   const normalizeTurkishChars = (text: string) => {
@@ -302,11 +303,15 @@ export default function AttendancePage() {
 
     try {
       setIsWebNfcScanning(true)
+      const abortController = new AbortController()
+      abortControllerRef.current = abortController
       const ndef = new (window as any).NDEFReader()
-      await ndef.scan()
+      await ndef.scan({ signal: abortController.signal })
       toast.success("NFC okuma başlatıldı. Kartı okutun...")
 
       ndef.onreading = async (event: any) => {
+        // HIZLI YAKALAMA: Okunduğu an önce okuyucuyu durdur ki Android araya girmesin
+        abortController.abort()
         setIsWebNfcScanning(false)
         
         // Try to decrypt data from any record type
