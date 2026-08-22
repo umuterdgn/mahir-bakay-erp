@@ -146,7 +146,7 @@ export async function PUT(
         shiftEnd: shiftEnd || "17:00",
         latitude: latitude ? parseFloat(latitude) : null,
         longitude: longitude ? parseFloat(longitude) : null,
-        geofenceRadius: geofenceRadius ? parseInt(geofenceRadius) : 100
+        gpsRadius: geofenceRadius ? parseInt(geofenceRadius) : 100
       },
       // @ts-ignore - Prisma include type inference issue
       include: {

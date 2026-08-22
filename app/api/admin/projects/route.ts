@@ -103,7 +103,7 @@ export async function POST(request: Request) {
       // Geofencing (GPS) fields - optional
       latitude: restData.latitude ? parseFloat(restData.latitude) : null,
       longitude: restData.longitude ? parseFloat(restData.longitude) : null,
-      geofenceRadius: restData.geofenceRadius ? parseInt(restData.geofenceRadius) : null,
+      gpsRadius: restData.geofenceRadius ? parseInt(restData.geofenceRadius) : null,
     }
 
     const newProject = await prisma.project.create({
