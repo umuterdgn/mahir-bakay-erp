@@ -14,20 +14,19 @@ export async function processNfcAttendance(nfcUid: string, projectId: string) {
     console.log("Gelen NFC ID:", nfcUid)
     console.log("Proje ID:", projectId)
 
-    // Find personnel by NFC UID, ID, or nfcId (OR logic)
+    // Find personnel by NFC UID or ID (OR logic)
     const personel = await prisma.personel.findFirst({
       where: {
         OR: [
           { id: nfcUid },       // Yeni sistem: Şifresi çözülmüş CUID
-          { nfcId: nfcUid },     // Eski sistem: Fiziksel seri no
-          { nfcUid: nfcUid }     // Mevcut sistem: nfcUid sütunu
+          { nfcUid: nfcUid }    // Mevcut sistem: Fiziksel seri no sütunu
         ]
       }
     })
 
     console.log("Personel Arama Sonucu:", personel ? "Bulundu" : "BULUNAMADI")
     if (personel) {
-      console.log("Personel Detayları:", { id: personel.id, name: personel.name, nfcId: personel.nfcId, nfcUid: personel.nfcUid })
+      console.log("Personel Detayları:", { id: personel.id, name: personel.name, nfcUid: personel.nfcUid })
     }
 
     if (!personel) {
