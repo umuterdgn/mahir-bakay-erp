@@ -51,13 +51,13 @@ export default function TasksPage() {
 
   const fetchWorkers = async () => {
     try {
-      const response = await fetch("/api/admin/workers")
+      const response = await fetch("/api/admin/personnel")
       if (response.ok) {
         const data = await response.json()
         setWorkers(data)
       }
     } catch (error) {
-      console.error("Failed to fetch workers:", error)
+      console.error("Failed to fetch personnel:", error)
     }
   }
 
@@ -309,7 +309,7 @@ export default function TasksPage() {
             <option value="">Tüm Personel</option>
             {workers.map((worker) => (
               <option key={worker.id} value={worker.id}>
-                {worker.firstName} {worker.lastName}
+                {worker.name}
               </option>
             ))}
           </select>
@@ -682,7 +682,7 @@ function TaskCard({ task, onStatusChange, onDelete, isOverdue, onEdit }: any) {
         )}
         {task.worker && (
           <span className="bg-slate-800 px-2 py-1 rounded">
-            {task.worker.firstName} {task.worker.lastName}
+            {task.worker.name}
           </span>
         )}
         {task.dueDate && (

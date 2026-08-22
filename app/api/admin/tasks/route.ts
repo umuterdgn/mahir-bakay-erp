@@ -25,11 +25,39 @@ export async function GET(request: Request) {
             name: true,
             title: true
           }
-        }
+        },
+        profession: true
       }
     })
 
-    return NextResponse.json(tasks)
+    // Fetch personnel data for tasks with assignedTo
+    const personnelIds = tasks
+      .map(task => task.assignedTo)
+      .filter((id): id is string => id !== null)
+    
+    const personnelMap = new Map<string, any>()
+    
+    if (personnelIds.length > 0) {
+      const personnel = await prisma.personel.findMany({
+        where: {
+          id: { in: personnelIds }
+        },
+        select: {
+          id: true,
+          name: true
+        }
+      })
+      
+      personnel.forEach(p => personnelMap.set(p.id, p))
+    }
+
+    // Attach personnel data to tasks
+    const tasksWithPersonnel = tasks.map(task => ({
+      ...task,
+      worker: task.assignedTo ? personnelMap.get(task.assignedTo) : null
+    }))
+
+    return NextResponse.json(tasksWithPersonnel)
   } catch (error) {
     console.error("Error fetching tasks:", error)
     return NextResponse.json({ error: "Failed to fetch tasks" }, { status: 500 })
