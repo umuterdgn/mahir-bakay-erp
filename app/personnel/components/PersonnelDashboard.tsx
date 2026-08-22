@@ -257,43 +257,40 @@ export function PersonnelDashboard({ personnel, summary, recentAttendance, equip
         // HIZLI YAKALAMA: Okunduğu an önce okuyucuyu durdur ki Android araya girmesin
         abortController.abort()
         setIsWebNfcScanning(false)
-        
-        // Try to decrypt data from any record type
-        let personnelId = null
-        const textDecoder = new TextDecoder()
-        
-        // Try to read from the first record
-        const record = event.message.records[0]
-        if (record) {
-          try {
-            const data = textDecoder.decode(record.data)
-            const payload = decryptNfcData(data)
-            
-            if (payload && payload.id) {
-              personnelId = payload.id
+
+        try {
+          const record = event.message.records[0]
+          const textDecoder = new TextDecoder(record.encoding || "utf-8")
+          const rawData = textDecoder.decode(record.data)
+
+          // 2. Gelen rawData (şifreli metin) deşifre edilmeye çalışılır
+          const decryptedData = decryptNfcData(rawData)
+
+          if (decryptedData && decryptedData.id) {
+            // 3. ŞİFRE BAŞARIYLA ÇÖZÜLDÜ, GİRİŞ YAP!
+            const success = await handleCheckIn(decryptedData.id)
+            if (success) {
+              setIsScanning(false)
+            } else {
+              setCameraError("Giriş başarısız")
             }
-          } catch {
-            // If decryption fails, try serial number fallback
-          }
-        }
-        
-        // Fallback to serial number for old cards
-        if (!personnelId) {
-          personnelId = event.serialNumber
-        }
-        
-        // Attempt check-in with the ID we found
-        if (personnelId) {
-          const success = await handleCheckIn(personnelId)
-          if (success) {
-            setIsScanning(false)
           } else {
-            // Silent fail - don't show error toast
-            console.log("Check-in failed for ID:", personnelId)
+            // 4. Şifre çözülemediyse, eski/standart kart ID'sini (serialNumber) fallback olarak dene
+            const serialNumber = event.serialNumber
+            if (serialNumber) {
+              const success = await handleCheckIn(serialNumber)
+              if (success) {
+                setIsScanning(false)
+              } else {
+                setCameraError("Giriş başarısız")
+              }
+            } else {
+              setCameraError("Tanımsız Kart: Geçersiz veri formatı.")
+            }
           }
-        } else {
-          // Silent fail - don't show error toast
-          console.log("No valid personnel ID found in NFC data")
+        } catch (error) {
+          console.error("NFC Okuma Hatası:", error)
+          setCameraError("Kart okunamadı, tekrar deneyin.")
         }
       }
 

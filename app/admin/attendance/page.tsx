@@ -313,48 +313,50 @@ export default function AttendancePage() {
         // HIZLI YAKALAMA: Okunduğu an önce okuyucuyu durdur ki Android araya girmesin
         abortController.abort()
         setIsWebNfcScanning(false)
-        
-        // Try to decrypt data from any record type
-        let personnelId = null
-        const textDecoder = new TextDecoder()
-        
-        // Try to read from the first record
-        const record = event.message.records[0]
-        if (record) {
-          try {
-            const data = textDecoder.decode(record.data)
-            const payload = decryptNfcData(data)
-            
-            if (payload && payload.id) {
-              personnelId = payload.id
+
+        try {
+          const record = event.message.records[0]
+          const textDecoder = new TextDecoder(record.encoding || "utf-8")
+          const rawData = textDecoder.decode(record.data)
+
+          // 2. Gelen rawData (şifreli metin) deşifre edilmeye çalışılır
+          const decryptedData = decryptNfcData(rawData)
+
+          if (decryptedData && decryptedData.id) {
+            // 3. ŞİFRE BAŞARIYLA ÇÖZÜLDÜ, GİRİŞ YAP!
+            setNfcInput(decryptedData.id)
+            const result = await processNfcAttendance(decryptedData.id, selectedProjectForNfc)
+            if (result.success) {
+              const actionText = result.action === "checkin" ? "Giriş" : "Çıkış"
+              toast.success(`${result.personelName} - ${actionText} Başarılı (${result.time})`)
+              setNfcInput("")
+              fetchAttendanceRecords()
+            } else {
+              toast.error(result.error || "İşlem başarısız")
+              setNfcInput("")
             }
-          } catch {
-            // If decryption fails, try serial number fallback
-          }
-        }
-        
-        // Fallback to serial number for old cards
-        if (!personnelId) {
-          personnelId = event.serialNumber
-        }
-        
-        setNfcInput(personnelId)
-        
-        // Auto-submit after reading
-        if (personnelId) {
-          const result = await processNfcAttendance(personnelId, selectedProjectForNfc)
-          if (result.success) {
-            const actionText = result.action === "checkin" ? "Giriş" : "Çıkış"
-            toast.success(`${result.personelName} - ${actionText} Başarılı (${result.time})`)
-            setNfcInput("")
-            fetchAttendanceRecords()
           } else {
-            toast.error(result.error || "İşlem başarısız")
-            setNfcInput("")
+            // 4. Şifre çözülemediyse, eski/standart kart ID'sini (serialNumber) fallback olarak dene
+            const serialNumber = event.serialNumber
+            if (serialNumber) {
+              setNfcInput(serialNumber)
+              const result = await processNfcAttendance(serialNumber, selectedProjectForNfc)
+              if (result.success) {
+                const actionText = result.action === "checkin" ? "Giriş" : "Çıkış"
+                toast.success(`${result.personelName} - ${actionText} Başarılı (${result.time})`)
+                setNfcInput("")
+                fetchAttendanceRecords()
+              } else {
+                toast.error(result.error || "İşlem başarısız")
+                setNfcInput("")
+              }
+            } else {
+              toast.error("Tanımsız Kart: Geçersiz veri formatı.")
+            }
           }
-        } else {
-          // Silent fail - don't show error toast
-          console.log("No valid personnel ID found in NFC data")
+        } catch (error) {
+          console.error("NFC Okuma Hatası:", error)
+          toast.error("Kart okunamadı, tekrar deneyin.")
         }
       }
 
