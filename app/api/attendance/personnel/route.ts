@@ -20,13 +20,23 @@ export async function POST(request: Request) {
     // - AttendanceRecord, personelId ile Personel'e bağlı
     // - Doğru tablo: Personel
 
-    // Personel tablosunda username ile ara (case-insensitive)
+    // Personel tablosunda username, id veya nfcId ile ara (case-insensitive)
     const personnel = await (prisma as any).personel.findFirst({
       where: {
-        username: {
-          equals: username as string,
-          mode: 'insensitive'
-        }
+        OR: [
+          {
+            username: {
+              equals: username as string,
+              mode: 'insensitive'
+            }
+          },
+          {
+            id: username as string
+          },
+          {
+            nfcId: username as string
+          }
+        ]
       }
     })
 

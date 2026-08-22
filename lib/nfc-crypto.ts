@@ -6,7 +6,8 @@
 
 import CryptoJS from "crypto-js"
 
-const SECRET_KEY = process.env.NFC_SECRET_KEY || "MahirBakay2026SecureKey"
+// Client-side'da çalışabilmesi için NEXT_PUBLIC_ kullanıldı veya fallback atandı.
+const SECRET_KEY = process.env.NEXT_PUBLIC_NFC_SECRET_KEY || "mahirbakay-erp-super-secret-key-2026";
 
 export interface NfcPayload {
   id: string
