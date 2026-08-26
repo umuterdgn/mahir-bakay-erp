@@ -9,12 +9,14 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "react-hot-toast"
+import { useSession } from "next-auth/react"
 import * as XLSX from "xlsx"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 
 export default function FinancePage() {
   const router = useRouter()
+  const { data: session, status } = useSession()
   
   const [transactions, setTransactions] = useState<any[]>([])
   const [projects, setProjects] = useState<any[]>([])
@@ -26,7 +28,25 @@ export default function FinancePage() {
   const [isProgressPaymentModalOpen, setIsProgressPaymentModalOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // Role-based access control
   useEffect(() => {
+    if (status === "loading") return
+    
+    const userRole = session?.user?.role
+    const isAdmin = userRole === "SUPER_ADMIN" || userRole === "ADMIN"
+    
+    if (!isAdmin) {
+      router.push("/admin/dashboard")
+      toast.error("Bu sayfaya erişim yetkiniz yok")
+    }
+  }, [status, session, router])
+
+  useEffect(() => {
+    const userRole = session?.user?.role
+    const isAdmin = userRole === "SUPER_ADMIN" || userRole === "ADMIN"
+    
+    if (!isAdmin) return
+    
     fetchTransactions()
     fetchProjects()
     fetchCompanies()

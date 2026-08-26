@@ -26,7 +26,9 @@ import {
   Menu,
   X,
   ChevronDown,
-  ClipboardList
+  ClipboardList,
+  ClipboardCheck,
+  ShoppingCart
 } from "lucide-react"
 
 export default function PersonnelSidebar() {
@@ -38,11 +40,13 @@ export default function PersonnelSidebar() {
   const navItems = [
     { href: "/personnel", label: "Ana Sayfa", icon: Home },
     { href: "/personnel/tasks", label: "Görevlerim / İş Emirleri", icon: ClipboardList },
+    { href: "/personnel/requests", label: "Malzeme Talepleri", icon: ShoppingCart },
     { href: "/personnel/profile", label: "Profil ve Ayarlar", icon: User },
     { href: "/personnel/qr-checkin", label: "QR Giriş/Çıkış", icon: QrCode },
     { href: "/personnel/attendance", label: "Mesai Geçmişi", icon: Clock },
     { href: "/personnel/salary", label: "Maaş ve Avans", icon: Wallet },
     { href: "/personnel/equipment", label: "Zimmetli Ekipmanlar", icon: Package },
+    { href: "/personnel/audits", label: "Denetim Raporları", icon: ClipboardCheck },
     { href: "/personnel/isg", label: "İSG Bildirimleri", icon: ShieldAlert },
     { href: "/personnel/leave", label: "İzin Yönetimi", icon: Calendar },
     { href: "/personnel/announcements", label: "Duyurular ve Belgeler", icon: Bell },

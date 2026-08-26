@@ -8,6 +8,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import Link from "next/link"
 import FinancialChart from "../../components/admin/FinancialChart"
+import WeatherWidget from "@/components/ui/WeatherWidget"
 
 export default async function AdminDashboard() {
   const session = await auth()
@@ -89,6 +90,11 @@ export default async function AdminDashboard() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
+        {/* Weather Widget */}
+        <div className="mb-6">
+          <WeatherWidget city="İstanbul" />
+        </div>
+
         {/* Stat Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
           {/* Active Projects */}

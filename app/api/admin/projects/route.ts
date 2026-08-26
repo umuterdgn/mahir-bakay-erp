@@ -10,6 +10,8 @@ import { deleteFromCloudinary, deleteMultipleFromCloudinary } from "@/lib/cloudi
 import { auth } from "@/lib/auth"
 import { logAction } from "@/lib/logger"
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   try {
     const session = await auth()
@@ -17,6 +19,8 @@ export async function GET(request: Request) {
     const userId = session?.user?.id
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search')
+
+    console.log("📋 Projects API - Session:", { userRole, userId })
 
     // SITE_MANAGER ise sadece kendi projelerini görebilir
     const roleWhereClause = userRole === "SITE_MANAGER" && userId 
@@ -43,6 +47,8 @@ export async function GET(request: Request) {
       ...searchWhereClause
     }
 
+    console.log("📋 Projects API - Where clause:", whereClause)
+
     const projects = await prisma.project.findMany({
       where: whereClause,
       include: {
@@ -53,11 +59,15 @@ export async function GET(request: Request) {
         createdAt: 'desc'
       }
     })
-    return NextResponse.json(projects)
+
+    console.log("📋 DB'den çekilen projeler:", projects)
+    console.log("📋 Projects API - Fetched projects count:", projects.length)
+    
+    return NextResponse.json({ projects: projects || [] })
   } catch (error) {
-    console.error("Error fetching projects:", error)
+    console.error("❌ Error fetching projects:", error)
     return NextResponse.json(
-      { error: "Projeler getirilirken hata oluştu" },
+      { error: "Projeler getirilirken hata oluştu", details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     )
   }

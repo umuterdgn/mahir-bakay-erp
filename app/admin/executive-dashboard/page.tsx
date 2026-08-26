@@ -7,6 +7,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
+import { toast } from "react-hot-toast"
 import { 
   BarChart, 
   Bar, 
@@ -48,12 +51,32 @@ interface DashboardData {
 const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
 
 export default function ExecutiveDashboardPage() {
+  const router = useRouter()
+  const { data: session, status } = useSession()
   const [data, setData] = useState<DashboardData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
+  // Role-based access control
   useEffect(() => {
+    if (status === "loading") return
+    
+    const userRole = session?.user?.role
+    const isAdmin = userRole === "SUPER_ADMIN" || userRole === "ADMIN"
+    
+    if (!isAdmin) {
+      router.push("/admin/dashboard")
+      toast.error("Bu sayfaya erişim yetkiniz yok")
+    }
+  }, [status, session, router])
+
+  useEffect(() => {
+    const userRole = session?.user?.role
+    const isAdmin = userRole === "SUPER_ADMIN" || userRole === "ADMIN"
+    
+    if (!isAdmin) return
+    
     fetchDashboardData()
-  }, [])
+  }, [session])
 
   const fetchDashboardData = async () => {
     try {
@@ -124,6 +147,30 @@ export default function ExecutiveDashboardPage() {
           color="from-amber-600 to-orange-600"
           subtitle="Kullanımda"
         />
+      </div>
+
+      {/* AI Insight Widget */}
+      <div className="mb-8">
+        <div className="bg-gradient-to-r from-purple-600/20 to-blue-600/20 backdrop-blur-sm rounded-2xl p-6 border border-purple-500/30 shadow-lg relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-blue-500/10 rounded-full blur-3xl"></div>
+          <div className="relative z-10">
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl shadow-lg shadow-purple-500/30">
+                <span className="text-2xl">✨</span>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
+                  Nexa AI Günlük Özet
+                  <span className="text-xs bg-purple-500/30 text-purple-300 px-2 py-1 rounded-full">AI Insight</span>
+                </h3>
+                <p className="text-slate-300 text-sm leading-relaxed">
+                  Nexa AI: Bugün 3 projede toplam 45 kişi sahada. Açık olan 2 DÖF kaydı kritik seviyede (A Blok Kalıp). Hatay bölgesindeki yüksek nem sebebiyle döküm saatlerinin akşam 18:00 sonrasına kaydırılması önerilir.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Charts */}

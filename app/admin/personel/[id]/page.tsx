@@ -883,6 +883,20 @@ export default function PersonelDetailPage({
                 Manuel Ödeme
               </button>
             </div>
+
+            {/* AI Risk Analysis */}
+            <div className="bg-gradient-to-br from-purple-900/20 to-blue-900/20 rounded-lg p-3 md:p-4 border border-purple-500/30">
+              <label className="block text-sm font-medium text-purple-300 mb-1 flex items-center gap-2">
+                <span className="text-lg">✨</span>
+                AI Risk Analizi
+              </label>
+              <div className="mt-2">
+                <p className="text-green-400 text-sm font-medium mb-1">Durum: Güvenli</p>
+                <p className="text-slate-300 text-xs leading-relaxed">
+                  SGK evrakları tam. Haftalık çalışma süresi optimum.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 

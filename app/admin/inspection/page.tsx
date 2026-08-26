@@ -1,6 +1,6 @@
 "use client"
 /**
- * © 2026 NXA Software. All rights reserved.
+ * 
  * Developer: Umut Erdoğan
  * This code is the property of NXA Software.
  */
@@ -8,7 +8,8 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Building2, TestTube, FileText, Plus, CheckCircle, XCircle, Clock, AlertTriangle, X, Edit, Upload, Trash2 } from "lucide-react"
+import { Building2, TestTube, FileText, Plus, CheckCircle, XCircle, Clock, AlertTriangle, X, Edit, Upload, Trash2, Sparkles } from "lucide-react"
+import AIAssistantModal from "@/components/AIAssistantModal"
 
 export default function InspectionPage() {
   const router = useRouter()
@@ -30,7 +31,9 @@ export default function InspectionPage() {
     strength: "",
     testDate: "",
     projectId: "",
-    reportFile: null as File | null
+    reportFile: null as File | null,
+    aiWeatherContext: "",
+    aiExpertAdvice: ""
   })
   const [isKarotUpdateModalOpen, setIsKarotUpdateModalOpen] = useState(false)
   const [selectedKarot, setSelectedKarot] = useState<any>(null)
@@ -58,6 +61,7 @@ export default function InspectionPage() {
     waybillNo: "",
     castDate: ""
   })
+  const [isAIAssistantOpen, setIsAIAssistantOpen] = useState(false)
 
   useEffect(() => {
     fetchProjects()
@@ -203,6 +207,21 @@ export default function InspectionPage() {
     }
   }
 
+  const handleAIResult = (data: any) => {
+    // Populate karot form with AI result
+    setKarotFormData({
+      location: data.location || "",
+      element: "",
+      strength: "",
+      testDate: new Date().toISOString().split('T')[0],
+      projectId: "",
+      reportFile: null,
+      aiWeatherContext: data.weatherContext || "",
+      aiExpertAdvice: data.expertAdvice || ""
+    })
+    setIsKarotModalOpen(true)
+  }
+
   const handleKarotUpdateSubmit = async () => {
     if (!selectedKarot) return
 
@@ -343,13 +362,22 @@ export default function InspectionPage() {
           </button>
         )}
         {activeTab === "core" && (
-          <button 
-            onClick={() => setIsKarotModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors"
-          >
-            <Plus className="w-5 h-5" />
-            Yeni Karot Ekle
-          </button>
+          <div className="flex gap-2">
+            <button 
+              onClick={() => setIsAIAssistantOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-lg transition-colors"
+            >
+              <Sparkles className="w-5 h-5" />
+              AI Asistan ile Raporla
+            </button>
+            <button 
+              onClick={() => setIsKarotModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors"
+            >
+              <Plus className="w-5 h-5" />
+              Yeni Karot Ekle
+            </button>
+          </div>
         )}
       </div>
 
@@ -730,6 +758,35 @@ export default function InspectionPage() {
                   <p className="text-green-400 text-sm mt-2">{karotFormData.reportFile.name}</p>
                 )}
               </div>
+              
+              {/* AI Insight Boxes */}
+              {karotFormData.aiWeatherContext && (
+                <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-amber-500/20 rounded-lg">
+                      <span className="text-amber-400 text-lg">🌡️</span>
+                    </div>
+                    <div>
+                      <h4 className="text-amber-400 font-medium text-sm mb-1">Hava Durumu Notu</h4>
+                      <p className="text-slate-300 text-sm">{karotFormData.aiWeatherContext}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {karotFormData.aiExpertAdvice && (
+                <div className="bg-indigo-500/10 border border-indigo-500/30 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-indigo-500/20 rounded-lg">
+                      <span className="text-indigo-400 text-lg">✨</span>
+                    </div>
+                    <div>
+                      <h4 className="text-indigo-400 font-medium text-sm mb-1">AI Uzman Tavsiyesi</h4>
+                      <p className="text-slate-300 text-sm">{karotFormData.aiExpertAdvice}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="p-6 border-t border-slate-800 flex justify-end gap-3">
               <button 
@@ -763,7 +820,7 @@ export default function InspectionPage() {
                     // Save karot data (API endpoint to be created)
                     console.log("Karot data:", { ...karotFormData, reportUrl })
                     setIsKarotModalOpen(false)
-                    setKarotFormData({ location: "", element: "", strength: "", testDate: "", projectId: "", reportFile: null })
+                    setKarotFormData({ location: "", element: "", strength: "", testDate: "", projectId: "", reportFile: null, aiWeatherContext: "", aiExpertAdvice: "" })
                     setShowToast(true)
                     setTimeout(() => setShowToast(false), 3000)
                   } catch (error) {
@@ -1039,6 +1096,13 @@ export default function InspectionPage() {
           Numune sonuçları güncellendi
         </div>
       )}
+
+      {/* AI Assistant Modal */}
+      <AIAssistantModal
+        isOpen={isAIAssistantOpen}
+        onClose={() => setIsAIAssistantOpen(false)}
+        onResult={handleAIResult}
+      />
     </div>
   )
 }

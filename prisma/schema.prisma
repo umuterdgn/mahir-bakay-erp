@@ -32,6 +32,8 @@ model User {
   inventory       Inventory[]
   messages        Message[]
   conversationParticipants ConversationParticipant[]
+  approvedOrders  PurchaseOrder[]
+  uploadedDocuments ProjectDocument[]
 }
 
 enum UserRole {
@@ -40,6 +42,39 @@ enum UserRole {
   SITE_MANAGER
   MUHASEBE
   STAFF
+  ENGINEER
+  SUBCONTRACTOR
+  CLIENT
+}
+
+enum CompanyType {
+  MAIN_CONTRACTOR
+  SUBCONTRACTOR
+  SUPPLIER
+  CLIENT
+}
+
+// ============================================================================
+// TENANT (SaaS Multi-Tenancy)
+// ============================================================================
+
+model Tenant {
+  id        String   @id @default(cuid())
+  name      String   // Şirket adı
+  domain    String?  // Özel domain (opsiyonel)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  projects  Project[]
+  personnel Personel[]
+  equipment Equipment[]
+  locationLogs LocationLog[]
+  droneMedia DroneMedia[]
+  chatThreads ChatThread[]
+  systemLogs SystemLog[]
+
+  @@index([isActive])
 }
 
 // ============================================================================
@@ -86,6 +121,8 @@ model Project {
   status        String?  // ETUT, CIZIM, SAHA, TAMAMLANDI
   companyId     String?
   company       Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  tenantId      String?
+  tenant        Tenant?  @relation(fields: [tenantId], references: [id], onDelete: SetNull)
   startDate   DateTime @default(now())
   endDate     DateTime?
   managerId    String?  // Projeye atanan şantiye şefinin ID'si
@@ -111,6 +148,9 @@ model Project {
   latitude       Float?   // Proje merkezi enlem
   longitude      Float?   // Proje merkezi boylam
   gpsRadius      Int?     @default(100) // Metre cinsinden izin verilen çap
+  ifcModelUrl    String?  // 3D BIM modelinin dosya yolu (.ifc)
+  locationCity   String?  // Proje lokasyon şehri (hava durumu için)
+  contractValue  Float?   // Sözleşme bedeli (hakediş hesaplamaları için)
   // Relations
   archives    Archive[]
   transactions Transaction[]
@@ -135,6 +175,15 @@ model Project {
   projectBlueprints ProjectBlueprint[]
   reinforcementInspections ReinforcementInspection[]
   attachmentEvidences AttachmentEvidence[]
+  audits      Audit[]
+  dailyProgress DailyProgress[]
+  bimIssues   BimIssue[]
+  progressBillings ProgressBilling[]
+  subcontractorContracts SubcontractorContract[]
+  deductions Deduction[]
+  materialRequests MaterialRequest[]
+  projectTasks ProjectTask[]
+  projectDocuments ProjectDocument[]
   inventoryItems InventoryItem[]
   siteZones SiteZone[]
   workOrders WorkOrder[]
@@ -235,6 +284,8 @@ model Equipment {
   
   projectId        String?
   project          Project? @relation(fields: [projectId], references: [id])
+  tenantId         String?
+  tenant           Tenant?  @relation(fields: [tenantId], references: [id], onDelete: SetNull)
   locationLogs     LocationLog[]
 
   createdAt        DateTime @default(now())
@@ -245,6 +296,7 @@ model Equipment {
   @@index([type])
   @@index([assignedToId])
   @@index([serialNumber])
+  @@index([tenantId])
 }
 
 // ============================================================================
@@ -259,10 +311,13 @@ model LocationLog {
   personel    Personel?  @relation(fields: [personelId], references: [id])
   equipmentId String?
   equipment   Equipment? @relation(fields: [equipmentId], references: [id])
+  tenantId    String?
+  tenant      Tenant?    @relation(fields: [tenantId], references: [id], onDelete: SetNull)
   timestamp   DateTime   @default(now())
 
   @@index([personelId])
   @@index([equipmentId])
+  @@index([tenantId])
   @@index([timestamp])
 }
 
@@ -278,10 +333,13 @@ model DroneMedia {
   date        DateTime // Çekim tarihi
   projectId   String
   project     Project  @relation(fields: [projectId], references: [id])
+  tenantId    String?
+  tenant      Tenant?   @relation(fields: [tenantId], references: [id], onDelete: SetNull)
   description String?
   createdAt   DateTime @default(now())
 
   @@index([projectId])
+  @@index([tenantId])
   @@index([date])
   @@index([mediaType])
 }
@@ -296,6 +354,8 @@ model ChatThread {
   status      String    @default("OPEN") // OPEN, RESOLVED, ARCHIVED
   projectId   String
   project     Project   @relation(fields: [projectId], references: [id])
+  tenantId    String?
+  tenant      Tenant?   @relation(fields: [tenantId], references: [id], onDelete: SetNull)
   createdById String
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -303,6 +363,7 @@ model ChatThread {
   participants ChatParticipant[]
 
   @@index([projectId])
+  @@index([tenantId])
   @@index([status])
   @@index([createdById])
 }
@@ -351,18 +412,25 @@ model Announcement {
 // ============================================================================
 
 model Company {
-  id          String   @id @default(cuid())
+  id          String      @id @default(cuid())
   name        String
-  type        String   // MUSTERI, TASERON, TEDARIKCI
+  type        CompanyType @default(SUBCONTRACTOR)
   contactName String?
   phone       String?
   email       String?
   taxNumber   String?
   taxOffice   String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  personnel   Personel[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
   projects    Project[]
   transactions Transaction[]
+  audits      Audit[]
+  dailyProgress DailyProgress[]
+  progressBillings ProgressBilling[]
+  subcontractorContracts SubcontractorContract[]
+  workerDocuments WorkerDocument[]
+  deductions Deduction[]
 
   @@index([type])
 }
@@ -567,6 +635,11 @@ model Personel {
   gunlukYevmiye   Float               @default(0) // Günlük Yevmiye
   userId          String?             // AdminUser ile eşleşme (opsiyonel)
   username        String?             // Kullanıcı adı (login için)
+  role            UserRole            @default(STAFF) // Rol bazlı yetkilendirme
+  companyId       String?             // Firma ID (Taşeron izolasyonu için)
+  company         Company?            @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  tenantId        String?             // Tenant ID (SaaS multi-tenancy)
+  tenant          Tenant?             @relation(fields: [tenantId], references: [id], onDelete: SetNull)
   emergencyContactName String?        // Acil durum kişisi adı
   emergencyContactPhone String?       // Acil durum kişisi telefon
   emergencyContactRelation String?    // Acil durum kişisi yakınlık
@@ -578,7 +651,7 @@ model Personel {
   siteHistory     SiteHistory[]
   payments        PersonelPayment[]
   insurance       Insurance?
-  inventoryHistory InventoryHistory[] @relation("InventoryHistoryPersonnel")
+  inventoryHistory InventoryHistory[]
   inventoryAssignments InventoryAssignment[]
   transactions    Transaction[]
   movements       StockMovement[]
@@ -594,7 +667,10 @@ model Personel {
   assignedEquipment Equipment[]
   locationLogs    LocationLog[]
   chatParticipants ChatParticipant[]
+  materialRequests MaterialRequest[]
+  assignedProjectTasks ProjectTask[] @relation("AssignedTasks")
   notes           String?             @db.Text
+  audits          Audit[]
   createdAt       DateTime            @default(now())
   updatedAt       DateTime            @updatedAt
 
@@ -605,6 +681,308 @@ model Personel {
   @@index([takim])
   @@index([userId])
   @@index([professionId])
+  @@index([role])
+  @@index([companyId])
+}
+
+// ============================================================================
+// AUDIT (Taşeron Denetim ve Performans)
+// ============================================================================
+
+model Audit {
+  id              String   @id @default(cuid())
+  title           String   // Örn: "A Blok 3. Kat Kalıp Denetimi"
+  type            String   // OHS (İSG), QUALITY (Kalite), PROGRESS (İlerleme)
+  score           Int      // 0-100 arası puan
+  status          String   // PASSED, FAILED, ACTION_REQUIRED
+  notes           String?  @db.Text
+  
+  projectId       String
+  project         Project  @relation(fields: [projectId], references: [id])
+  
+  subcontractorId String
+  subcontractor   Company  @relation(fields: [subcontractorId], references: [id])
+  
+  inspectorId     String
+  inspector       Personel @relation(fields: [inspectorId], references: [id])
+  
+  createdAt       DateTime @default(now())
+
+  @@index([projectId])
+  @@index([subcontractorId])
+  @@index([inspectorId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// DAILY PROGRESS (Günlük İlerleme Raporları)
+// ============================================================================
+
+model DailyProgress {
+  id                    String   @id @default(cuid())
+  description           String   @db.Text
+  completionPercentage  Int      // 0-100
+  photos                String[] // Fotoğraf URL'leri
+  
+  projectId             String
+  project               Project  @relation(fields: [projectId], references: [id])
+  
+  subcontractorId       String
+  subcontractor         Company  @relation(fields: [subcontractorId], references: [id])
+  
+  createdAt             DateTime @default(now())
+
+  @@index([projectId])
+  @@index([subcontractorId])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// BIM ISSUE (3D Kusur İşaretleme - Snagging)
+// ============================================================================
+
+model BimIssue {
+  id          String   @id @default(cuid())
+  title       String
+  description String   @db.Text
+  imageUrl    String?
+  positionX   Float
+  positionY   Float
+  positionZ   Float
+  status      String   // OPEN, RESOLVED
+  
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id])
+  
+  createdAt   DateTime @default(now())
+
+  @@index([projectId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// PROGRESS BILLING (Hakediş - Taşeron Ödemesi)
+// ============================================================================
+
+model ProgressBilling {
+  id               String   @id @default(cuid())
+  periodMonth      Int      // Ay (1-12)
+  periodYear       Int      // Yıl (2024, 2025, vb.)
+  totalAmount      Float
+  netAmount        Float    // Brüt tutardan kesintiler çıkarıldıktan sonra ödenecek net tutar
+  status           String   // DRAFT, PENDING_APPROVAL, APPROVED, PAID
+  notes            String?  @db.Text
+  
+  projectId        String
+  project          Project  @relation(fields: [projectId], references: [id])
+  
+  subcontractorId String
+  subcontractor   Company  @relation(fields: [subcontractorId], references: [id])
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([subcontractorId])
+  @@index([status])
+  @@index([periodYear, periodMonth])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// SUBCONTRACTOR CONTRACT (Taşeron Sözleşmeleri)
+// ============================================================================
+
+model SubcontractorContract {
+  id               String   @id @default(cuid())
+  contractType     String   // UNIT_PRICE, LUMP_SUM
+  totalValue       Float
+  startDate        DateTime
+  endDate          DateTime?
+  status           String   // DRAFT, ACTIVE, COMPLETED, CANCELLED
+  notes            String?  @db.Text
+  
+  projectId        String
+  project          Project  @relation(fields: [projectId], references: [id])
+  
+  subcontractorId String
+  subcontractor   Company  @relation(fields: [subcontractorId], references: [id])
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([subcontractorId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// WORKER DOCUMENT (İSG ve SGK Evrak Takibi)
+// ============================================================================
+
+model WorkerDocument {
+  id               String   @id @default(cuid())
+  workerName       String
+  tcNo             String?  // TC Kimlik No
+  sgkStatus        Boolean  @default(false) // SGK kaydı var mı?
+  ohsTraining      Boolean  @default(false) // İSG eğitimi alındı mı?
+  medicalReport    Boolean  @default(false) // Sağlık raporu var mı?
+  notes            String?  @db.Text
+  
+  subcontractorId String
+  subcontractor   Company  @relation(fields: [subcontractorId], references: [id])
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([subcontractorId])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// DEDUCTION (Kesintiler ve Cezalar)
+// ============================================================================
+
+model Deduction {
+  id               String   @id @default(cuid())
+  amount           Float
+  reason           String   @db.Text
+  date             DateTime @default(now())
+  appliedToBillingId String? // Hangi hakedişe uygulandı?
+  notes            String?  @db.Text
+  
+  projectId        String?
+  project          Project? @relation(fields: [projectId], references: [id])
+  
+  subcontractorId String
+  subcontractor   Company  @relation(fields: [subcontractorId], references: [id])
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([subcontractorId])
+  @@index([appliedToBillingId])
+  @@index([date])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// MATERIAL REQUEST (Malzeme Talebi)
+// ============================================================================
+
+model MaterialRequest {
+  id          String   @id @default(cuid())
+  itemName    String
+  quantity    Int
+  unit        String   // kg, adet, m, m2, vb.
+  urgency     String   // LOW, NORMAL, HIGH, CRITICAL
+  status      String   // PENDING, QUOTING, APPROVED, REJECTED, DELIVERED
+  notes       String?  @db.Text
+  
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id])
+  
+  requesterId String
+  requester   Personel @relation(fields: [requesterId], references: [id])
+  
+  purchaseOrders PurchaseOrder[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([requesterId])
+  @@index([status])
+  @@index([urgency])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// PURCHASE ORDER (Satınalma Siparişi)
+// ============================================================================
+
+model PurchaseOrder {
+  id            String   @id @default(cuid())
+  supplierName  String
+  unitPrice     Float
+  totalPrice    Float
+  orderDate     DateTime @default(now())
+  
+  requestId     String
+  request       MaterialRequest @relation(fields: [requestId], references: [id])
+  
+  approvedById  String?
+  approvedBy    User?    @relation(fields: [approvedById], references: [id])
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([requestId])
+  @@index([approvedById])
+  @@index([orderDate])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// PROJECT TASK (İş Programı - Gantt Şeması Görevleri)
+// ============================================================================
+
+model ProjectTask {
+  id            String   @id @default(cuid())
+  name          String
+  startDate     DateTime
+  endDate       DateTime
+  progress      Int      @default(0) // 0-100 arası ilerleme yüzdesi
+  dependencies  String?  // Kendinden önce bitmesi gereken task'ın ID'si (virgülle ayrılmış)
+  notes         String?  @db.Text
+  
+  projectId     String
+  project       Project  @relation(fields: [projectId], references: [id])
+  
+  assignedToId  String?
+  assignedTo    Personel? @relation("AssignedTasks", fields: [assignedToId], references: [id])
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([assignedToId])
+  @@index([startDate])
+  @@index([endDate])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// PROJECT DOCUMENT (Doküman ve Revizyon Yönetimi)
+// ============================================================================
+
+model ProjectDocument {
+  id              String   @id @default(cuid())
+  title           String
+  type            String   // BLUEPRINT, SPECIFICATION, CONTRACT, OTHER
+  fileUrl         String
+  revision        Int      @default(0)
+  status          String   @default("ACTIVE") // ACTIVE, OBSOLETE
+  documentGroupId String?  // Aynı dosyanın yeni revizyonları aynı groupId'ye sahip
+  
+  projectId       String
+  project         Project  @relation(fields: [projectId], references: [id])
+  
+  uploadedById    String?
+  uploadedBy      User?    @relation(fields: [uploadedById], references: [id])
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([uploadedById])
+  @@index([documentGroupId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 enum Gender {
@@ -869,11 +1247,11 @@ model InventoryHistory {
   id          String   @id @default(cuid())
   inventoryId String
   inventory   Inventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
-  action      String   // "CREATED", "STOCK_ADDED", "STOCK_REMOVED", "ASSIGNED", "UNASSIGNED"
+  action      String   // "CREATED", "STOCK_ADDED", "STOCK_REMOVED", "ASSIGNED", "UNASSIGNED", "TRANSFERRED"
   quantity    Float?
   description String?  @db.Text
   personnelId  String?  // If assigned/unassigned
-  personnel   Personel? @relation("InventoryHistoryPersonnel", fields: [personnelId], references: [id], onDelete: SetNull)
+  personnel   Personel? @relation(fields: [personnelId], references: [id], onDelete: SetNull)
   userId      String?  // Who performed the action
   createdAt   DateTime @default(now())
 
@@ -1096,14 +1474,20 @@ model ProjectFile {
 // ============================================================================
 
 model SystemLog {
-  id        String   @id @default(cuid())
-  action    String   // Örn: "PROJE_EKLENDI", "PERSONEL_AVANS_GIRILDI"
-  details   String   // Yapılan işlemin metin detayı
-  user      String   // İşlemi yapan şefin/kullanıcının adı
-  createdAt DateTime @default(now())
+  id          String   @id @default(cuid())
+  action      String   // Örn: "PROJE_EKLENDI", "PERSONEL_AVANS_GIRILDI"
+  details     String   // Yapılan işlemin metin detayı
+  user        String   // İşlemi yapan şefin/kullanıcının adı
+  errorType   String?  // ERROR, WARNING, INFO (for error logging)
+  stackTrace  String?  @db.Text // Stack trace for errors
+  tenantId    String?
+  tenant      Tenant?  @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
 
   @@index([action])
   @@index([createdAt])
+  @@index([errorType])
+  @@index([tenantId])
 }
 
 // ============================================================================

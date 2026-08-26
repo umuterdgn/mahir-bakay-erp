@@ -43,11 +43,35 @@ export default function CreateReportPage() {
 
   const fetchProjects = async () => {
     try {
-      const response = await fetch("/api/admin/projects");
+      // Önbelleği kesin olarak iptal etmek için timestamp ekliyoruz
+      const timestamp = new Date().getTime();
+      const response = await fetch(`/api/admin/projects?t=${timestamp}`, { cache: 'no-store' });
       const data = await response.json();
-      setProjects(data);
+      
+      console.log("📋 Client - API Response:", data);
+      
+      // Güvenli Veri Ayrıştırma (Defensive Parsing)
+      let parsedProjects: any[] = [];
+      
+      if (Array.isArray(data)) {
+        parsedProjects = data;
+      } else if (data && typeof data === 'object') {
+        if (Array.isArray(data.projects)) {
+          parsedProjects = data.projects;
+        } else if (Array.isArray(data.data)) {
+          parsedProjects = data.data;
+        }
+      }
+      
+      setProjects(parsedProjects);
+      
+      if (parsedProjects.length === 0) {
+         console.warn("API boş veri döndürdü veya veri formatı eşleşmedi:", data);
+      }
+      
     } catch (error) {
       console.error("Projeler yüklenirken hata:", error);
+      setProjects([]); // Hata anında kesinlikle boş dizi ata ki map çökmesin
     } finally {
       setLoading(false);
     }
@@ -71,7 +95,7 @@ export default function CreateReportPage() {
     try {
       setLoading(true);
 
-      // Upload DWG annotation to Cloudinary
+      // Upload DWG annotation
       let dwgUrl = null;
       if (markedBlueprintUrl) {
         const dwgBlob = await (await fetch(markedBlueprintUrl)).blob();
@@ -86,7 +110,7 @@ export default function CreateReportPage() {
         dwgUrl = dwgUploadData.url;
       }
 
-      // Upload Photo annotation to Cloudinary
+      // Upload Photo annotation
       let photoUrl = null;
       if (markedPhotoUrl) {
         const photoBlob = await (await fetch(markedPhotoUrl)).blob();
@@ -153,11 +177,17 @@ export default function CreateReportPage() {
               disabled={loading}
             >
               <option value="">Proje Seçin</option>
-              {projects.map((project) => (
-                <option key={project.id} value={project.id}>
-                  {project.name || project.title}
-                </option>
-              ))}
+              {loading ? (
+                <option disabled>Projeler yükleniyor...</option>
+              ) : projects && projects.length > 0 ? (
+                projects.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.name || project.title}
+                  </option>
+                ))
+              ) : (
+                <option disabled>Proje bulunamadı veya eklenmedi</option>
+              )}
             </select>
           </div>
 

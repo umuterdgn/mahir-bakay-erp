@@ -199,14 +199,14 @@ export default function EquipmentsPage() {
   }
 
   return (
-    <div className="lg:mt-0 mt-16">
-      <div className="flex justify-between items-center mb-8">
+    <div className="lg:mt-0 mt-16 p-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <h1 className="text-2xl lg:text-3xl font-bold text-white">
           Demirbaş Takibi
         </h1>
         <button
           onClick={openModal}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors"
+          className="w-full md:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors"
         >
           Yeni Demirbaş Ekle
         </button>
@@ -214,7 +214,8 @@ export default function EquipmentsPage() {
 
       {/* Equipments Table */}
       <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
-        <table className="w-full">
+        <div className="w-full overflow-x-auto block whitespace-nowrap">
+          <table className="w-full">
           <thead className="bg-slate-800">
             <tr>
               <th className="px-6 py-3 text-left text-sm font-medium text-slate-300">Adı</th>

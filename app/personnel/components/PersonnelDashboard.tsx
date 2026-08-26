@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation"
 import { signOut } from "next-auth/react"
 import { Html5Qrcode } from "html5-qrcode"
 import { decryptNfcData } from "@/lib/nfc-crypto"
+import WeatherWidget from "@/components/ui/WeatherWidget"
 import { 
   User, 
   QrCode, 
@@ -399,6 +400,9 @@ export function PersonnelDashboard({ personnel, summary, recentAttendance, equip
 
       {/* Quick Action Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {/* Weather Widget */}
+        <WeatherWidget city={personnel.currentSite || "İstanbul"} />
+
         {/* QR Check-in - Large Action Button */}
         <button
           onClick={() => router.push('/personnel/qr-checkin')}

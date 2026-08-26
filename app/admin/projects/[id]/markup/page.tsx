@@ -201,9 +201,9 @@ export default function MarkupPage({ params }: { params: Promise<{ id: string }>
       {/* Main Content */}
       <div className="flex flex-col md:flex-row h-[calc(100vh-73px)]">
         {/* Canvas Area */}
-        <div className="flex-1 bg-slate-800 p-4 md:p-6">
+        <div className="flex-1 bg-slate-800 p-4 md:p-6 w-full max-w-full overflow-hidden">
           {/* Sekme Kapsayıcısı - Relative zorunlu */}
-          <div className="flex-1 relative min-h-[600px] bg-slate-900 rounded-xl border border-slate-700 overflow-hidden">
+          <div className="flex-1 relative min-h-[600px] bg-slate-900 rounded-xl border border-slate-700 overflow-hidden w-full max-w-full">
               
               {/* Plan Çizim Alanı (Opacity & Z-index ile gizle/göster) */}
               <div className={`absolute inset-0 w-full h-full transition-opacity duration-300 ${activeTab === 'blueprint' ? 'opacity-100 z-10' : 'opacity-0 -z-10 pointer-events-none'}`}>

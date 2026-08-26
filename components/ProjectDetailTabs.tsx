@@ -16,10 +16,19 @@ import GeofencedCheckIn from "@/components/GeofencedCheckIn"
 import { toast } from "react-hot-toast"
 import { jsPDF } from "jspdf"
 import * as htmlToImage from 'html-to-image'
+import { UploadDropzone } from "@uploadthing/react"
+import type { OurFileRouter } from "@/app/api/uploadthing/core"
+import { updateProjectBimModel } from "@/app/actions/project"
 
 // Leaflet SSR'da hata verdiği için dynamic import kullanıyoruz
 const MapLocationPicker = dynamic(() => import('@/components/MapLocationPicker'), { ssr: false })
 const SiteMasterPlan = dynamic(() => import('@/components/SiteMasterPlan'), { ssr: false })
+// IFC Viewer SSR'da hata verdiği için dynamic import kullanıyoruz
+const BimViewer = dynamic(() => import('@/app/admin/projects/[id]/_components/BimViewer'), { ssr: false })
+// Gantt Chart SSR'da hata verdiği için dynamic import kullanıyoruz
+const GanttChart = dynamic(() => import('@/app/admin/projects/[id]/_components/GanttChart'), { ssr: false })
+// Project Documents SSR'da hata verdiği için dynamic import kullanıyoruz
+const ProjectDocuments = dynamic(() => import('@/app/admin/projects/[id]/_components/ProjectDocuments'), { ssr: false })
 
 interface Project {
   id: string
@@ -61,6 +70,7 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
   const [loadingReports, setLoadingReports] = useState(false)
   const [deleteReportId, setDeleteReportId] = useState<string | null>(null)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [isUploadingBim, setIsUploadingBim] = useState(false)
   const [editForm, setEditForm] = useState({
     city: project.city || "",
     district: project.district || "",
@@ -84,6 +94,9 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
     { id: "arsiv", label: "Arşiv ve Evraklar" },
     { id: "gunluk", label: "Şantiye Günlüğü" },
     { id: "vaziyet", label: "🗺️ Vaziyet Planı" },
+    { id: "bim", label: "3D BIM Modeli" },
+    { id: "gantt", label: "📅 İş Programı (Gantt)" },
+    { id: "dokumanlar", label: "📁 Dokümanlar & Revizyonlar" },
     { id: "denetim", label: "Yapı Denetim Arşivi" },
     { id: "hatirlatici", label: "Hatırlatıcılar" }
   ]
@@ -191,12 +204,12 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
   return (
     <div className="space-y-6">
       {/* Tab Navigation */}
-      <div className="flex gap-2 border-b border-slate-800">
+      <div className="flex gap-2 border-b border-slate-800 overflow-x-auto no-scrollbar snap-x">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 ${
+            className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 whitespace-nowrap snap-start ${
               activeTab === tab.id
                 ? "border-blue-500 text-blue-400"
                 : "border-transparent text-slate-400 hover:text-slate-200"
@@ -559,6 +572,91 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
           />
         )}
 
+        {activeTab === "bim" && (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-white">3D BIM Modeli</h3>
+              <button
+                onClick={() => router.push(`/admin/projects/${project.id}/edit`)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors flex items-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                IFC Yükle
+              </button>
+            </div>
+
+            <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+              {(project as any).ifcModelUrl ? (
+                <div className="h-[600px]">
+                  <BimViewer ifcUrl={(project as any).ifcModelUrl} />
+                </div>
+              ) : (
+                <div className="p-6">
+                  {isUploadingBim ? (
+                    <div className="flex flex-col items-center justify-center py-20">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
+                      <p className="text-slate-400">IFC Modeli yükleniyor...</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-20">
+                      <svg className="w-16 h-16 text-slate-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                      </svg>
+                      <p className="text-slate-400 text-lg mb-2">IFC Modeli Yüklenmemiş</p>
+                      <p className="text-slate-500 text-sm mb-6">Bu proje için henüz 3D BIM modeli eklenmemiş.</p>
+                      
+                      <UploadDropzone<OurFileRouter, "bimModelUploader">
+                        endpoint="bimModelUploader"
+                        config={{ mode: "auto" }}
+                        onClientUploadComplete={async (res) => {
+                          if (res && res.length > 0) {
+                            setIsUploadingBim(true)
+                            const result = await updateProjectBimModel(project.id, res[0].url)
+                            if (result.success) {
+                              toast.success("BIM modeli başarıyla yüklendi!")
+                              router.refresh()
+                            } else {
+                              toast.error("BIM modeli kaydedilirken hata oluştu")
+                            }
+                            setIsUploadingBim(false)
+                          }
+                        }}
+                        onUploadError={(error: Error) => {
+                          toast.error(`Yükleme hatası: ${error.message}`)
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === "gantt" && (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-white">İş Programı (Gantt Şeması)</h3>
+            </div>
+            <div className="bg-slate-800 rounded-xl border border-slate-700 p-6">
+              <GanttChart projectId={project.id} />
+            </div>
+          </div>
+        )}
+
+        {activeTab === "dokumanlar" && (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-white">Dokümanlar & Revizyonlar</h3>
+            </div>
+            <div className="bg-slate-800 rounded-xl border border-slate-700 p-6">
+              <ProjectDocuments projectId={project.id} />
+            </div>
+          </div>
+        )}
+
         {activeTab === "denetim" && (
           <div className="space-y-4">
             <div className="flex justify-between items-center">
@@ -881,10 +979,11 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
                 {project.city?.toUpperCase() || ""}, {project.district?.toUpperCase() || ""} - ADA: {project.ada?.toUpperCase() || ""}, PARSEL: {project.parsel?.toUpperCase() || ""}
               </p>
             </div>
-            <div className="p-4">
+            <div className="p-4 w-full max-w-full overflow-hidden">
               <iframe
                 src="https://parselsorgu.tkgm.gov.tr/"
                 className="w-full h-[75vh] rounded-lg border-0"
+                width="100%"
                 title="TKGM Parsel Sorgu"
               />
             </div>

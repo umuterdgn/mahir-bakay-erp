@@ -6,8 +6,8 @@
  */
 
 
-import { useState } from "react"
-import { MessageSquare, Send, Paperclip, Hash, User, Search, MoreVertical, AlertTriangle, FileText, CheckCircle, Plus, X } from "lucide-react"
+import { useState, useEffect } from "react"
+import { MessageSquare, Send, Paperclip, Hash, User, Search, MoreVertical, AlertTriangle, FileText, CheckCircle, Plus, X, Users } from "lucide-react"
 
 interface ChatMessage {
   id: string
@@ -38,6 +38,10 @@ export default function ChatPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [isNewChatModalOpen, setIsNewChatModalOpen] = useState(false)
   const [newChatName, setNewChatName] = useState("")
+  const [selectedProject, setSelectedProject] = useState("")
+  const [selectedParticipants, setSelectedParticipants] = useState<string[]>([])
+  const [projects, setProjects] = useState<any[]>([])
+  const [personnel, setPersonnel] = useState<any[]>([])
   const [channels, setChannels] = useState<Channel[]>([
     { 
       id: "1", 
@@ -160,28 +164,87 @@ export default function ChatPage() {
     setMessageInput("")
   }
 
+  useEffect(() => {
+    // Fetch projects and personnel when modal opens
+    if (isNewChatModalOpen) {
+      fetchProjects()
+      fetchPersonnel()
+    }
+  }, [isNewChatModalOpen])
+
+  const fetchProjects = async () => {
+    try {
+      const response = await fetch("/api/admin/projects")
+      if (response.ok) {
+        const data = await response.json()
+        setProjects(data)
+      }
+    } catch (error) {
+      console.error("Failed to fetch projects:", error)
+    }
+  }
+
+  const fetchPersonnel = async () => {
+    try {
+      const response = await fetch("/api/admin/personnel")
+      if (response.ok) {
+        const data = await response.json()
+        setPersonnel(data)
+      }
+    } catch (error) {
+      console.error("Failed to fetch personnel:", error)
+    }
+  }
+
   const handleAttachmentSelect = (type: string) => {
     setShowAttachmentMenu(false)
     // Handle attachment selection
   }
 
-  const handleCreateNewChat = () => {
+  const handleCreateNewChat = async () => {
     if (!newChatName.trim()) return
 
-    const newChannel: Channel = {
-      id: Date.now().toString(),
-      name: newChatName,
-      type: "channel",
-      lastMessage: "",
-      lastMessageTime: new Date(),
-      unreadCount: 0,
-      messages: []
-    }
+    try {
+      const response = await fetch("/api/admin/chat-threads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: newChatName,
+          projectId: selectedProject || null,
+          participants: selectedParticipants
+        })
+      })
 
-    setChannels([...channels, newChannel])
-    setSelectedChannel(newChannel)
-    setNewChatName("")
-    setIsNewChatModalOpen(false)
+      if (response.ok) {
+        const newThread = await response.json()
+        // Add to channels list
+        const newChannel: Channel = {
+          id: newThread.id,
+          name: newThread.title,
+          type: "channel",
+          lastMessage: "",
+          lastMessageTime: new Date(),
+          unreadCount: 0,
+          messages: []
+        }
+        setChannels([...channels, newChannel])
+        setSelectedChannel(newChannel)
+        setNewChatName("")
+        setSelectedProject("")
+        setSelectedParticipants([])
+        setIsNewChatModalOpen(false)
+      }
+    } catch (error) {
+      console.error("Failed to create chat:", error)
+    }
+  }
+
+  const toggleParticipant = (personId: string) => {
+    setSelectedParticipants(prev =>
+      prev.includes(personId)
+        ? prev.filter(id => id !== personId)
+        : [...prev, personId]
+    )
   }
 
   return (
@@ -414,16 +477,58 @@ export default function ChatPage() {
             </div>
             <div className="p-4 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Sohbet Adı veya Kişi</label>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Sohbet Adı</label>
                 <input
                   type="text"
                   value={newChatName}
                   onChange={(e) => setNewChatName(e.target.value)}
                   className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
                   placeholder="Örn: Proje Ekibi"
-                  onKeyPress={(e) => e.key === "Enter" && handleCreateNewChat()}
                 />
               </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">İlgili Proje (Opsiyonel)</label>
+                <select
+                  value={selectedProject}
+                  onChange={(e) => setSelectedProject(e.target.value)}
+                  className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                >
+                  <option value="">Proje Seçin</option>
+                  {projects.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.name || project.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2 flex items-center gap-2">
+                  <Users className="w-4 h-4" />
+                  Katılımcılar
+                </label>
+                <div className="max-h-48 overflow-y-auto space-y-2 bg-slate-900 rounded-lg p-3 border border-slate-700">
+                  {personnel.map((person) => (
+                    <label
+                      key={person.id}
+                      className="flex items-center gap-3 p-2 hover:bg-slate-800 rounded cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedParticipants.includes(person.id)}
+                        onChange={() => toggleParticipant(person.id)}
+                        className="w-4 h-4 rounded border-slate-600 bg-slate-800 text-blue-500 focus:ring-blue-500"
+                      />
+                      <div className="flex-1">
+                        <p className="text-sm text-white">{person.name}</p>
+                        <p className="text-xs text-slate-400">{person.position || person.department}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              
               <div className="flex gap-3 pt-4">
                 <button
                   onClick={() => setIsNewChatModalOpen(false)}

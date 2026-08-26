@@ -457,8 +457,8 @@ export default function AttendancePage() {
   }
 
   return (
-    <div className="lg:mt-0 mt-16">
-      <div className="flex justify-between items-center mb-8">
+    <div className="lg:mt-0 mt-16 p-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <h1 className="text-2xl lg:text-3xl font-bold text-white">
           Puantaj & Personel
         </h1>
@@ -549,20 +549,20 @@ export default function AttendancePage() {
       </div>
 
       {/* Action Buttons */}
-      <div className="grid md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <button
           onClick={() => setIsManualAttendanceOpen(true)}
-          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors font-medium"
+          className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors font-medium"
         >
           📝 Manuel Yoklama Girişi
         </button>
         <button
           onClick={() => setIsNfcModalOpen(true)}
-          className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-500 transition-colors font-medium"
+          className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-500 transition-colors font-medium"
         >
           📡 NFC ile Hızlı Yoklama
         </button>
-        <div className="flex gap-2">
+        <div className="flex flex-col md:flex-row gap-2">
           <button
             onClick={exportAttendanceToExcel}
             className="flex-1 px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-500 transition-colors font-medium"
