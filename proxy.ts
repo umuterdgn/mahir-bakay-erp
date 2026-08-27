@@ -64,14 +64,17 @@ export default NextAuth(authConfig).auth((req) => {
   const hostname = req.headers.get("host") || ""
   const cleanHostname = hostname.replace(/^https?:\/\//, "")
 
-  // Eğer ana domain veya localhost ise, normal rotalara devam et
-  if (cleanHostname === MAIN_DOMAIN || cleanHostname.startsWith(LOCALHOST)) {
+  // Vercel domainlerini localhost gibi güvenli kabul et
+  const isVercelDomain = cleanHostname.endsWith(".vercel.app")
+
+  // Eğer ana domain, localhost veya Vercel test domaini ise, normal rotalara devam et
+  if (cleanHostname === MAIN_DOMAIN || cleanHostname.startsWith(LOCALHOST) || isVercelDomain) {
     return NextResponse.next()
   }
 
   // Eğer özel domain veya subdomain (Müşterinin sitesi) ise, public route'a yönlendir
   const url = req.nextUrl.clone()
-  url.pathname = `/${cleanHostname}${url.pathname}`
+  url.pathname = `/${cleanHostname}${url.pathname}` 
 
   return NextResponse.rewrite(url)
 })
