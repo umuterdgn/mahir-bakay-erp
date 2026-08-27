@@ -8,7 +8,7 @@
 import { useEffect, useRef, useState } from "react"
 import { IfcViewerAPI } from "web-ifc-viewer"
 import * as THREE from "three"
-import { ARButton } from "three/examples/jsm/webxr/ARButton"
+// import { ARButton } from "three/examples/jsm/webxr/ARButton"
 import { UploadButton } from "@uploadthing/react"
 import type { OurFileRouter } from "@/app/api/uploadthing/core"
 
@@ -47,7 +47,7 @@ export default function BimViewer({ ifcUrl, projectId }: BimViewerProps) {
     // Initialize IFC Viewer
     const viewer = new IfcViewerAPI({
       container: containerRef.current,
-      backgroundColor: [0x1e293b], // Slate-900
+      backgroundColor: new THREE.Color(0x1e293b), // Slate-900
     })
 
     // Setup scene
@@ -77,30 +77,30 @@ export default function BimViewer({ ifcUrl, projectId }: BimViewerProps) {
     }
 
     // Setup click handler for object selection
-    viewer.IFC.selector.selectionPicker.on("ifc-model-loaded", () => {
-      console.log("IFC model loaded")
-    })
+    // viewer.IFC.selector.selectionPicker.on("ifc-model-loaded", () => {
+    //   console.log("IFC model loaded")
+    // })
 
-    viewer.IFC.selector.selectionPicker.on("ifc-selection", (event: any) => {
-      // Disable object selection when in measurement mode
-      if (isMeasurementMode) return
-      
-      const expressID = event.expressID
-      if (expressID) {
-        const properties = viewer.IFC.getProperties(0, expressID, true)
-        setSelectedObject(properties)
-      }
-    })
+    // viewer.IFC.selector.selectionPicker.on("ifc-selection", (event: any) => {
+    //   // Disable object selection when in measurement mode
+    //   if (isMeasurementMode) return
+    //   
+    //   const expressID = event.expressID
+    //   if (expressID) {
+    //     const properties = viewer.IFC.getProperties(0, expressID, true)
+    //     setSelectedObject(properties)
+    //   }
+    // })
 
     // Create AR button
-    if (arButtonRef.current) {
-      const arButton = ARButton.createButton(renderer, {
-        requiredFeatures: ['hit-test'],
-        optionalFeatures: ['dom-overlay'],
-        domOverlay: { root: document.body }
-      })
-      arButtonRef.current.appendChild(arButton)
-    }
+    // if (arButtonRef.current) {
+    //   const arButton = ARButton.createButton(renderer, {
+    //     requiredFeatures: ['hit-test'],
+    //     optionalFeatures: ['dom-overlay'],
+    //     domOverlay: { root: document.body }
+    //   })
+    //   arButtonRef.current.appendChild(arButton)
+    // }
 
     return () => {
       viewer.dispose()

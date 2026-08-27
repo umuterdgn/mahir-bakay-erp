@@ -28,7 +28,8 @@ export default function SubcontractorLayout({
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
-  const { data: session } = useSession()
+  const session = useSession()
+  const sessionData = session?.data
 
   const navItems = [
     { href: "/subcontractor", label: "Ana Sayfa", icon: Home },
@@ -109,10 +110,7 @@ export default function SubcontractorLayout({
           <div className="pt-6 pb-8 border-t border-orange-800 mt-4">
             <div className="mb-4 px-4">
               <p className="text-orange-200 text-sm">
-                {session?.user?.name || "Taşeron Kullanıcı"}
-              </p>
-              <p className="text-orange-300/60 text-xs">
-                {session?.user?.companyName || "Firma"}
+                {sessionData?.user?.name || "Taşeron Kullanıcı"}
               </p>
             </div>
             <button

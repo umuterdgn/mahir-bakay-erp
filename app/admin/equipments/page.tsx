@@ -216,63 +216,64 @@ export default function EquipmentsPage() {
       <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
         <div className="w-full overflow-x-auto block whitespace-nowrap">
           <table className="w-full">
-          <thead className="bg-slate-800">
-            <tr>
-              <th className="px-6 py-3 text-left text-sm font-medium text-slate-300">Adı</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-slate-300">Tipi</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-slate-300">Plaka/Seri No</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-slate-300">Durumu</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-slate-300">Bakım Tarihi</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-slate-300">Proje/Şantiye</th>
-              <th className="px-6 py-3 text-right text-sm font-medium text-slate-300">İşlemler</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-800">
-            {equipments.length === 0 ? (
+            <thead className="bg-slate-800">
               <tr>
-                <td colSpan={6} className="px-6 py-12 text-center text-slate-400">
-                  Demirbaş kaydı bulunamadı
-                </td>
+                <th className="px-6 py-3 text-left text-sm font-medium text-slate-300">Adı</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-slate-300">Tipi</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-slate-300">Plaka/Seri No</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-slate-300">Durumu</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-slate-300">Bakım Tarihi</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-slate-300">Proje/Şantiye</th>
+                <th className="px-6 py-3 text-right text-sm font-medium text-slate-300">İşlemler</th>
               </tr>
-            ) : (
-              equipments.map((equipment) => (
-                <tr key={equipment.id}>
-                  <td className="px-6 py-4 text-sm text-white font-medium">{equipment.name}</td>
-                  <td className="px-6 py-4 text-sm text-slate-400">{getTypeLabel(equipment.type)}</td>
-                  <td className="px-6 py-4 text-sm text-slate-400">{equipment.plateOrSerialNo || "-"}</td>
-                  <td className="px-6 py-4 text-sm">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(equipment.status)}`}>
-                      {getStatusLabel(equipment.status)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-400">
-                    {equipment.nextMaintenance 
-                      ? new Date(equipment.nextMaintenance).toLocaleDateString("tr-TR")
-                      : "-"
-                    }
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-400">
-                    {equipment.project?.name || equipment.project?.title || "-"}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-right space-x-2">
-                    <button
-                      onClick={() => openEditModal(equipment)}
-                      className="text-blue-400 hover:text-blue-300"
-                    >
-                      Düzenle
-                    </button>
-                    <button
-                      onClick={() => handleDelete(equipment.id)}
-                      className="text-red-400 hover:text-red-300"
-                    >
-                      Sil
-                    </button>
+            </thead>
+            <tbody className="divide-y divide-slate-800">
+              {equipments.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center text-slate-400">
+                    Demirbaş kaydı bulunamadı
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                equipments.map((equipment) => (
+                  <tr key={equipment.id}>
+                    <td className="px-6 py-4 text-sm text-white font-medium">{equipment.name}</td>
+                    <td className="px-6 py-4 text-sm text-slate-400">{getTypeLabel(equipment.type)}</td>
+                    <td className="px-6 py-4 text-sm text-slate-400">{equipment.plateOrSerialNo || "-"}</td>
+                    <td className="px-6 py-4 text-sm">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(equipment.status)}`}>
+                        {getStatusLabel(equipment.status)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-slate-400">
+                      {equipment.nextMaintenance 
+                        ? new Date(equipment.nextMaintenance).toLocaleDateString("tr-TR")
+                        : "-"
+                      }
+                    </td>
+                    <td className="px-6 py-4 text-sm text-slate-400">
+                      {equipment.project?.name || equipment.project?.title || "-"}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-right space-x-2">
+                      <button
+                        onClick={() => openEditModal(equipment)}
+                        className="text-blue-400 hover:text-blue-300"
+                      >
+                        Düzenle
+                      </button>
+                      <button
+                        onClick={() => handleDelete(equipment.id)}
+                        className="text-red-400 hover:text-red-300"
+                      >
+                        Sil
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Modal */}
@@ -282,7 +283,7 @@ export default function EquipmentsPage() {
             <h3 className="text-xl font-semibold text-white mb-6">
               {editingEquipment ? "Demirbaş Düzenle" : "Yeni Demirbaş Ekle"}
             </h3>
-            
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">Demirbaş Adı *</label>
@@ -399,5 +400,5 @@ export default function EquipmentsPage() {
         type="danger"
       />
     </div>
-  )
+  );
 }

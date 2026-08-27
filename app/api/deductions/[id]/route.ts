@@ -11,14 +11,15 @@ export const dynamic = 'force-dynamic';
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const { subcontractorId, projectId, amount, reason, notes } = body;
 
     const deduction = await prisma.deduction.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         subcontractorId: subcontractorId || undefined,
         projectId: projectId !== undefined ? (projectId || null) : undefined,
@@ -44,11 +45,12 @@ export async function PATCH(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     await prisma.deduction.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return NextResponse.json({ success: true });

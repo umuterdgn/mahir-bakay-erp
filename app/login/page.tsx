@@ -10,9 +10,11 @@ import { motion } from "framer-motion"
 import { useState } from "react"
 import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
+import { Building, ShieldCheck, ArrowLeft } from "lucide-react"
 
 export default function LoginPage() {
   const router = useRouter()
+  const [selectedType, setSelectedType] = useState<"contractor" | "inspection" | null>(null)
   const [activeTab, setActiveTab] = useState<"admin" | "worker">("admin")
   const [adminFormData, setAdminFormData] = useState({
     email: "",
@@ -65,7 +67,7 @@ export default function LoginPage() {
       if (result?.error) {
         setError("Geçersiz kullanıcı adı veya şifre")
       } else {
-        router.push("/personnel")
+        router.push(selectedType === "inspection" ? "/inspection" : "/personnel")
         router.refresh()
       }
     } catch (error) {
@@ -83,6 +85,89 @@ export default function LoginPage() {
     setWorkerFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
+  if (!selectedType) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center px-4 relative overflow-hidden">
+        {/* Background decorative elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl" />
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl" />
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="w-full max-w-4xl relative z-10"
+        >
+          <div className="text-center mb-12">
+            <h1 className="text-4xl font-bold text-white mb-3">
+              Nexa ERP
+            </h1>
+            <p className="text-slate-300 text-lg">
+              Mahir Bakay Mühendislik Yönetim Sistemi
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Contractor Card */}
+            <motion.button
+              onClick={() => setSelectedType("contractor")}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="bg-gradient-to-br from-blue-600/20 to-blue-700/20 backdrop-blur-lg rounded-2xl p-8 border border-blue-500/30 hover:border-blue-400/50 transition-all shadow-2xl group"
+            >
+              <div className="flex flex-col items-center text-center space-y-4">
+                <div className="w-20 h-20 bg-blue-600/20 rounded-full flex items-center justify-center group-hover:bg-blue-600/30 transition-all">
+                  <Building className="w-10 h-10 text-blue-400" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-white mb-2">
+                    Müteahhit / Yüklenici
+                  </h2>
+                  <p className="text-slate-300">
+                    İnşaat projeleri, personel yönetimi ve operasyonel süreçler için
+                  </p>
+                </div>
+              </div>
+            </motion.button>
+
+            {/* Inspection Card */}
+            <motion.button
+              onClick={() => setSelectedType("inspection")}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="bg-gradient-to-br from-purple-600/20 to-purple-700/20 backdrop-blur-lg rounded-2xl p-8 border border-purple-500/30 hover:border-purple-400/50 transition-all shadow-2xl group"
+            >
+              <div className="flex flex-col items-center text-center space-y-4">
+                <div className="w-20 h-20 bg-purple-600/20 rounded-full flex items-center justify-center group-hover:bg-purple-600/30 transition-all">
+                  <ShieldCheck className="w-10 h-10 text-purple-400" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-white mb-2">
+                    Yapı Denetim OS
+                  </h2>
+                  <p className="text-slate-300">
+                    Yapı denetim firmaları, YİBF yönetimi ve denetim kayıtları için
+                  </p>
+                </div>
+              </div>
+            </motion.button>
+          </div>
+
+          <div className="mt-8 text-center">
+            <a
+              href="/"
+              className="text-slate-400 hover:text-white transition-colors text-sm"
+            >
+              Ana Sayfaya Dön
+            </a>
+          </div>
+        </motion.div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center px-4 relative overflow-hidden">
       {/* Background decorative elements */}
@@ -98,12 +183,29 @@ export default function LoginPage() {
         className="w-full max-w-md relative z-10"
       >
         <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-2xl border border-white/20">
+          <button
+            onClick={() => setSelectedType(null)}
+            className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-6"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span className="text-sm">Geri Dön</span>
+          </button>
+
           <div className="text-center mb-8">
+            <div className="w-16 h-16 mx-auto mb-4 bg-blue-600/20 rounded-full flex items-center justify-center">
+              {selectedType === "contractor" ? (
+                <Building className="w-8 h-8 text-blue-400" />
+              ) : (
+                <ShieldCheck className="w-8 h-8 text-purple-400" />
+              )}
+            </div>
             <h1 className="text-3xl font-bold text-white mb-2">
-              Nexa ERP
+              {selectedType === "contractor" ? "Müteahhit Girişi" : "Yapı Denetim Girişi"}
             </h1>
             <p className="text-slate-300">
-              Mahir Bakay Mühendislik Yönetim Sistemi
+              {selectedType === "contractor"
+                ? "Nexa ERP - İnşaat Yönetim Sistemi"
+                : "Nexa ERP - Yapı Denetim Sistemi"}
             </p>
           </div>
 

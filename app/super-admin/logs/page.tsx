@@ -13,7 +13,9 @@ import { AlertTriangle, Info, AlertCircle, Search, Filter } from "lucide-react"
 
 export default function SystemLogsPage() {
   const router = useRouter()
-  const { data: session, status } = useSession()
+  const session = useSession()
+  const sessionData = session?.data
+  const status = session?.status
   const [loading, setLoading] = useState(true)
   const [logs, setLogs] = useState<any[]>([])
   const [filter, setFilter] = useState("ALL")
@@ -25,14 +27,14 @@ export default function SystemLogsPage() {
       return
     }
 
-    if (session?.user?.role !== "SUPER_ADMIN") {
+    if (sessionData?.user?.role !== "SUPER_ADMIN") {
       toast.error("Bu sayfaya erişim izniniz yok")
       router.push("/admin")
       return
     }
 
     fetchLogs()
-  }, [session, status, router])
+  }, [sessionData, status, router])
 
   const fetchLogs = async () => {
     try {

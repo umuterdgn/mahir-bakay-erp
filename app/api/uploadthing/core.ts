@@ -12,9 +12,7 @@ const f = createUploadthing()
 export const ourFileRouter = {
   // BIM Model Uploader - Only .ifc files, max 128MB
   bimModelUploader: f({
-    image: { maxFileSize: "128MB", maxFileCount: 1 },
-    "application/x-step": { maxFileSize: "128MB", maxFileCount: 1 },
-    "model/ifc": { maxFileSize: "128MB", maxFileCount: 1 },
+    "application/octet-stream": { maxFileSize: "128MB", maxFileCount: 1 },
   })
     .middleware(() => {
       // Add authentication middleware here if needed
@@ -51,8 +49,6 @@ export const ourFileRouter = {
     "application/pdf": { maxFileSize: "64MB", maxFileCount: 1 },
     "application/msword": { maxFileSize: "64MB", maxFileCount: 1 },
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document": { maxFileSize: "64MB", maxFileCount: 1 },
-    "image/vnd.dwg": { maxFileSize: "64MB", maxFileCount: 1 },
-    "image/dxf": { maxFileSize: "64MB", maxFileCount: 1 },
     "application/octet-stream": { maxFileSize: "64MB", maxFileCount: 1 },
   })
     .middleware(() => {

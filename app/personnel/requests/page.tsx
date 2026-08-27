@@ -5,12 +5,11 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import RequestsClient from "./RequestsClient";
 
 export default async function PersonnelRequestsPage() {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   
   if (!session?.user?.id) {
     return <div>Oturum bulunamadı</div>;
@@ -53,10 +52,31 @@ export default async function PersonnelRequestsPage() {
     },
   });
 
+  const formattedProjects = projects.map(p => ({
+    id: p.id,
+    name: p.name || "İsimsiz Proje"
+  }));
+
+  const formattedRequests = requests.map(req => ({
+    ...req,
+    createdAt: req.createdAt.toISOString(),
+    updatedAt: req.updatedAt.toISOString(),
+    project: {
+      ...req.project,
+      name: req.project.name || "İsimsiz Proje"
+    },
+    purchaseOrders: req.purchaseOrders.map(po => ({
+      ...po,
+      createdAt: po.createdAt.toISOString(),
+      updatedAt: po.updatedAt.toISOString(),
+      orderDate: po.orderDate.toISOString(),
+    })),
+  }));
+
   return (
     <RequestsClient 
-      initialRequests={requests}
-      projects={projects}
+      initialRequests={formattedRequests}
+      projects={formattedProjects}
       personelId={personel.id}
     />
   );

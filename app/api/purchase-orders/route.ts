@@ -37,7 +37,7 @@ export async function POST(request: Request) {
               select: { name: true },
             },
             requester: {
-              select: { name: true, surname: true },
+              select: { name: true },
             },
             purchaseOrders: true,
           },

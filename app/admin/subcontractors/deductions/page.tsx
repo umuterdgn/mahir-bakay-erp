@@ -36,6 +36,11 @@ export default async function SubcontractorDeductionsPage() {
     },
   });
 
+  const formattedProjects = projects.map(p => ({
+    id: p.id,
+    name: p.name || "İsimsiz Proje"
+  }));
+
   // Calculate KPI data
   const now = new Date();
   const currentMonth = now.getMonth();
@@ -48,7 +53,18 @@ export default async function SubcontractorDeductionsPage() {
     })
     .reduce((sum, d) => sum + d.amount, 0);
 
-  const subcontractorTotals = deductions.reduce((acc, d) => {
+  const formattedDeductions = deductions.map(d => ({
+    ...d,
+    date: d.date.toISOString(),
+    createdAt: d.createdAt.toISOString(),
+    updatedAt: d.updatedAt.toISOString(),
+    project: d.project ? {
+      id: d.project.id,
+      name: d.project.name || "İsimsiz Proje"
+    } : null,
+  }));
+
+  const subcontractorTotals = formattedDeductions.reduce((acc, d) => {
     acc[d.subcontractor.name] = (acc[d.subcontractor.name] || 0) + d.amount;
     return acc;
   }, {} as Record<string, number>);
@@ -58,9 +74,9 @@ export default async function SubcontractorDeductionsPage() {
 
   return (
     <DeductionsClient 
-      initialDeductions={deductions}
+      initialDeductions={formattedDeductions}
       subcontractors={subcontractors}
-      projects={projects}
+      projects={formattedProjects}
       monthlyTotal={monthlyTotal}
       topPenalizedSubcontractor={topPenalizedSubcontractor}
     />

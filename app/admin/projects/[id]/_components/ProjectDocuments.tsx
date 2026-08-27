@@ -250,7 +250,7 @@ export default function ProjectDocuments({ projectId }: ProjectDocumentsProps) {
                       {doc.documentGroupId && (
                         <button
                           onClick={() => {
-                            if (showHistory === doc.document(groupId)) {
+                            if (showHistory === doc.documentGroupId) {
                               setShowHistory(null);
                               fetchDocuments();
                             } else {

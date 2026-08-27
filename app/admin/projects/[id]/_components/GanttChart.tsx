@@ -7,7 +7,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { View } from "react-big-calendar";
 import { Gantt, Task, ViewMode } from "gantt-task-react";
 import "gantt-task-react/dist/index.css";
 import { Plus, Calendar, Percent } from "lucide-react";

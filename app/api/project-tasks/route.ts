@@ -21,7 +21,7 @@ export async function GET(request: Request) {
       where,
       include: {
         assignedTo: {
-          select: { name: true, surname: true },
+          select: { name: true },
         },
       },
       orderBy: {
@@ -57,7 +57,7 @@ export async function POST(request: Request) {
       },
       include: {
         assignedTo: {
-          select: { name: true, surname: true },
+          select: { name: true },
         },
       },
     });

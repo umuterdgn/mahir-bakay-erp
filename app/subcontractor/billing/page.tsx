@@ -5,22 +5,38 @@
  */
 
 import { prisma } from "@/lib/prisma"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/app/api/auth/[...nextauth]/route"
+import { auth } from "@/lib/auth"
 
 export default async function SubcontractorBillingPage() {
-  const session = await getServerSession(authOptions)
+  const session = await auth()
   
-  // Get subcontractor's company ID from session
-  const subcontractorId = session?.user?.companyId
+  if (!session?.user?.id) {
+    return (
+      <div className="p-6">
+        <div className="text-red-400">Oturum bulunamadı</div>
+      </div>
+    )
+  }
 
-  if (!subcontractorId) {
+  // Get personel record to find company association
+  const personel = await prisma.personel.findFirst({
+    where: {
+      userId: session.user.id,
+    },
+    include: {
+      company: true,
+    },
+  })
+
+  if (!personel?.companyId) {
     return (
       <div className="p-6">
         <div className="text-red-400">Firma bilgisi bulunamadı</div>
       </div>
     )
   }
+
+  const subcontractorId = personel.companyId
 
   const billings = await prisma.progressBilling.findMany({
     where: { subcontractorId },

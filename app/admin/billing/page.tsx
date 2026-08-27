@@ -30,11 +30,17 @@ export default async function AdminBillingPage() {
     select: { id: true, name: true, contractValue: true }
   })
 
+  const formattedProjects = projects.map(p => ({
+    id: p.id,
+    name: p.name || "İsimsiz Proje",
+    contractValue: p.contractValue || 0
+  }))
+
   return (
     <BillingClient 
       initialBillings={billings} 
       subcontractors={subcontractors} 
-      projects={projects} 
+      projects={formattedProjects} 
     />
   )
 }

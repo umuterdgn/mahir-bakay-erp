@@ -10,6 +10,7 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { signOut, useSession } from "next-auth/react"
+import NotificationBell from "@/components/NotificationBell"
 import { 
   LayoutDashboard, 
   FileText, 
@@ -210,8 +211,13 @@ export default function AdminSidebar() {
         <div className="flex flex-col h-full p-6">
           {/* Header */}
           <div className="mb-6">
-            <h1 className="text-xl font-bold text-white mb-1">Şantiye Asistanı</h1>
-            <p className="text-slate-400 text-sm mb-4">Mahir Bakay Mühendislik</p>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h1 className="text-xl font-bold text-white mb-1">Şantiye Asistanı</h1>
+                <p className="text-slate-400 text-sm">Mahir Bakay Mühendislik</p>
+              </div>
+              <NotificationBell />
+            </div>
             
             {/* Search Bar */}
             <div className="relative">

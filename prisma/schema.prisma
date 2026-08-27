@@ -52,6 +52,7 @@ enum CompanyType {
   SUBCONTRACTOR
   SUPPLIER
   CLIENT
+  INSPECTION
 }
 
 // ============================================================================
@@ -414,7 +415,7 @@ model Announcement {
 model Company {
   id          String      @id @default(cuid())
   name        String
-  type        CompanyType @default(SUBCONTRACTOR)
+  type        CompanyType @default(MAIN_CONTRACTOR)
   contactName String?
   phone       String?
   email       String?
@@ -424,6 +425,7 @@ model Company {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   projects    Project[]
+  yibfProjects YibfProject[]
   transactions Transaction[]
   audits      Audit[]
   dailyProgress DailyProgress[]
@@ -605,6 +607,26 @@ model Profession {
 // PERSONEL YÖNETİMİ
 // ============================================================================
 
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum EmploymentType {
+  WORKER
+  OFFICER
+  PARTNERSHIP
+  CONTRACTOR
+}
+
+enum PersonelStatus {
+  ACTIVE
+  ON_LEAVE
+  RESIGNED
+  RETIRED
+}
+
 model Personel {
   id              String              @id @default(cuid())
   personnelNo     String              @unique // Personel no (P001, P002, vb.)
@@ -669,6 +691,9 @@ model Personel {
   chatParticipants ChatParticipant[]
   materialRequests MaterialRequest[]
   assignedProjectTasks ProjectTask[] @relation("AssignedTasks")
+  inspectionRecords InspectionRecord[]
+  deficiencies Deficiency[]
+  assignedInspectionTasks InspectionTask[]
   notes           String?             @db.Text
   audits          Audit[]
   createdAt       DateTime            @default(now())
@@ -985,24 +1010,168 @@ model ProjectDocument {
   @@index([createdAt])
 }
 
-enum Gender {
-  MALE
-  FEMALE
-  OTHER
+// ============================================================================
+// YİBF PROJECT (Yapı İzleme Belgesi - Yapı Denetim Binaları)
+// ============================================================================
+
+model YibfProject {
+  id             String   @id @default(cuid())
+  yibfNo         String   @unique
+  address        String
+  ownerName      String
+  contractorName String
+  totalArea      Float
+  floors         Int
+  status         String   @default("ACTIVE") // ACTIVE, COMPLETED, SUSPENDED
+  
+  companyId      String
+  company        Company  @relation(fields: [companyId], references: [id])
+  
+  inspectionRecords InspectionRecord[]
+  deficiencies Deficiency[]
+  yibfEvents YibfEvent[]
+  inspectionTasks InspectionTask[]
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([yibfNo])
+  @@index([status])
+  @@index([createdAt])
 }
 
-enum EmploymentType {
-  WORKER
-  OFFICER
-  PARTNERSHIP
-  CONTRACTOR
+// ============================================================================
+// INSPECTION RECORD (Kanıt Zinciri - Yapı Denetim Kayıtları)
+// ============================================================================
+
+model InspectionRecord {
+  id           String   @id @default(cuid())
+  category     String   // Örn: Demir, Beton, Duvar, Tesisat
+  status       String   @default("PENDING") // PASS, FAIL, PENDING
+  gpsLat       Float?
+  gpsLng       Float?
+  timestamp    DateTime @default(now())
+  hash         String?  // Değiştirilemez kayıt için
+  notes        String?  @db.Text
+  
+  yibfId       String
+  yibf         YibfProject @relation(fields: [yibfId], references: [id])
+  
+  inspectorId  String
+  inspector    Personel @relation(fields: [inspectorId], references: [id])
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([yibfId])
+  @@index([inspectorId])
+  @@index([status])
+  @@index([category])
+  @@index([timestamp])
 }
 
-enum PersonelStatus {
-  ACTIVE
-  ON_LEAVE
-  RESIGNED
-  RETIRED
+// ============================================================================
+// DEFICIENCY (Uygunsuzluk/Eksiklik)
+// ============================================================================
+
+model Deficiency {
+  id          String   @id @default(cuid())
+  floor       String   // Kat
+  element     String   // Örn: Kolon C12
+  category    String   // Örn: Donatı, Beton, Duvar
+  priority    String   @default("MEDIUM") // LOW, MEDIUM, CRITICAL
+  description String   @db.Text
+  photoUrl    String?
+  status      String   @default("OPEN") // OPEN, FIX_PENDING, VERIFY_PENDING, CLOSED
+  dueDate     DateTime?
+  closedAt    DateTime?
+  
+  yibfId      String
+  yibf        YibfProject @relation(fields: [yibfId], references: [id])
+  
+  inspectorId String
+  inspector   Personel @relation(fields: [inspectorId], references: [id])
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([yibfId])
+  @@index([inspectorId])
+  @@index([status])
+  @@index([priority])
+  @@index([dueDate])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// YİBF EVENT (Zaman Makinesi Logları)
+// ============================================================================
+
+model YibfEvent {
+  id          String   @id @default(cuid())
+  eventType  String   // Örn: "Ruhsat Alındı", "Eksiklik Açıldı", "Beton Döküldü"
+  description String? @db.Text
+  timestamp   DateTime @default(now())
+  
+  yibfId      String
+  yibf        YibfProject @relation(fields: [yibfId], references: [id])
+  
+  userId      String?
+  
+  createdAt   DateTime @default(now())
+
+  @@index([yibfId])
+  @@index([eventType])
+  @@index([timestamp])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// INSPECTION TASK (Görev Dağıtımı)
+// ============================================================================
+
+model InspectionTask {
+  id          String   @id @default(cuid())
+  yibfId      String
+  yibf        YibfProject @relation(fields: [yibfId], references: [id])
+  
+  assignedToId String
+  assignedTo   Personel @relation(fields: [assignedToId], references: [id])
+  
+  taskDate    DateTime
+  taskType    String   // Örn: "Beton", "Donatı", "Kalıp"
+  status      String   @default("SCHEDULED") // SCHEDULED, IN_PROGRESS, COMPLETED
+  orderIndex  Int      @default(0) // Rota sırası
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([yibfId])
+  @@index([assignedToId])
+  @@index([taskDate])
+  @@index([status])
+  @@index([orderIndex])
+}
+
+// ============================================================================
+// NOTIFICATIONS (Bildirimler)
+// ============================================================================
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String   @db.Text
+  type      String   @default("INFO") // INFO, WARNING, ERROR, SUCCESS, URGENT
+  isRead    Boolean  @default(false)
+  link      String?  // Tıklayınca yönlendirme linki
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([type])
+  @@index([createdAt])
 }
 
 // ============================================================================
