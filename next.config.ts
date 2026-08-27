@@ -51,6 +51,12 @@ const nextConfig: NextConfig = {
       minimize: false,
     };
     
+    // Ignore warnings from web-ifc packages to prevent build failures
+    config.ignoreWarnings = [
+      { module: /web-ifc-viewer/ },
+      { module: /web-ifc-three/ }
+    ];
+    
     return config;
   },
 };
