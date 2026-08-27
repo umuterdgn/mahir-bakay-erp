@@ -11,19 +11,21 @@ const fs = require('fs');
 const path = require('path');
 
 const webIfcViewerPath = path.join(__dirname, 'node_modules', 'web-ifc-viewer', 'dist');
+const webIfcThreePath = path.join(__dirname, 'node_modules', 'web-ifc-three');
 
-console.log('🔧 Patching web-ifc-viewer for Three.js compatibility...');
-console.log(`📁 Target directory: ${webIfcViewerPath}`);
-
-if (!fs.existsSync(webIfcViewerPath)) {
-  console.error('❌ web-ifc-viewer/dist directory not found!');
-  console.error('Please install dependencies first: npm install');
-  process.exit(1);
-}
+console.log('🔧 Patching web-ifc-viewer and web-ifc-three for Three.js compatibility...');
+console.log(`📁 Target directories:`);
+console.log(`   - ${webIfcViewerPath}`);
+console.log(`   - ${webIfcThreePath}`);
 
 let filesPatched = 0;
 
 function patchDirectory(dir) {
+  if (!fs.existsSync(dir)) {
+    console.log(`⚠️  Directory not found: ${dir}`);
+    return;
+  }
+  
   const items = fs.readdirSync(dir, { withFileTypes: true });
   
   for (const item of items) {
@@ -47,12 +49,13 @@ function patchFile(filePath) {
   if (content !== originalContent) {
     fs.writeFileSync(filePath, content, 'utf8');
     filesPatched++;
-    console.log(`✅ Patched: ${path.relative(webIfcViewerPath, filePath)}`);
+    console.log(`✅ Patched: ${filePath}`);
   }
 }
 
 try {
   patchDirectory(webIfcViewerPath);
+  patchDirectory(webIfcThreePath);
   
   if (filesPatched > 0) {
     console.log(`\n✨ Successfully patched ${filesPatched} file(s)`);

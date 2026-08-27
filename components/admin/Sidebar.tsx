@@ -10,6 +10,7 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { signOut, useSession } from "next-auth/react"
+import { useTheme } from "next-themes"
 import NotificationBell from "@/components/NotificationBell"
 import { 
   LayoutDashboard, 
@@ -54,7 +55,9 @@ import {
   FileText as FileContract,
   ShieldCheck,
   TrendingDown,
-  ShoppingCart
+  ShoppingCart,
+  Sun,
+  Moon
 } from "lucide-react"
 
 export default function AdminSidebar() {
@@ -62,6 +65,12 @@ export default function AdminSidebar() {
   const [searchQuery, setSearchQuery] = useState("")
   const pathname = usePathname()
   const { data: session, status } = useSession()
+  const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const isAdmin = session?.user?.role === "SUPER_ADMIN" || session?.user?.role === "ADMIN"
   const isPersonnel = session?.user?.role === "STAFF"
@@ -216,7 +225,18 @@ export default function AdminSidebar() {
                 <h1 className="text-xl font-bold text-white mb-1">Şantiye Asistanı</h1>
                 <p className="text-slate-400 text-sm">Mahir Bakay Mühendislik</p>
               </div>
-              <NotificationBell />
+              <div className="flex items-center gap-2">
+                {mounted && (
+                  <button
+                    onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                    className="p-2 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
+                    title={theme === 'dark' ? 'Açık Tema' : 'Koyu Tema'}
+                  >
+                    {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                  </button>
+                )}
+                <NotificationBell />
+              </div>
             </div>
             
             {/* Search Bar */}

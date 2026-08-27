@@ -1,5 +1,5 @@
 /**
- * © 2026 NXA Software. All rights reserved.
+ * 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
  * This code is the property of NXA Software.
  */
@@ -10,6 +10,7 @@ import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import OfflineStatus from "@/components/OfflineStatus";
 import OfflineSyncManager from "@/components/OfflineSyncManager";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -42,11 +43,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="tr" className={`${inter.variable} antialiased`}>
-      <body className="min-h-screen bg-slate-950" suppressHydrationWarning>
-        <OfflineStatus />
-        <OfflineSyncManager />
-        {children}
-        <Toaster position="bottom-right" />
+      <body className="min-h-screen bg-slate-950 dark:bg-slate-950 bg-white" suppressHydrationWarning>
+        <ThemeProvider>
+          <OfflineStatus />
+          <OfflineSyncManager />
+          {children}
+          <Toaster position="bottom-right" />
+        </ThemeProvider>
       </body>
     </html>
   );
