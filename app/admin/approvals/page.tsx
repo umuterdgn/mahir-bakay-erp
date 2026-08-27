@@ -8,6 +8,8 @@ import { prisma } from "@/lib/prisma";
 import { approveLeave, rejectLeave, approveAdvance, rejectAdvance } from "./actions";
 import { Calendar, User, DollarSign, Check, X } from "lucide-react";
 
+export const dynamic = 'force-dynamic'
+
 export default async function ApprovalsPage() {
   // Fetch pending leave requests
   const pendingLeaves = await prisma.leaveRequest.findMany({

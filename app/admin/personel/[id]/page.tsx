@@ -33,7 +33,9 @@ export default function PersonelDetailPage({
     yarimGunSayisi: 0,
     totalDayMultiplier: 0,
     grossEntitlement: 0,
-    toplamPrim: 0
+    toplamPrim: 0,
+    toplamMesai: 0,
+    toplamMesaiSaati: 0
   })
   const [resolvedParams, setResolvedParams] = useState<{ id: string } | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
@@ -116,6 +118,17 @@ export default function PersonelDetailPage({
       const tamGunSayisi = attendanceRecords.filter((record: any) => record.dayMultiplier === 1).length
       const yarimGunSayisi = attendanceRecords.filter((record: any) => record.dayMultiplier === 0.5).length
 
+      // Calculate overtime
+      const toplamMesaiSaati = attendanceRecords.reduce((sum: number, record: any) => {
+        return sum + (record.overtimeHours || 0)
+      }, 0)
+
+      // Calculate hourly rate: Saatlik Ücret = (Günlük Yevmiye / 8)
+      const hourlyRate = dailyWage / 8
+
+      // Calculate overtime earnings: Mesai Kazancı = (Mesai Saati * Saatlik Ücret * 1.5)
+      const toplamMesai = toplamMesaiSaati * hourlyRate * 1.5
+
       // Calculate gross entitlement (Hakediş)
       const grossEntitlement = totalDayMultiplier * dailyWage
 
@@ -135,8 +148,8 @@ export default function PersonelDetailPage({
         return sum
       }, 0)
 
-      // Calculate net payable
-      const toplamKazanilan = grossEntitlement + toplamPrim
+      // Calculate net payable (include overtime)
+      const toplamKazanilan = grossEntitlement + toplamPrim + toplamMesai
       const netOdenecek = toplamKazanilan - kesintilerToplami
 
       setCalculatedValues({
@@ -147,7 +160,9 @@ export default function PersonelDetailPage({
         yarimGunSayisi,
         totalDayMultiplier,
         grossEntitlement,
-        toplamPrim
+        toplamPrim,
+        toplamMesai,
+        toplamMesaiSaati
       })
     }
   }, [person, payments, attendanceRecords])
@@ -785,11 +800,25 @@ export default function PersonelDetailPage({
               <p className="text-xl md:text-2xl font-bold text-green-400 break-words">
                 ₺{calculatedValues.toplamKazanilan.toLocaleString("tr-TR")}
               </p>
-              <p className="text-xs text-slate-500 mt-1">Brüt + Prim</p>
+              <p className="text-xs text-slate-500 mt-1">Brüt + Prim + Mesai</p>
             </div>
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-6">
+            <div className="bg-slate-800 rounded-lg p-3 md:p-4 border border-slate-700">
+              <label className="block text-sm font-medium text-slate-400 mb-1">Mesai Saati</label>
+              <p className="text-xl md:text-2xl font-bold text-purple-400 break-words">
+                {calculatedValues.toplamMesaiSaati.toFixed(1)} saat
+              </p>
+              <p className="text-xs text-slate-500 mt-1">Toplam Mesai</p>
+            </div>
+            <div className="bg-slate-800 rounded-lg p-3 md:p-4 border border-slate-700">
+              <label className="block text-sm font-medium text-slate-400 mb-1">Mesai Kazancı</label>
+              <p className="text-xl md:text-2xl font-bold text-purple-400 break-words">
+                ₺{calculatedValues.toplamMesai.toLocaleString("tr-TR")}
+              </p>
+              <p className="text-xs text-slate-500 mt-1">1.5x Saatlik Ücret</p>
+            </div>
             <div className="bg-slate-800 rounded-lg p-3 md:p-4 border border-slate-700">
               <label className="block text-sm font-medium text-slate-400 mb-1">Kesintiler Toplamı</label>
               <p className="text-xl md:text-2xl font-bold text-red-400 break-words">

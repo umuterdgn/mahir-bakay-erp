@@ -509,7 +509,7 @@ export default function ChatPage() {
                   Katılımcılar
                 </label>
                 <div className="max-h-48 overflow-y-auto space-y-2 bg-slate-900 rounded-lg p-3 border border-slate-700">
-                  {personnel.map((person) => (
+                  {(personnel || []).map((person) => (
                     <label
                       key={person.id}
                       className="flex items-center gap-3 p-2 hover:bg-slate-800 rounded cursor-pointer"

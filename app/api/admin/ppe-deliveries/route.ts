@@ -9,6 +9,15 @@ import { PrismaClient } from "@prisma/client"
 
 const prisma = new PrismaClient()
 
+// Safe JSON parse function
+function safeParseJSON(val: any) {
+  try {
+    return JSON.parse(val)
+  } catch {
+    return val
+  }
+}
+
 export async function GET() {
   try {
     const deliveries = await prisma.pPEDelivery.findMany({
@@ -27,10 +36,10 @@ export async function GET() {
       }
     })
 
-    // Parse equipment JSON
+    // Parse equipment JSON safely
     const deliveriesWithParsedEquipment = deliveries.map(delivery => ({
       ...delivery,
-      equipment: JSON.parse(delivery.equipment)
+      equipment: safeParseJSON(delivery.equipment)
     }))
 
     return NextResponse.json(deliveriesWithParsedEquipment)
@@ -68,7 +77,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       ...delivery,
-      equipment: JSON.parse(delivery.equipment)
+      equipment: safeParseJSON(delivery.equipment)
     })
   } catch (error) {
     console.error("Failed to create PPE delivery:", error)

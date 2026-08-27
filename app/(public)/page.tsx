@@ -7,6 +7,8 @@
 import { prisma } from "@/lib/prisma"
 import HomeClient from "./HomeClient"
 
+export const dynamic = 'force-dynamic'
+
 async function getFeaturedServices() {
   try {
     const services = await prisma.service.findMany({

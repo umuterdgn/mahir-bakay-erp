@@ -169,7 +169,7 @@ export default function BlueprintsPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {blueprints.map((blueprint) => (
+              {(blueprints || []).map((blueprint) => (
                 <div
                   key={blueprint.id}
                   className="bg-slate-800/50 rounded-xl p-4 border border-slate-700 hover:border-slate-600 transition-colors"

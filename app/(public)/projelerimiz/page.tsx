@@ -7,6 +7,8 @@
 import { prisma } from "@/lib/prisma"
 import ProjectsClient from "./ProjectsClient"
 
+export const dynamic = 'force-dynamic'
+
 async function getProjects() {
   try {
     const projects = await prisma.project.findMany({

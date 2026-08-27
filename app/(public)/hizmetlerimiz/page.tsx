@@ -7,6 +7,8 @@
 import { prisma } from "@/lib/prisma"
 import ServicesClient from "./ServicesClient"
 
+export const dynamic = 'force-dynamic'
+
 async function getServices() {
   try {
     const services = await prisma.service.findMany({

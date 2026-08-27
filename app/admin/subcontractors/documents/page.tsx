@@ -7,6 +7,8 @@
 import { prisma } from "@/lib/prisma";
 import DocumentsClient from "./DocumentsClient";
 
+export const dynamic = 'force-dynamic'
+
 export default async function SubcontractorDocumentsPage() {
   const workerDocuments = await prisma.workerDocument.findMany({
     include: {

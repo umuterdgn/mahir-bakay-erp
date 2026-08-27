@@ -7,6 +7,8 @@
 import { prisma } from "@/lib/prisma";
 import ProcurementClient from "./ProcurementClient";
 
+export const dynamic = 'force-dynamic'
+
 export default async function ProcurementPage() {
   const requests = await prisma.materialRequest.findMany({
     include: {

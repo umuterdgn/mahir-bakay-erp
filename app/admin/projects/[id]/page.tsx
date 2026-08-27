@@ -10,6 +10,8 @@ import Link from "next/link"
 import ProjectDetailClient from "@/components/ProjectDetailClient"
 import ProjectDetailTabs from "@/components/ProjectDetailTabs"
 
+export const dynamic = 'force-dynamic'
+
 export default async function ProjectDetailPage({
   params
 }: {

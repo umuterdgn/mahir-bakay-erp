@@ -7,6 +7,8 @@
 import { prisma } from "@/lib/prisma"
 import BillingClient from "./BillingClient"
 
+export const dynamic = 'force-dynamic'
+
 export default async function AdminBillingPage() {
   const billings = await prisma.progressBilling.findMany({
     include: {

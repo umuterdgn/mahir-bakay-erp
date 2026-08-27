@@ -598,7 +598,7 @@ function ProjectsSection() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800">
-              {projects.map((project: any) => (
+              {(projects || []).map((project: any) => (
                 <tr key={project.id}>
                   <td className="px-6 py-4 text-sm text-white">{project.title}</td>
                   <td className="px-6 py-4 text-sm text-slate-400 truncate max-w-xs">{project.description}</td>

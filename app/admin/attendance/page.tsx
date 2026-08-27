@@ -43,7 +43,8 @@ export default function AttendancePage() {
     projectId: "",
     checkInTime: "",
     checkOutTime: "",
-    dayMultiplier: 1 // Default to full day
+    dayMultiplier: 1, // Default to full day
+    overtimeHours: 0 // Mesai saati (opsiyonel)
   })
   const [personelSearchTerm, setPersonelSearchTerm] = useState("")
   const [isPersonelDropdownOpen, setIsPersonelDropdownOpen] = useState(false)
@@ -146,7 +147,8 @@ export default function AttendancePage() {
           date: today,
           checkIn: manualAttendanceForm.checkInTime ? `${today}T${manualAttendanceForm.checkInTime}` : null,
           checkOut: manualAttendanceForm.checkOutTime ? `${today}T${manualAttendanceForm.checkOutTime}` : null,
-          dayMultiplier: manualAttendanceForm.dayMultiplier
+          dayMultiplier: manualAttendanceForm.dayMultiplier,
+          overtimeHours: manualAttendanceForm.overtimeHours
         })
       })
 
@@ -159,7 +161,8 @@ export default function AttendancePage() {
           projectId: "",
           checkInTime: "",
           checkOutTime: "",
-          dayMultiplier: 1
+          dayMultiplier: 1,
+          overtimeHours: 0
         })
         setPersonelSearchTerm("")
       } else {
@@ -474,7 +477,7 @@ export default function AttendancePage() {
             className="flex-1 px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
           >
             <option value="">Proje Seçin</option>
-            {projects.map((project) => (
+            {(projects || []).map((project) => (
               <option key={project.id} value={project.id}>
                 {project.name || project.title}
               </option>
@@ -860,6 +863,19 @@ export default function AttendancePage() {
                   <option value={1.5}>1.5 Gün</option>
                   <option value={2}>2 Gün</option>
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Mesai Saati (Opsiyonel)</label>
+                <input
+                  type="number"
+                  value={manualAttendanceForm.overtimeHours}
+                  onChange={(e) => setManualAttendanceForm(prev => ({ ...prev, overtimeHours: parseFloat(e.target.value) || 0 }))}
+                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                  placeholder="0"
+                  min="0"
+                  step="0.5"
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-4">

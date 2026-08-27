@@ -294,11 +294,12 @@ export default function WorkOrdersPage() {
                     onChange={(e) => setFormData({ ...formData, department: e.target.value as Department })}
                     className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500"
                   >
-                    <option value="GENEL">Genel</option>
-                    <option value="MIMARI">Mimari</option>
-                    <option value="MEKANIK">Mekanik</option>
-                    <option value="ELEKTRIK">Elektrik</option>
-                    <option value="INSAAT">İnşaat</option>
+                    <option value="Yönetim">Yönetim</option>
+                    <option value="Saha Ekibi">Saha Ekibi</option>
+                    <option value="Mühendislik">Mühendislik</option>
+                    <option value="İSG & Kalite">İSG & Kalite</option>
+                    <option value="Muhasebe & Finans">Muhasebe & Finans</option>
+                    <option value="Taşeron">Taşeron</option>
                   </select>
                 </div>
 

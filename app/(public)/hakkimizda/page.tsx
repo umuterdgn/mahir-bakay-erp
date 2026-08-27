@@ -7,6 +7,8 @@
 import { prisma } from "@/lib/prisma"
 import AboutClient from "@/components/AboutClient"
 
+export const dynamic = 'force-dynamic'
+
 async function getAboutContent() {
   try {
     const about = await prisma.about.findFirst()

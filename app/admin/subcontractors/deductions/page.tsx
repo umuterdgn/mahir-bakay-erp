@@ -7,6 +7,8 @@
 import { prisma } from "@/lib/prisma";
 import DeductionsClient from "./DeductionsClient";
 
+export const dynamic = 'force-dynamic'
+
 export default async function SubcontractorDeductionsPage() {
   const deductions = await prisma.deduction.findMany({
     include: {

@@ -32,7 +32,7 @@ export default function ProjectsPage() {
       const response = await fetch("/api/admin/projects")
       if (response.ok) {
         const data = await response.json()
-        setProjects(data)
+        setProjects(data.projects || [])
       }
     } catch (error) {
       console.error("Failed to fetch projects:", error)
@@ -120,7 +120,7 @@ export default function ProjectsPage() {
 
   const categories = ["Tüm Projeler", "Güçlendirme", "Paket İş", "Kentsel Dönüşüm", "Performans Analizi", "Danışmanlık"]
 
-  const filteredProjects = projects.filter(project => {
+  const filteredProjects = (projects || []).filter(project => {
     const matchesSearch = 
       project.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       project.parsel?.toLowerCase().includes(searchQuery.toLowerCase()) ||
