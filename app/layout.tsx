@@ -20,16 +20,6 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Mahir Bakay Mühendislik",
   description: "Geleceği inşa eden mühendislik çözümleri",
-  manifest: "/manifest.json",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
-    title: "Nexa ERP",
-  },
-  icons: {
-    icon: "/icon-192.png",
-    apple: "/icon-192.png",
-  },
 };
 
 export const viewport: Viewport = {
@@ -42,7 +32,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="tr" className={`${inter.variable} antialiased`}>
+    <html lang="tr" className={`${inter.variable} antialiased`} suppressHydrationWarning>
       <body className="min-h-screen bg-slate-950 dark:bg-slate-950 bg-white" suppressHydrationWarning>
         <ThemeProvider>
           <OfflineStatus />
