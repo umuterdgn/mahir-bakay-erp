@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "predev": "node -e \"const fs=require('fs'); const dest1='public/admin/blueprints/assets'; const dest2='public/admin/inspection/reports/assets'; fs.mkdirSync(dest1, {recursive:true}); fs.mkdirSync(dest2, {recursive:true}); try { fs.cpSync('node_modules/@mlightcad/mtext-renderer/dist', dest1, {recursive:true}); fs.cpSync('node_modules/@mlightcad/mtext-renderer/dist', dest2, {recursive:true}); } catch(e) { console.log('Worker kopyalama atlandi...'); }\"",
-    "prebuild": "rm -rf .next || true",
+    "prebuild": "node -e \"const fs=require('fs'); try { fs.rmSync('.next', { recursive: true, force: true }); } catch(e) { }\"",
     "dev": "next dev --webpack",
     "build": "next build --webpack",
     "start": "next start",
