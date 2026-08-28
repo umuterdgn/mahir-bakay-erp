@@ -49,12 +49,15 @@ export default NextAuth(authConfig).auth((req) => {
   }
 
   if (isOnLoginPage && isLoggedIn) {
-    // SUPER_ADMIN ise /super-admin'a, SUBCONTRACTOR ise /subcontractor'a, diğerleri /admin'e yönlendir
+    // SUPER_ADMIN ise /super-admin'a, SUBCONTRACTOR ise /subcontractor'a, PERSONNEL ise /personnel'a, diğerleri /admin'e yönlendir
     if (userRole === "SUPER_ADMIN") {
       return NextResponse.redirect(new URL("/super-admin", req.nextUrl))
     }
     if (userRole === "SUBCONTRACTOR" as any) {
       return NextResponse.redirect(new URL("/subcontractor", req.nextUrl))
+    }
+    if (userRole === "PERSONNEL" as any) {
+      return NextResponse.redirect(new URL("/personnel", req.nextUrl))
     }
     return NextResponse.redirect(new URL("/admin", req.nextUrl))
   }
