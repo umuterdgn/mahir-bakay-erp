@@ -82,24 +82,24 @@ export default function AdminSidebar() {
     { href: "/admin", label: "Dashboard", requiredPermission: "DASHBOARD", icon: LayoutDashboard, category: "ANA MENÜ", adminOnly: true },
     { href: "/admin/calendar", label: "Takvim", requiredPermission: null, icon: Calendar, category: "ANA MENÜ" },
     { href: "/admin/site-reports", label: "Şantiye Günlüğü", requiredPermission: null, icon: ClipboardList, category: "ANA MENÜ" },
-    { href: "/admin/audits", label: "Taşeron Denetimleri", requiredPermission: null, icon: ShieldAlert, category: "TAŞERON YÖNETİMİ" },
-    { href: "/admin/billing", label: "Hakediş Yönetimi", requiredPermission: null, icon: Wallet, category: "TAŞERON YÖNETİMİ" },
-    { href: "/admin/subcontractors/contracts", label: "Taşeron Sözleşmeleri", requiredPermission: null, icon: FileContract, category: "TAŞERON YÖNETİMİ" },
-    { href: "/admin/subcontractors/documents", label: "İSG ve Evrak Takibi", requiredPermission: null, icon: ShieldCheck, category: "TAŞERON YÖNETİMİ" },
-    { href: "/admin/subcontractors/deductions", label: "Kesintiler ve Cezalar", requiredPermission: null, icon: TrendingDown, category: "TAŞERON YÖNETİMİ" },
-    { href: "/admin/personel", label: "Personeller", requiredPermission: "PERSONNEL", icon: Users, category: "İNSAN KAYNAKLARI" },
-    { href: "/admin/attendance", label: "Puantaj & Mesai", requiredPermission: "ATTENDANCE", icon: UserCheck, category: "İNSAN KAYNAKLARI" },
-    { href: "/admin/approvals", label: "Onay Bekleyenler", requiredPermission: null, icon: ClipboardCheck, category: "İNSAN KAYNAKLARI" },
-    { href: "/admin/food-menu", label: "Yemek Menüsü", requiredPermission: null, icon: Utensils, category: "İNSAN KAYNAKLARI" },
-    { href: "/admin/finance", label: "Kasa & Finans", requiredPermission: "FINANCE", icon: DollarSign, category: "FİNANS & TEDARİK", adminOnly: true },
-    { href: "/admin/inventory", label: "Ambar & Karekod", requiredPermission: "INVENTORY", icon: PackageSearch, category: "FİNANS & TEDARİK" },
-    { href: "/admin/equipments", label: "Demirbaş", requiredPermission: null, icon: Wrench, category: "FİNANS & TEDARİK" },
-    { href: "/admin/contracts", label: "Sözleşmeler", requiredPermission: null, icon: FileSignature, category: "FİNANS & TEDARİK" },
-    { href: "/admin/progress-payments", label: "Hakediş ve Metraj", requiredPermission: null, icon: Calculator, category: "FİNANS & TEDARİK", subcontractorAllowed: true },
-    { href: "/admin/procurement", label: "Satınalma & Talepler", requiredPermission: null, icon: ShoppingCart, category: "FİNANS & TEDARİK" },
-    { href: "/admin/projects", label: "Projeler", requiredPermission: "PROJECTS", icon: FolderKanban, category: "PROJE YÖNETİMİ" },
-    { href: "/admin/crm", label: "CRM / Firmalar", requiredPermission: null, icon: Building2, category: "PROJE YÖNETİMİ" },
-    { href: "/admin/bim", label: "BIM & 3D Modeller", requiredPermission: null, icon: Box, category: "PROJE YÖNETİMİ" },
+    { href: "/admin/audits", label: "Taşeron Denetimleri", requiredPermission: null, icon: ShieldAlert, category: "TAŞERON YÖNETİMİ", contractorOnly: true },
+    { href: "/admin/billing", label: "Hakediş Yönetimi", requiredPermission: null, icon: Wallet, category: "TAŞERON YÖNETİMİ", contractorOnly: true },
+    { href: "/admin/subcontractors/contracts", label: "Taşeron Sözleşmeleri", requiredPermission: null, icon: FileContract, category: "TAŞERON YÖNETİMİ", contractorOnly: true },
+    { href: "/admin/subcontractors/documents", label: "İSG ve Evrak Takibi", requiredPermission: null, icon: ShieldCheck, category: "TAŞERON YÖNETİMİ", contractorOnly: true },
+    { href: "/admin/subcontractors/deductions", label: "Kesintiler ve Cezalar", requiredPermission: null, icon: TrendingDown, category: "TAŞERON YÖNETİMİ", contractorOnly: true },
+    { href: "/admin/personel", label: "Personeller", requiredPermission: "PERSONNEL", icon: Users, category: "İNSAN KAYNAKLARI", contractorOnly: true },
+    { href: "/admin/attendance", label: "Puantaj & Mesai", requiredPermission: "ATTENDANCE", icon: UserCheck, category: "İNSAN KAYNAKLARI", contractorOnly: true },
+    { href: "/admin/approvals", label: "Onay Bekleyenler", requiredPermission: null, icon: ClipboardCheck, category: "İNSAN KAYNAKLARI", contractorOnly: true },
+    { href: "/admin/food-menu", label: "Yemek Menüsü", requiredPermission: null, icon: Utensils, category: "İNSAN KAYNAKLARI", contractorOnly: true },
+    { href: "/admin/finance", label: "Kasa & Finans", requiredPermission: "FINANCE", icon: DollarSign, category: "FİNANS & TEDARİK", adminOnly: true, contractorOnly: true },
+    { href: "/admin/inventory", label: "Ambar & Karekod", requiredPermission: "INVENTORY", icon: PackageSearch, category: "FİNANS & TEDARİK", contractorOnly: true },
+    { href: "/admin/equipments", label: "Demirbaş", requiredPermission: null, icon: Wrench, category: "FİNANS & TEDARİK", contractorOnly: true },
+    { href: "/admin/contracts", label: "Sözleşmeler", requiredPermission: null, icon: FileSignature, category: "FİNANS & TEDARİK", contractorOnly: true },
+    { href: "/admin/progress-payments", label: "Hakediş ve Metraj", requiredPermission: null, icon: Calculator, category: "FİNANS & TEDARİK", subcontractorAllowed: true, contractorOnly: true },
+    { href: "/admin/procurement", label: "Satınalma & Talepler", requiredPermission: null, icon: ShoppingCart, category: "FİNANS & TEDARİK", contractorOnly: true },
+    { href: "/admin/projects", label: "Projeler", requiredPermission: "PROJECTS", icon: FolderKanban, category: "PROJE YÖNETİMİ", contractorOnly: true },
+    { href: "/admin/crm", label: "CRM / Firmalar", requiredPermission: null, icon: Building2, category: "PROJE YÖNETİMİ", contractorOnly: true },
+    { href: "/admin/bim", label: "BIM & 3D Modeller", requiredPermission: null, icon: Box, category: "PROJE YÖNETİMİ", contractorOnly: true },
     { href: "/admin/inspection/reports/create", label: "Hasar Tespit & Rapor", requiredPermission: null, icon: FileSearch, category: "YAPI DENETİM & KONTROL" },
     { href: "/admin/inspection", label: "Numune & Karot Takip", requiredPermission: null, icon: TestTube, category: "YAPI DENETİM & KONTROL" },
     { href: "/admin/inspection/reinforcement", label: "Demir & Kalıp Kontrol", requiredPermission: null, icon: Hammer, category: "YAPI DENETİM & KONTROL" },
@@ -137,6 +137,12 @@ export default function AdminSidebar() {
     // Admin ve Super Admin personnelOnly menüleri görmemeli
     if (item.personnelOnly === true) {
       return false
+    }
+    
+    // Contractor-only menüler (Taşeron Yönetimi, İnsan Kaynakları, Finans & Tedarık, Proje Yönetimi)
+    // Sadece ADMIN, SUPER_ADMIN ve SUBCONTRACTOR görebilir, INSPECTOR göremez
+    if (item.contractorOnly === true) {
+      return isAdmin || isSubcontractor
     }
     
     // Admin-only menüler (Dashboard, Finance, Users, Logs)
