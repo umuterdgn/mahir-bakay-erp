@@ -557,8 +557,8 @@ export default function FinancePage() {
           <h3 className="text-lg font-semibold text-white">🏗️ Taşeron Hakedişleri</h3>
           <span className="text-sm text-slate-400">Toplam: {progressPayments.length} hakediş</span>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
+        <div className="w-full overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+          <table className="w-full min-w-max">
             <thead className="bg-slate-800">
               <tr>
                 <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">Taşeron</th>
@@ -633,8 +633,8 @@ export default function FinancePage() {
 
       {/* Transactions Table */}
       <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
+        <div className="w-full overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+          <table className="w-full min-w-max">
           <thead className="bg-slate-800">
             <tr>
               <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">Tarih</th>

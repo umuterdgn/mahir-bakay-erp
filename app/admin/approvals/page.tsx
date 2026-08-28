@@ -52,8 +52,8 @@ export default async function ApprovalsPage() {
         {pendingLeaves.length === 0 ? (
           <p className="text-slate-400 text-center py-8">Bekleyen izin talebi yok</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
+          <div className="w-full overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+            <table className="w-full min-w-max">
               <thead>
                 <tr className="border-b border-slate-700">
                   <th className="text-left py-3 px-4 text-slate-300 font-medium">Personel</th>
@@ -128,8 +128,8 @@ export default async function ApprovalsPage() {
         {pendingAdvances.length === 0 ? (
           <p className="text-slate-400 text-center py-8">Bekleyen avans talebi yok</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
+          <div className="w-full overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+            <table className="w-full min-w-max">
               <thead>
                 <tr className="border-b border-slate-700">
                   <th className="text-left py-3 px-4 text-slate-300 font-medium">Personel</th>

@@ -143,7 +143,8 @@ export default async function BillingDetailPage({ params }: { params: Promise<{ 
         {appliedDeductions.length > 0 && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-6">
             <h3 className="font-semibold text-slate-700 mb-4">Uygulanan Kesintiler</h3>
-            <table className="w-full">
+            <div className="w-full overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+              <table className="w-full min-w-max">
               <thead>
                 <tr className="border-b border-red-200">
                   <th className="text-left py-2 text-sm text-slate-600">Sebep</th>
@@ -174,6 +175,7 @@ export default async function BillingDetailPage({ params }: { params: Promise<{ 
                 </tr>
               </tfoot>
             </table>
+            </div>
           </div>
         )}
 

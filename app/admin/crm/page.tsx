@@ -170,13 +170,13 @@ export default function CRMPage() {
 
   return (
     <div className="lg:mt-0 mt-16">
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-wrap gap-4 justify-between items-center mb-8">
         <h1 className="text-2xl lg:text-3xl font-bold text-white">
           Firma ve Müşteri Yönetimi
         </h1>
         <button
           onClick={openModal}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors"
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors whitespace-nowrap"
         >
           Yeni Firma Ekle
         </button>
@@ -184,7 +184,8 @@ export default function CRMPage() {
 
       {/* Companies Table */}
       <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
-        <table className="w-full">
+        <div className="w-full overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+          <table className="w-full min-w-max">
           <thead className="bg-slate-800">
             <tr>
               <th className="px-6 py-3 text-left text-sm font-medium text-slate-300">Firma Adı</th>
@@ -237,6 +238,7 @@ export default function CRMPage() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* Modal */}

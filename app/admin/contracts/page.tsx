@@ -520,7 +520,7 @@ export default function ContractsPage() {
 
   return (
     <div className="lg:mt-0 mt-16">
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-wrap gap-4 justify-between items-center mb-8">
         <h1 className="text-2xl lg:text-3xl font-bold text-white">
           📄 Sözleşme Yönetimi
         </h1>
@@ -553,8 +553,8 @@ export default function ContractsPage() {
 
       {/* Contracts Table */}
       <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
+        <div className="w-full overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+          <table className="w-full min-w-max">
             <thead className="bg-slate-800">
               <tr>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-white">Sözleşme Adı</th>

@@ -247,8 +247,8 @@ export default function ReinforcementPage() {
       </div>
 
       <div className="bg-slate-900/50 backdrop-blur-lg rounded-2xl border border-slate-800 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
+        <div className="w-full overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+          <table className="w-full min-w-max">
             <thead>
               <tr className="border-b border-slate-800">
                 <th className="text-left px-4 py-3 text-slate-400 font-medium text-sm">Eleman</th>

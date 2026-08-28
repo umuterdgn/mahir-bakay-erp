@@ -555,26 +555,26 @@ export default function AttendancePage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <button
           onClick={() => setIsManualAttendanceOpen(true)}
-          className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors font-medium"
+          className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors font-medium whitespace-nowrap"
         >
           📝 Manuel Yoklama Girişi
         </button>
         <button
           onClick={() => setIsNfcModalOpen(true)}
-          className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-500 transition-colors font-medium"
+          className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-500 transition-colors font-medium whitespace-nowrap"
         >
           📡 NFC ile Hızlı Yoklama
         </button>
         <div className="flex flex-col md:flex-row gap-2">
           <button
             onClick={exportAttendanceToExcel}
-            className="flex-1 px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-500 transition-colors font-medium"
+            className="flex-1 px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-500 transition-colors font-medium whitespace-nowrap"
           >
             📊 Yoklamaları İndir
           </button>
           <button
             onClick={exportVisitorsToExcel}
-            className="flex-1 px-4 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-500 transition-colors font-medium"
+            className="flex-1 px-4 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-500 transition-colors font-medium whitespace-nowrap"
           >
             📊 Ziyaretçileri İndir
           </button>
@@ -635,8 +635,8 @@ export default function AttendancePage() {
       {/* Attendance Records Table */}
       <div className="bg-slate-900 rounded-xl p-6 border border-slate-800 mb-6">
         <h2 className="text-xl font-semibold text-white mb-4">📋 Personel Yoklamaları</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full">
+        <div className="w-full overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+          <table className="w-full min-w-max">
             <thead>
               <tr className="border-b border-slate-700">
                 <th className="text-left py-3 px-4 text-slate-300 font-medium">Personel</th>
@@ -698,8 +698,8 @@ export default function AttendancePage() {
       {/* Visitor Records Table */}
       <div className="bg-slate-900 rounded-xl p-6 border border-slate-800">
         <h2 className="text-xl font-semibold text-white mb-4">👤 Ziyaretçi Kayıtları</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full">
+        <div className="w-full overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+          <table className="w-full min-w-max">
             <thead>
               <tr className="border-b border-slate-700">
                 <th className="text-left py-3 px-4 text-slate-300 font-medium">Ad Soyad</th>

@@ -136,7 +136,7 @@ export default function LogisticsPage() {
   return (
     <div className="p-6 h-screen flex flex-col">
       {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-wrap gap-4 justify-between items-start">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-3">
             <Truck className="w-8 h-8 text-blue-400" />
@@ -146,7 +146,7 @@ export default function LogisticsPage() {
         </div>
         <button 
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors whitespace-nowrap"
         >
           <Plus className="w-5 h-5" />
           Yeni Randevu

@@ -228,7 +228,7 @@ export default function MyTeamPage() {
             resetForm()
             setIsModalOpen(true)
           }}
-          className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-colors whitespace-nowrap"
         >
           <Plus className="w-5 h-5" />
           Yeni Personel Ekle
@@ -236,8 +236,8 @@ export default function MyTeamPage() {
       </div>
 
       <div className="bg-slate-900/50 backdrop-blur-lg rounded-2xl border border-slate-800 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
+        <div className="w-full overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+          <table className="w-full min-w-max">
             <thead>
               <tr className="border-b border-slate-800">
                 <th className="text-left px-6 py-4 text-slate-400 font-medium text-sm">Personel No</th>

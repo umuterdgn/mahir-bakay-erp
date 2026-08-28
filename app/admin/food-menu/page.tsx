@@ -105,9 +105,16 @@ export default function FoodMenuPage() {
 
   return (
     <div className="p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">Yemek Menüsü Yönetimi</h1>
-        <p className="text-slate-400">Aylık yemek listesini Excel dosyası olarak yükleyin</p>
+      <div className="flex flex-wrap gap-4 justify-between items-center mb-8">
+        <h1 className="text-2xl lg:text-3xl font-bold text-white">
+          Yemek Menüsü
+        </h1>
+        <button
+          onClick={() => console.log("openModal")}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors whitespace-nowrap"
+        >
+          Yeni Menü Ekle
+        </button>
       </div>
 
       {/* Upload Section */}
@@ -150,8 +157,8 @@ export default function FoodMenuPage() {
           <h2 className="text-xl font-semibold text-white">Mevcut Menüler</h2>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full">
+        <div className="w-full overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+          <table className="w-full min-w-max">
             <thead>
               <tr className="border-b border-slate-700">
                 <th className="text-left py-3 px-4 text-slate-400 font-medium">Tarih</th>

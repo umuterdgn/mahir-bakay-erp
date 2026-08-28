@@ -322,13 +322,13 @@ export default function CommunicationPage() {
         {/* Left Panel - Announcements */}
         <div className="lg:col-span-1">
           <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50 shadow-lg">
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-wrap gap-4 justify-between items-center mb-6">
               <h2 className="text-xl font-semibold text-white">Duyurular</h2>
               <button
                 onClick={() => setIsAnnouncementModalOpen(true)}
-                className="px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-cyan-600 text-white text-sm rounded-lg hover:from-emerald-500 hover:to-cyan-500 transition-all"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors whitespace-nowrap"
               >
-                + Duyuru
+                Yeni Duyuru
               </button>
             </div>
             
@@ -365,11 +365,11 @@ export default function CommunicationPage() {
         <div className="lg:col-span-2">
           {activeTab === "threads" && !selectedThread ? (
             <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50 shadow-lg">
-              <div className="flex justify-between items-center mb-6">
+              <div className="flex flex-wrap gap-4 justify-between items-center mb-6">
                 <h2 className="text-xl font-semibold text-white">Konu Bazlı Odalar</h2>
                 <button
                   onClick={() => setIsThreadModalOpen(true)}
-                  className="px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-cyan-600 text-white text-sm rounded-lg hover:from-emerald-500 hover:to-cyan-500 transition-all"
+                  className="px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-cyan-600 text-white text-sm rounded-lg hover:from-emerald-500 hover:to-cyan-500 transition-all whitespace-nowrap"
                 >
                   + Yeni Oda
                 </button>

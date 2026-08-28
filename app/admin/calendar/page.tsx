@@ -134,7 +134,7 @@ export default function CalendarPage() {
 
   return (
     <div className="lg:mt-0 mt-16">
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-wrap gap-4 justify-between items-center mb-8">
         <h1 className="text-2xl lg:text-3xl font-bold text-white">
           Takvim
         </h1>
@@ -170,7 +170,7 @@ export default function CalendarPage() {
         </div>
 
         {/* Calendar Grid */}
-        <div className="w-full overflow-x-auto">
+        <div className="w-full overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
           <div className="grid grid-cols-7 gap-2 min-w-[800px]">
             {/* Empty cells before first day */}
             {Array.from({ length: startDayOfWeek }).map((_, i) => (

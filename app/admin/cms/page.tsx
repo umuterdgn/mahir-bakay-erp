@@ -236,11 +236,11 @@ function ServicesSection() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-wrap gap-4 justify-between items-center mb-6">
         <h2 className="text-xl font-semibold text-white">Hizmetler</h2>
         <button
           onClick={handleAdd}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors"
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors whitespace-nowrap"
         >
           Yeni Hizmet Ekle
         </button>
@@ -261,37 +261,39 @@ function ServicesSection() {
         />
       ) : (
         <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-slate-800">
-              <tr>
-                <th className="px-6 py-3 text-left text-sm font-medium text-slate-300">Başlık</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-slate-300">Açıklama</th>
-                <th className="px-6 py-3 text-right text-sm font-medium text-slate-300">İşlemler</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800">
-              {services.map((service: any) => (
-                <tr key={service.id}>
-                  <td className="px-6 py-4 text-sm text-white">{service.title}</td>
-                  <td className="px-6 py-4 text-sm text-slate-400 truncate max-w-xs">{service.description}</td>
-                  <td className="px-6 py-4 text-right text-sm space-x-2">
-                    <button
-                      onClick={() => handleEdit(service)}
-                      className="text-blue-400 hover:text-blue-300"
-                    >
-                      Düzenle
-                    </button>
-                    <button
-                      onClick={() => handleDelete(service.id)}
-                      className="text-red-400 hover:text-red-300"
-                    >
-                      Sil
-                    </button>
-                  </td>
+          <div className="w-full overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+            <table className="w-full min-w-max">
+              <thead className="bg-slate-800">
+                <tr>
+                  <th className="px-6 py-3 text-left text-sm font-medium text-slate-300">Başlık</th>
+                  <th className="px-6 py-3 text-left text-sm font-medium text-slate-300">Açıklama</th>
+                  <th className="px-6 py-3 text-right text-sm font-medium text-slate-300">İşlemler</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-800">
+                {services.map((service: any) => (
+                  <tr key={service.id}>
+                    <td className="px-6 py-4 text-sm text-white">{service.title}</td>
+                    <td className="px-6 py-4 text-sm text-slate-400 truncate max-w-xs">{service.description}</td>
+                    <td className="px-6 py-4 text-right text-sm space-x-2">
+                      <button
+                        onClick={() => handleEdit(service)}
+                        className="text-blue-400 hover:text-blue-300"
+                      >
+                        Düzenle
+                      </button>
+                      <button
+                        onClick={() => handleDelete(service.id)}
+                        className="text-red-400 hover:text-red-300"
+                      >
+                        Sil
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
@@ -564,11 +566,11 @@ function ProjectsSection() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-wrap gap-4 justify-between items-center mb-6">
         <h2 className="text-xl font-semibold text-white">Projeler</h2>
         <button
           onClick={handleAdd}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors"
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors whitespace-nowrap"
         >
           Yeni Proje Ekle
         </button>
@@ -589,12 +591,13 @@ function ProjectsSection() {
         />
       ) : (
         <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-slate-800">
-              <tr>
-                <th className="px-6 py-3 text-left text-sm font-medium text-slate-300">Başlık</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-slate-300">Açıklama</th>
-                <th className="px-6 py-3 text-right text-sm font-medium text-slate-300">İşlemler</th>
+          <div className="w-full overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+            <table className="w-full min-w-max">
+              <thead className="bg-slate-800">
+                <tr>
+                  <th className="px-6 py-3 text-left text-sm font-medium text-slate-300">Başlık</th>
+                  <th className="px-6 py-3 text-left text-sm font-medium text-slate-300">Açıklama</th>
+                  <th className="px-6 py-3 text-right text-sm font-medium text-slate-300">İşlemler</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800">
@@ -620,6 +623,7 @@ function ProjectsSection() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>

@@ -187,20 +187,13 @@ export default function CompaniesPage() {
 
   return (
     <div className="p-6">
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-            <Building2 className="w-8 h-8 text-blue-400" />
-            Firma Yönetimi
-          </h1>
-          <p className="text-slate-400 mt-1">Taşeron firmalar, tedarikçiler ve müşteriler</p>
-        </div>
+      <div className="flex flex-wrap gap-4 justify-between items-center mb-8">
+        <h1 className="text-2xl lg:text-3xl font-bold text-white">
+          Firma Yönetimi
+        </h1>
         <button
-          onClick={() => {
-            resetForm()
-            setIsModalOpen(true)
-          }}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors"
+          onClick={() => setIsModalOpen(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors whitespace-nowrap"
         >
           <Plus className="w-5 h-5" />
           Yeni Firma Ekle
@@ -208,8 +201,8 @@ export default function CompaniesPage() {
       </div>
 
       <div className="bg-slate-900/50 backdrop-blur-lg rounded-2xl border border-slate-800 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
+        <div className="w-full overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+          <table className="w-full min-w-max">
             <thead>
               <tr className="border-b border-slate-800">
                 <th className="text-left px-6 py-4 text-slate-400 font-medium text-sm">Firma Adı</th>

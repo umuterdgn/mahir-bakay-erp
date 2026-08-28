@@ -232,15 +232,16 @@ export default function AdminArchivePage() {
 
       {/* Archive List */}
       <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-slate-800">
-            <tr>
-              <th className="px-6 py-3 text-left text-sm font-medium text-slate-300">İlgili Proje</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-slate-300">Dosya Adı</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-slate-300">Yükleme Tarihi</th>
-              <th className="px-6 py-3 text-right text-sm font-medium text-slate-300">İşlemler</th>
-            </tr>
-          </thead>
+        <div className="w-full overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+          <table className="w-full min-w-max">
+            <thead className="bg-slate-800">
+              <tr>
+                <th className="px-6 py-3 text-left text-sm font-medium text-slate-300">İlgili Proje</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-slate-300">Dosya Adı</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-slate-300">Yükleme Tarihi</th>
+                <th className="px-6 py-3 text-right text-sm font-medium text-slate-300">İşlemler</th>
+              </tr>
+            </thead>
           <tbody className="divide-y divide-slate-800">
             {filteredArchives.map((archive) => (
               <tr key={archive.id}>
@@ -288,6 +289,7 @@ export default function AdminArchivePage() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* Modal */}
