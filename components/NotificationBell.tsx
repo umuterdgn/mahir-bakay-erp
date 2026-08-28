@@ -141,7 +141,7 @@ export default function NotificationBell() {
       </button>
 
       {isOpen && (
-        <div className="fixed right-4 top-16 w-96 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-[100] max-h-[500px] overflow-hidden">
+        <div className="fixed right-0 top-16 w-96 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 max-h-[80vh] overflow-y-auto">
           {/* Header */}
           <div className="p-4 border-b border-slate-800 flex items-center justify-between">
             <h3 className="font-semibold text-white">Bildirimler</h3>

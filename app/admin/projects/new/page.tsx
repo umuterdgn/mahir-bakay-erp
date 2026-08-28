@@ -317,14 +317,14 @@ export default function NewProjectPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Mıntıka</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Mahalle Adı</label>
                   <input
                     type="text"
                     name="mintika"
                     value={formData.mintika}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
-                    placeholder="Mıntıka"
+                    placeholder="Mahalle Adı"
                   />
                 </div>
                 <div>

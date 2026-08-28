@@ -176,7 +176,7 @@ export default function ProjectsPage() {
         <div className="relative">
           <input
             type="text"
-            placeholder="Proje ara (Ad, Parsel, Mıntıka, Firma, Müşteri)..."
+            placeholder="Proje ara (Ad, Parsel, Mahalle Adı, Firma, Müşteri)..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
