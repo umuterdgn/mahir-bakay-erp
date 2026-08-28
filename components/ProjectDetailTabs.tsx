@@ -13,6 +13,8 @@ import ProjectFiles from "@/components/ProjectFiles"
 import ProjectReminders from "@/components/ProjectReminders"
 import ProjectDailyLogs from "@/components/ProjectDailyLogs"
 import GeofencedCheckIn from "@/components/GeofencedCheckIn"
+import ProjectTimeline from "@/components/ProjectTimeline"
+import StructureTree from "@/components/StructureTree"
 import { toast } from "react-hot-toast"
 import { jsPDF } from "jspdf"
 import * as htmlToImage from 'html-to-image'
@@ -98,6 +100,7 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
     { id: "gantt", label: "📅 İş Programı (Gantt)" },
     { id: "dokumanlar", label: "📁 Dokümanlar & Revizyonlar" },
     { id: "denetim", label: "Yapı Denetim Arşivi" },
+    { id: "yapi-agaci", label: "🏗️ Yapı Ağacı (Dijital İkiz)" },
     { id: "hatirlatici", label: "Hatırlatıcılar" }
   ]
 
@@ -753,6 +756,12 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {activeTab === "yapi-agaci" && (
+          <div className="space-y-4">
+            <StructureTree />
           </div>
         )}
 

@@ -9,6 +9,7 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import ProjectDetailClient from "@/components/ProjectDetailClient"
 import ProjectDetailTabs from "@/components/ProjectDetailTabs"
+import ProjectTimeline from "@/components/ProjectTimeline"
 
 export const dynamic = 'force-dynamic'
 
@@ -56,11 +57,11 @@ export default async function ProjectDetailPage({
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "ETUT": return "bg-purple-900/50 text-purple-400"
-      case "CIZIM": return "bg-blue-900/50 text-blue-400"
-      case "SAHA": return "bg-orange-900/50 text-orange-400"
-      case "TAMAMLANDI": return "bg-green-900/50 text-green-400"
-      default: return "bg-slate-900/50 text-slate-400"
+      case "ETUT": return "bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800"
+      case "CIZIM": return "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800"
+      case "SAHA": return "bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800"
+      case "TAMAMLANDI": return "bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800"
+      default: return "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
     }
   }
 
@@ -76,29 +77,29 @@ export default async function ProjectDetailPage({
       </div>
 
       {/* Header */}
-      <div className="bg-slate-900 rounded-xl p-6 border border-slate-800 mb-6">
+      <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 mb-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl lg:text-3xl font-bold text-white mb-2">
+            <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white mb-2">
               {project.name || project.title}
             </h1>
-            <div className="flex flex-wrap items-center gap-4 text-slate-400">
+            <div className="flex flex-wrap items-center gap-4 text-slate-600 dark:text-slate-400">
               {project.company && (
                 <span className="flex items-center">
                   <span className="mr-2">Müşteri:</span>
-                  <span className="text-white font-medium">{project.company.name}</span>
+                  <span className="text-slate-900 dark:text-white font-medium">{project.company.name}</span>
                 </span>
               )}
               <span className="flex items-center">
                 <span className="mr-2">Başlangıç:</span>
-                <span className="text-white">
+                <span className="text-slate-900 dark:text-white">
                   {new Date(project.startDate).toLocaleDateString("tr-TR")}
                 </span>
               </span>
               {project.endDate && (
                 <span className="flex items-center">
                   <span className="mr-2">Bitiş:</span>
-                  <span className="text-white">
+                  <span className="text-slate-900 dark:text-white">
                     {new Date(project.endDate).toLocaleDateString("tr-TR")}
                   </span>
                 </span>
@@ -115,6 +116,9 @@ export default async function ProjectDetailPage({
           </div>
         </div>
       </div>
+
+      {/* Timeline */}
+      <ProjectTimeline />
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
