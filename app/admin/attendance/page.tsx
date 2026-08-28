@@ -81,8 +81,7 @@ export default function AttendancePage() {
       const response = await fetch("/api/admin/projects")
       if (response.ok) {
         const data = await response.json()
-        console.error("Gelen Veri (Projects):", data)
-        setProjects(Array.isArray(data) ? data : [])
+        setProjects(Array.isArray(data) ? data : (data?.projects || []))
       }
     } catch (error) {
       console.error("Failed to fetch projects:", error)
@@ -94,7 +93,6 @@ export default function AttendancePage() {
       const response = await fetch("/api/admin/personnel")
       if (response.ok) {
         const data = await response.json()
-        console.error("Gelen Veri (Personnel):", data)
         setPersonnel(Array.isArray(data) ? data : [])
       }
     } catch (error) {
@@ -109,7 +107,6 @@ export default function AttendancePage() {
       const response = await fetch("/api/admin/attendance-records")
       if (response.ok) {
         const data = await response.json()
-        console.error("Gelen Veri (Attendance):", data)
         setAttendanceRecords(Array.isArray(data) ? data : [])
       }
     } catch (error) {
@@ -122,7 +119,6 @@ export default function AttendancePage() {
       const response = await fetch("/api/attendance/visitor")
       if (response.ok) {
         const data = await response.json()
-        console.error("Gelen Veri (Visitors):", data)
         setVisitorRecords(Array.isArray(data) ? data : [])
       }
     } catch (error) {
