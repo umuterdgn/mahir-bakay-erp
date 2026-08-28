@@ -141,7 +141,7 @@ export default function NotificationBell() {
       </button>
 
       {isOpen && (
-        <div className="fixed right-0 top-16 w-96 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 max-h-[80vh] overflow-y-auto">
+        <div className="absolute right-0 mt-2 w-[calc(100vw-2rem)] sm:w-96 max-w-sm bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 flex flex-col overflow-hidden">
           {/* Header */}
           <div className="p-4 border-b border-slate-800 flex items-center justify-between">
             <h3 className="font-semibold text-white">Bildirimler</h3>
@@ -164,7 +164,7 @@ export default function NotificationBell() {
           </div>
 
           {/* Notifications List */}
-          <div className="overflow-y-auto max-h-[400px]">
+          <div className="overflow-y-auto max-h-[60vh] sm:max-h-[400px]">
             {notifications.length === 0 ? (
               <div className="p-8 text-center">
                 <Bell className="w-12 h-12 text-slate-600 mx-auto mb-2" />
