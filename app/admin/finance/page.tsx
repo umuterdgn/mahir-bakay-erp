@@ -131,7 +131,8 @@ export default function FinancePage() {
       const response = await fetch("/api/admin/finance")
       if (response.ok) {
         const data = await response.json()
-        setTransactions(data)
+        console.error("Gelen Veri (Transactions):", data)
+        setTransactions(Array.isArray(data) ? data : [])
       }
     } catch (error) {
       console.error("Failed to fetch transactions:", error)
@@ -146,7 +147,8 @@ export default function FinancePage() {
       const response = await fetch("/api/admin/projects")
       if (response.ok) {
         const data = await response.json()
-        setProjects(data)
+        console.error("Gelen Veri (Projects):", data)
+        setProjects(Array.isArray(data) ? data : [])
       }
     } catch (error) {
       console.error("Failed to fetch projects:", error)
@@ -158,7 +160,8 @@ export default function FinancePage() {
       const response = await fetch("/api/admin/crm")
       if (response.ok) {
         const data = await response.json()
-        setCompanies(data)
+        console.error("Gelen Veri (Companies):", data)
+        setCompanies(Array.isArray(data) ? data : [])
       }
     } catch (error) {
       console.error("Failed to fetch companies:", error)
@@ -170,7 +173,8 @@ export default function FinancePage() {
       const response = await fetch("/api/admin/personnel")
       if (response.ok) {
         const data = await response.json()
-        setPersonnel(data)
+        console.error("Gelen Veri (Personnel):", data)
+        setPersonnel(Array.isArray(data) ? data : [])
       }
     } catch (error) {
       console.error("Failed to fetch personnel:", error)
@@ -182,7 +186,8 @@ export default function FinancePage() {
       const response = await fetch("/api/admin/progress-payments")
       if (response.ok) {
         const data = await response.json()
-        setProgressPayments(data)
+        console.error("Gelen Veri (ProgressPayments):", data)
+        setProgressPayments(Array.isArray(data) ? data : [])
       }
     } catch (error) {
       console.error("Failed to fetch progress payments:", error)
@@ -574,7 +579,7 @@ export default function FinancePage() {
                   </td>
                 </tr>
               ) : (
-                progressPayments.map((payment) => (
+                (Array.isArray(progressPayments) ? progressPayments : []).map((payment) => (
                   <tr key={payment.id}>
                     <td className="px-4 py-4 text-sm text-white">{payment.subcontractor}</td>
                     <td className="px-4 py-4 text-sm text-slate-400">{payment.workType}</td>
@@ -656,7 +661,7 @@ export default function FinancePage() {
                 </td>
               </tr>
             ) : (
-              getFilteredTransactions().map((transaction) => (
+              (Array.isArray(getFilteredTransactions()) ? getFilteredTransactions() : []).map((transaction) => (
                 <tr key={transaction.id}>
                   <td className="px-4 py-4 text-sm text-slate-400">
                     {new Date(transaction.date).toLocaleDateString("tr-TR")}
@@ -788,7 +793,7 @@ export default function FinancePage() {
                   className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
                 >
                   <option value="">Proje Seçin</option>
-                  {projects.map((project) => (
+                  {(Array.isArray(projects) ? projects : []).map((project) => (
                     <option key={project.id} value={project.id}>
                       {project.name || project.title}
                     </option>
@@ -807,7 +812,7 @@ export default function FinancePage() {
                   className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
                 >
                   <option value="">Firma Seçin</option>
-                  {companies.map((company) => (
+                  {(Array.isArray(companies) ? companies : []).map((company) => (
                     <option key={company.id} value={company.id}>
                       {company.name}
                     </option>
@@ -826,7 +831,7 @@ export default function FinancePage() {
                   className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
                 >
                   <option value="">Personel Seçin</option>
-                  {personnel.map((person) => (
+                  {(Array.isArray(personnel) ? personnel : []).map((person) => (
                     <option key={person.id} value={person.id}>
                       {person.name}
                     </option>
@@ -874,7 +879,7 @@ export default function FinancePage() {
                   required
                 >
                   <option value="">Proje Seçin</option>
-                  {projects.map((project) => (
+                  {(Array.isArray(projects) ? projects : []).map((project) => (
                     <option key={project.id} value={project.id}>
                       {project.name || project.title}
                     </option>

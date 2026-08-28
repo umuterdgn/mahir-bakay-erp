@@ -81,7 +81,8 @@ export default function AttendancePage() {
       const response = await fetch("/api/admin/projects")
       if (response.ok) {
         const data = await response.json()
-        setProjects(data)
+        console.error("Gelen Veri (Projects):", data)
+        setProjects(Array.isArray(data) ? data : [])
       }
     } catch (error) {
       console.error("Failed to fetch projects:", error)
@@ -93,7 +94,8 @@ export default function AttendancePage() {
       const response = await fetch("/api/admin/personnel")
       if (response.ok) {
         const data = await response.json()
-        setPersonnel(data)
+        console.error("Gelen Veri (Personnel):", data)
+        setPersonnel(Array.isArray(data) ? data : [])
       }
     } catch (error) {
       console.error("Failed to fetch personnel:", error)
@@ -107,7 +109,8 @@ export default function AttendancePage() {
       const response = await fetch("/api/admin/attendance-records")
       if (response.ok) {
         const data = await response.json()
-        setAttendanceRecords(data)
+        console.error("Gelen Veri (Attendance):", data)
+        setAttendanceRecords(Array.isArray(data) ? data : [])
       }
     } catch (error) {
       console.error("Failed to fetch attendance records:", error)
@@ -119,7 +122,8 @@ export default function AttendancePage() {
       const response = await fetch("/api/attendance/visitor")
       if (response.ok) {
         const data = await response.json()
-        setVisitorRecords(data)
+        console.error("Gelen Veri (Visitors):", data)
+        setVisitorRecords(Array.isArray(data) ? data : [])
       }
     } catch (error) {
       console.error("Failed to fetch visitor records:", error)
@@ -611,7 +615,7 @@ export default function AttendancePage() {
               className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
             >
               <option value="">Tüm Projeler</option>
-              {projects.map((project) => (
+              {(Array.isArray(projects) ? projects : []).map((project) => (
                 <option key={project.id} value={project.id}>
                   {project.name || project.title}
                 </option>
@@ -842,7 +846,7 @@ export default function AttendancePage() {
                   required
                 >
                   <option value="">Proje Seçin</option>
-                  {projects.map((project) => (
+                  {(Array.isArray(projects) ? projects : []).map((project) => (
                     <option key={project.id} value={project.id}>
                       {project.name || project.title}
                     </option>
@@ -986,7 +990,7 @@ export default function AttendancePage() {
                   required
                 >
                   <option value="">Proje Seçin</option>
-                  {projects.map((project) => (
+                  {(Array.isArray(projects) ? projects : []).map((project) => (
                     <option key={project.id} value={project.id}>
                       {project.name || project.title}
                     </option>

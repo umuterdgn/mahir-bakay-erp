@@ -38,7 +38,8 @@ export default function EquipmentsPage() {
       const response = await fetch("/api/admin/equipments")
       if (response.ok) {
         const data = await response.json()
-        setEquipments(data)
+        console.error("Gelen Veri (Equipments):", data)
+        setEquipments(Array.isArray(data) ? data : [])
       }
     } catch (error) {
       console.error("Failed to fetch equipments:", error)
@@ -53,7 +54,8 @@ export default function EquipmentsPage() {
       const response = await fetch("/api/admin/projects")
       if (response.ok) {
         const data = await response.json()
-        setProjects(data)
+        console.error("Gelen Veri (Projects):", data)
+        setProjects(Array.isArray(data) ? data : [])
       }
     } catch (error) {
       console.error("Failed to fetch projects:", error)
@@ -235,7 +237,7 @@ export default function EquipmentsPage() {
                   </td>
                 </tr>
               ) : (
-                equipments.map((equipment) => (
+                (Array.isArray(equipments) ? equipments : []).map((equipment) => (
                   <tr key={equipment.id}>
                     <td className="px-6 py-4 text-sm text-white font-medium">{equipment.name}</td>
                     <td className="px-6 py-4 text-sm text-slate-400">{getTypeLabel(equipment.type)}</td>
@@ -359,7 +361,7 @@ export default function EquipmentsPage() {
                   className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
                 >
                   <option value="">Proje Seçin</option>
-                  {projects.map((project) => (
+                  {(Array.isArray(projects) ? projects : []).map((project) => (
                     <option key={project.id} value={project.id}>
                       {project.name || project.title}
                     </option>
