@@ -129,13 +129,20 @@ export default function FinancePage() {
   const fetchTransactions = async () => {
     try {
       const response = await fetch("/api/admin/finance")
+      console.log("FİNANS VERİ ÇEKME - Response Status:", response.status)
       if (response.ok) {
         const data = await response.json()
-        console.error("Gelen Veri (Transactions):", data)
+        console.log("FİNANS VERİ ÇEKME - Gelen Veri Yapısı:", data)
+        console.log("FİNANS VERİ ÇEKME - Veri Tipi:", typeof data)
+        console.log("FİNANS VERİ ÇEKME - Array mi?", Array.isArray(data))
         setTransactions(Array.isArray(data) ? data : [])
+      } else {
+        console.error("FİNANS VERİ ÇEKME HATASI - Response not OK:", response.status, response.statusText)
+        const errorData = await response.json().catch(() => ({}))
+        console.error("FİNANS VERİ ÇEKME HATASI - Error Data:", errorData)
       }
     } catch (error) {
-      console.error("Failed to fetch transactions:", error)
+      console.error("FİNANS VERİ ÇEKME HATASI DETAYI:", error)
       toast.error("İşlemler yüklenirken hata oluştu")
     } finally {
       setIsLoading(false)
@@ -147,8 +154,11 @@ export default function FinancePage() {
       const response = await fetch("/api/admin/projects")
       if (response.ok) {
         const data = await response.json()
-        console.error("Gelen Veri (Projects):", data)
-        setProjects(Array.isArray(data) ? data : [])
+        console.log("FİNANS VERİ ÇEKME - Gelen Veri (Projects):", data)
+        // API returns { projects: [...] } structure
+        const projectsData = data.projects || data
+        console.log("FİNANS VERİ ÇEKME - Projects Data:", projectsData)
+        setProjects(Array.isArray(projectsData) ? projectsData : [])
       }
     } catch (error) {
       console.error("Failed to fetch projects:", error)
@@ -160,11 +170,11 @@ export default function FinancePage() {
       const response = await fetch("/api/admin/crm")
       if (response.ok) {
         const data = await response.json()
-        console.error("Gelen Veri (Companies):", data)
+        console.log("FİNANS VERİ ÇEKME - Gelen Veri (Companies):", data)
         setCompanies(Array.isArray(data) ? data : [])
       }
     } catch (error) {
-      console.error("Failed to fetch companies:", error)
+      console.error("FİNANS VERİ ÇEKME HATASI DETAYI (Companies):", error)
     }
   }
 
@@ -173,11 +183,11 @@ export default function FinancePage() {
       const response = await fetch("/api/admin/personnel")
       if (response.ok) {
         const data = await response.json()
-        console.error("Gelen Veri (Personnel):", data)
+        console.log("FİNANS VERİ ÇEKME - Gelen Veri (Personnel):", data)
         setPersonnel(Array.isArray(data) ? data : [])
       }
     } catch (error) {
-      console.error("Failed to fetch personnel:", error)
+      console.error("FİNANS VERİ ÇEKME HATASI DETAYI (Personnel):", error)
     }
   }
 
@@ -186,11 +196,11 @@ export default function FinancePage() {
       const response = await fetch("/api/admin/progress-payments")
       if (response.ok) {
         const data = await response.json()
-        console.error("Gelen Veri (ProgressPayments):", data)
+        console.log("FİNANS VERİ ÇEKME - Gelen Veri (ProgressPayments):", data)
         setProgressPayments(Array.isArray(data) ? data : [])
       }
     } catch (error) {
-      console.error("Failed to fetch progress payments:", error)
+      console.error("FİNANS VERİ ÇEKME HATASI DETAYI (ProgressPayments):", error)
     }
   }
 
