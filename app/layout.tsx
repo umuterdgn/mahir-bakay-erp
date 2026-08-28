@@ -20,6 +20,21 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Mahir Bakay Mühendislik",
   description: "Geleceği inşa eden mühendislik çözümleri",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Mahir Bakay Mühendislik",
+  },
+  icons: {
+    icon: [
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+  },
 };
 
 export const viewport: Viewport = {
@@ -40,19 +55,6 @@ export default function RootLayout({
           {children}
           <Toaster position="bottom-right" />
         </ThemeProvider>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                  for(let registration of registrations) {
-                    registration.unregister();
-                  }
-                });
-              }
-            `,
-          }}
-        />
       </body>
     </html>
   );
