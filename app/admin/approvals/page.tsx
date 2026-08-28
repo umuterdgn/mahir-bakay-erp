@@ -12,18 +12,28 @@ export const dynamic = 'force-dynamic'
 
 export default async function ApprovalsPage() {
   // Fetch pending leave requests
-  const pendingLeaves = await prisma.leaveRequest.findMany({
-    where: { status: "PENDING" },
-    include: { personel: true },
-    orderBy: { createdAt: "desc" },
-  });
+  let pendingLeaves: any[] = [];
+  try {
+    pendingLeaves = await prisma.leaveRequest.findMany({
+      where: { status: "PENDING" },
+      include: { personel: true },
+      orderBy: { createdAt: "desc" },
+    });
+  } catch (error) {
+    console.error("Failed to fetch pending leaves:", error);
+  }
 
   // Fetch pending advance payments
-  const pendingAdvances = await prisma.personelPayment.findMany({
-    where: { status: "PENDING" },
-    include: { personel: true },
-    orderBy: { createdAt: "desc" },
-  });
+  let pendingAdvances: any[] = [];
+  try {
+    pendingAdvances = await prisma.personelPayment.findMany({
+      where: { status: "PENDING" },
+      include: { personel: true },
+      orderBy: { createdAt: "desc" },
+    });
+  } catch (error) {
+    console.error("Failed to fetch pending advances:", error);
+  }
 
   return (
     <div className="p-6 space-y-8">

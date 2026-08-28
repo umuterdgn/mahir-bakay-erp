@@ -61,7 +61,7 @@ export default function SiteReportsPage() {
       const response = await fetch("/api/admin/projects")
       if (response.ok) {
         const data = await response.json()
-        setProjects(data)
+        setProjects(Array.isArray(data) ? data : (data?.projects || []))
       }
     } catch (error) {
       console.error("Failed to fetch projects:", error)
@@ -217,7 +217,7 @@ export default function SiteReportsPage() {
               className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
             >
               <option value="">Tüm Projeler</option>
-              {projects.map((project) => (
+              {(Array.isArray(projects) ? projects : []).map((project) => (
                 <option key={project.id} value={project.id}>
                   {project.name || project.title}
                 </option>
@@ -317,7 +317,7 @@ export default function SiteReportsPage() {
                   required
                 >
                   <option value="">Proje Seçin</option>
-                  {projects.map((project) => (
+                  {(Array.isArray(projects) ? projects : []).map((project) => (
                     <option key={project.id} value={project.id}>
                       {project.name || project.title}
                     </option>
