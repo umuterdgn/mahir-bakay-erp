@@ -57,7 +57,8 @@ import {
   TrendingDown,
   ShoppingCart,
   Sun,
-  Moon
+  Moon,
+  History
 } from "lucide-react"
 
 export default function AdminSidebar() {
@@ -122,6 +123,7 @@ export default function AdminSidebar() {
     { href: "/admin/communication/logistics", label: "Lojistik & Randevu Ağı", requiredPermission: null, icon: Truck, category: "İLETİŞİM & OPERASYON" },
     { href: "/admin/users", label: "Kullanıcılar", requiredPermission: null, icon: Users, category: "İLETİŞİM & SİSTEM", adminOnly: true },
     { href: "/admin/logs", label: "Sistem Logları", requiredPermission: null, icon: FileLog, category: "İLETİŞİM & SİSTEM", adminOnly: true },
+    { href: "/admin/audit-logs", label: "İşlem Geçmişi", requiredPermission: null, icon: History, category: "İLETİŞİM & SİSTEM", adminOnly: true },
     { href: "/admin/announcements", label: "Duyuru Yönetimi", requiredPermission: null, icon: Megaphone, category: "İLETİŞİM & SİSTEM" },
     { href: "/admin/ayarlar", label: "Ayarlar", requiredPermission: null, icon: Settings, category: "İLETİŞİM & SİSTEM" },
     { href: "/admin/my-tasks", label: "Görevlerim", requiredPermission: null, icon: CheckSquare, personnelOnly: true, category: "PERSONEL" },
