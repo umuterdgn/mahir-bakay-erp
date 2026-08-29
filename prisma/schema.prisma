@@ -34,6 +34,8 @@ model User {
   conversationParticipants ConversationParticipant[]
   approvedOrders  PurchaseOrder[]
   uploadedDocuments ProjectDocument[]
+  uploadedDocs    Document[]
+  auditLogs       AuditLog[]
 }
 
 enum UserRole {
@@ -45,7 +47,10 @@ enum UserRole {
   ENGINEER
   SUBCONTRACTOR
   CLIENT
-  MUTEAHHIT_MUSTERI
+  MUTEAHHIT
+  INSPECTOR
+  AUDITOR
+  WORKER
 }
 
 enum CompanyType {
@@ -145,6 +150,10 @@ model Project {
   mapUrl       String?   // Google Maps Linki
   shiftStart   String    @default("08:00") // Mesai Başlangıç Saati
   shiftEnd     String    @default("17:00") // Mesai Bitiş Saati
+  // Digital Twin / YİBF fields
+  yibfNo       String?   @unique // Yapı İzleme Belgesi Numarası
+  healthScore  Int       @default(100) // Proje sağlık skoru (0-100)
+  progress     Int       @default(0) // İlerleme yüzdesi (0-100)
   // Geofencing (GPS) fields
   gpsRequired    Boolean  @default(false) // Girişlerde GPS doğrulaması zorunlu mu?
   latitude       Float?   // Proje merkezi enlem
@@ -192,6 +201,9 @@ model Project {
   droneMedia DroneMedia[]
   chatThreads ChatThread[]
   announcements Announcement[]
+  documents Document[]
+  inspections Inspection[]
+  deficiencies Deficiency[]
 
   @@index([isActive, displayOrder])
   @@index([status])
@@ -697,6 +709,8 @@ model Personel {
   assignedInspectionTasks InspectionTask[]
   notes           String?             @db.Text
   audits          Audit[]
+  inspections     Inspection[]
+  reportedDeficiencies Deficiency[] @relation("DeficiencyReporter")
   createdAt       DateTime            @default(now())
   updatedAt       DateTime            @updatedAt
 
@@ -1077,30 +1091,48 @@ model InspectionRecord {
 // ============================================================================
 
 model Deficiency {
-  id          String   @id @default(cuid())
-  floor       String   // Kat
-  element     String   // Örn: Kolon C12
-  category    String   // Örn: Donatı, Beton, Duvar
-  priority    String   @default("MEDIUM") // LOW, MEDIUM, CRITICAL
-  description String   @db.Text
-  photoUrl    String?
-  status      String   @default("OPEN") // OPEN, FIX_PENDING, VERIFY_PENDING, CLOSED
-  dueDate     DateTime?
-  closedAt    DateTime?
+  id            String   @id @default(cuid())
+  floor         String   // Kat
+  element       String   // Örn: Kolon C12
+  category      String   // Örn: Donatı, Beton, Duvar
+  priority      String   @default("MEDIUM") // LOW, MEDIUM, CRITICAL
+  description   String   @db.Text
+  photoUrl      String?
+  status        String   @default("OPEN") // OPEN, FIX_PENDING, VERIFY_PENDING, CLOSED
+  dueDate       DateTime?
+  closedAt      DateTime?
   
-  yibfId      String
-  yibf        YibfProject @relation(fields: [yibfId], references: [id])
+  yibfId        String?
+  yibf          YibfProject? @relation(fields: [yibfId], references: [id], onDelete: SetNull)
   
-  inspectorId String
-  inspector   Personel @relation(fields: [inspectorId], references: [id])
+  projectId     String?
+  project       Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
   
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  inspectorId   String?
+  inspector     Personel? @relation(fields: [inspectorId], references: [id], onDelete: SetNull)
+  
+  reporterId    String?
+  reporter      Personel? @relation("DeficiencyReporter", fields: [reporterId], references: [id], onDelete: SetNull)
+  
+  inspectionId  String?
+  inspection    Inspection? @relation(fields: [inspectionId], references: [id], onDelete: SetNull)
+  
+  severity      String   @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL
+  location      String?  // Örn: "A Blok - Zemin Kat - Kolon K3"
+  evidenceChain String?  @db.Text // JSON formatında kanıt zinciri verisi
+  auditLogs     AuditLog[]
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@index([yibfId])
+  @@index([projectId])
   @@index([inspectorId])
+  @@index([reporterId])
+  @@index([inspectionId])
   @@index([status])
   @@index([priority])
+  @@index([severity])
   @@index([dueDate])
   @@index([createdAt])
 }
@@ -2153,4 +2185,82 @@ model WorkOrder {
   @@index([department])
   @@index([projectId])
   @@index([assignedToId])
+}
+
+// ============================================================================
+// INSPECTION (Denetimler - Kanıt Zinciri Altyapısı)
+// ============================================================================
+
+model Inspection {
+  id            String   @id @default(cuid())
+  projectId     String
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  inspectorId   String
+  inspector     Personel @relation(fields: [inspectorId], references: [id])
+  type          String   // DONATI, BETON, KALIP, DUVAR, DOSEME, KOLON, KIRIS
+  floor         String?  // Zemin, 1. Kat, 2. Kat, Çatı
+  status        String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  inspectionDate DateTime @default(now())
+  gpsLocation   String?  // GPS koordinatları (lat,lng formatında)
+  notes         String?  @db.Text
+  deficiencies  Deficiency[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([inspectorId])
+  @@index([type])
+  @@index([status])
+  @@index([inspectionDate])
+}
+
+// ============================================================================
+// DOCUMENT (Versiyonlu Evraklar - Google Drive Entegrasyonu)
+// ============================================================================
+
+model Document {
+  id                String   @id @default(cuid())
+  projectId         String
+  project           Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name              String
+  type              String   // RUHSAT, STATIK_PROJE, MIMARI_PROJE, YAPI_KULLANMA, DIGER
+  version           Int      @default(1)
+  googleDriveFileId String   // Google Drive dosya ID'si
+  googleDriveUrl    String?  // Google Drive paylaşım linki
+  uploadedById      String
+  uploadedBy        User     @relation(fields: [uploadedById], references: [id])
+  status            String   @default("ACTIVE") // ACTIVE, OBSOLETE, DELETED
+  notes             String?  @db.Text
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([type])
+  @@index([version])
+  @@index([uploadedById])
+  @@index([status])
+}
+
+// ============================================================================
+// AUDIT LOG (Değiştirilemez Log Sistemi)
+// ============================================================================
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  action      String   // STATUS_CHANGE, DELETE, UPDATE, CREATE
+  entityId    String   // İlgili kayıt ID'si
+  entityType  String   // DEFICIENCY, INSPECTION, PROJECT, PERSONEL, vb.
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  reason      String   @db.Text // İşlem nedeni/açıklama
+  ipAddress   String?  // IP adresi
+  metadata    String?  @db.Text // Ek JSON verileri
+  deficiency  Deficiency? @relation(fields: [entityId], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@index([entityId])
+  @@index([entityType])
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
 }
