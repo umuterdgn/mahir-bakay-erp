@@ -435,7 +435,7 @@ export default async function AdminDashboard() {
                   <span className="text-orange-600 dark:text-orange-400 font-bold">42 saat</span>
                 </div>
                 <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-3">
-                  <div className="bg-orange-500 h-3 rounded-full" style={{ width: '42%' }} />
+                  <div className="bg-orange-500 h-3 rounded-full" style={{ width: `${Math.min(42, 100)}%` }} />
                 </div>
               </div>
 
@@ -445,7 +445,7 @@ export default async function AdminDashboard() {
                   <span className="text-red-600 dark:text-red-400 font-bold">118 saat</span>
                 </div>
                 <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-3">
-                  <div className="bg-red-500 h-3 rounded-full" style={{ width: '118%' }} />
+                  <div className="bg-red-500 h-3 rounded-full" style={{ width: `${Math.min(118, 100)}%` }} />
                 </div>
               </div>
 
@@ -455,7 +455,7 @@ export default async function AdminDashboard() {
                   <span className="text-yellow-600 dark:text-yellow-400 font-bold">28 saat</span>
                 </div>
                 <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-3">
-                  <div className="bg-yellow-500 h-3 rounded-full" style={{ width: '28%' }} />
+                  <div className="bg-yellow-500 h-3 rounded-full" style={{ width: `${Math.min(28, 100)}%` }} />
                 </div>
               </div>
             </div>

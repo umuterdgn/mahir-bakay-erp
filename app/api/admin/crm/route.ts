@@ -17,10 +17,8 @@ export async function GET() {
     return NextResponse.json(companies)
   } catch (error) {
     console.error("Error fetching companies:", error)
-    return NextResponse.json(
-      { error: "Firmalar getirilirken hata oluştu" },
-      { status: 500 }
-    )
+    // Return empty array instead of 500 error to prevent UI crash
+    return NextResponse.json([])
   }
 }
 
