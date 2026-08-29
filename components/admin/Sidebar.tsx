@@ -81,6 +81,7 @@ export default function AdminSidebar() {
 
   const allNavItems = [
     { href: "/admin", label: "Dashboard", requiredPermission: "DASHBOARD", icon: LayoutDashboard, category: "ANA MENÜ", adminOnly: true },
+    { href: "/admin/map", label: "Şantiye Haritası", requiredPermission: null, icon: Map, category: "ANA MENÜ", adminOnly: true },
     { href: "/admin/calendar", label: "Takvim", requiredPermission: null, icon: Calendar, category: "ANA MENÜ" },
     { href: "/admin/site-reports", label: "Şantiye Günlüğü", requiredPermission: null, icon: ClipboardList, category: "ANA MENÜ" },
     { href: "/admin/audits", label: "Taşeron Denetimleri", requiredPermission: null, icon: ShieldAlert, category: "TAŞERON YÖNETİMİ", contractorOnly: true },
