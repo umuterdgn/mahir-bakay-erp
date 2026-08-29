@@ -5,711 +5,219 @@
  * This code is the property of NXA Software.
  */
 
-import { useState } from "react"
-import { Camera, MapPin, Clock, User, AlertCircle, CheckCircle, XCircle, Plus, X, Upload, Mic, Loader2 } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Camera, MapPin, Clock, User, AlertCircle, CheckCircle, XCircle, Plus, X, Upload, Mic, Loader2, Search, Filter } from "lucide-react"
 
-type EvidenceStep = {
+interface Deficiency {
   id: string
-  type: "initial" | "notification" | "correction" | "closed"
-  title: string
+  floor: string
+  element: string
+  category: string
+  priority: string
   description: string
-  photoUrl?: string
-  timestamp: string
-  author: string
-}
-
-type AuditLog = {
-  id: string
-  action: string
+  photoUrl: string | null
   status: string
-  reason: string
-  timestamp: string
-  user: string
-  ipAddress: string
-}
-
-type Deficiency = {
-  id: string
-  title: string
-  location: string
-  severity: "critical" | "high" | "medium" | "low"
-  status: "open" | "in_progress" | "resolved"
-  evidenceChain: EvidenceStep[]
-  auditLog: AuditLog[]
+  severity: string
+  location: string | null
   createdAt: string
+  updatedAt: string
+  projectId: string | null
+  inspectorId: string | null
+  reporterId: string | null
+  inspectionId: string | null
+  project: {
+    id: string
+    name: string
+    yibfNo: string | null
+  } | null
+  inspector: {
+    id: string
+    name: string
+  } | null
+  reporter: {
+    id: string
+    name: string
+  } | null
+  inspection: {
+    id: string
+    type: string
+  } | null
 }
 
 export default function DeficienciesPage() {
-  const [isSmartUploadOpen, setIsSmartUploadOpen] = useState(false)
-  const [selectedDeficiency, setSelectedDeficiency] = useState<Deficiency | null>(null)
-  const [uploadFormData, setUploadFormData] = useState({
-    controlType: "",
-    section: "",
-    photo: null as File | null
-  })
-  const [mockGPS, setMockGPS] = useState<{ lat: string; lng: string } | null>(null)
-  const [isRecording, setIsRecording] = useState(false)
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [isAuditModalOpen, setIsAuditModalOpen] = useState(false)
-  const [auditReason, setAuditReason] = useState("")
-  const [statusChangeTarget, setStatusChangeTarget] = useState<{ id: string; newStatus: string } | null>(null)
+  const [deficiencies, setDeficiencies] = useState<Deficiency[]>([])
+  const [loading, setLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [statusFilter, setStatusFilter] = useState("ALL")
+  const [severityFilter, setSeverityFilter] = useState("ALL")
 
-  // Mock data for deficiencies
-  const [deficiencies] = useState<Deficiency[]>([
-    {
-      id: "1",
-      title: "Donatı aralığı standartlara uymuyor",
-      location: "A Blok - Zemin Kat - Kolon K3",
-      severity: "critical",
-      status: "in_progress",
-      createdAt: "2024-08-25T10:30:00",
-      evidenceChain: [
-        {
-          id: "e1",
-          type: "initial",
-          title: "İlk Fotoğraf (Kırmızı Kalem İşaretli)",
-          description: "Donatı aralığı 25cm ölçüldü, standart 20cm olmalı",
-          photoUrl: "https://via.placeholder.com/150",
-          timestamp: "2024-08-25T10:30:00",
-          author: "Ahmet Yılmaz"
-        },
-        {
-          id: "e2",
-          type: "notification",
-          title: "Müteahhit Bildirimi",
-          description: "Müteahhit firmaya eksiklik bildirildi",
-          timestamp: "2024-08-25T11:00:00",
-          author: "Ahmet Yılmaz"
-        },
-        {
-          id: "e3",
-          type: "correction",
-          title: "Düzeltme Fotoğrafı",
-          description: "Donatı aralığı düzeltildi, 20cm olarak yeniden düzenlendi",
-          photoUrl: "https://via.placeholder.com/150",
-          timestamp: "2024-08-26T14:00:00",
-          author: "Mehmet Kaya"
-        }
-      ],
-      auditLog: [
-        {
-          id: "a1",
-          action: "STATUS_CHANGE",
-          status: "in_progress",
-          reason: "Müteahhit düzeltme başlattı",
-          timestamp: "2024-08-25T11:30:00",
-          user: "Ahmet Yılmaz",
-          ipAddress: "192.168.1.45"
-        }
-      ]
-    },
-    {
-      id: "2",
-      title: "Beton yüzeyinde çatlak tespit edildi",
-      location: "B Blok - 2. Kat - Döşeme",
-      severity: "high",
-      status: "open",
-      createdAt: "2024-08-27T09:15:00",
-      evidenceChain: [
-        {
-          id: "e4",
-          type: "initial",
-          title: "İlk Fotoğraf (Kırmızı Kalem İşaretli)",
-          description: "Döşeme yüzeyinde 2mm çatlak tespit edildi",
-          photoUrl: "https://via.placeholder.com/150",
-          timestamp: "2024-08-27T09:15:00",
-          author: "Ayşe Demir"
-        },
-        {
-          id: "e5",
-          type: "notification",
-          title: "Müteahhit Bildirimi",
-          description: "Müteahhit firmaya çatlak bildirimi yapıldı",
-          timestamp: "2024-08-27T09:45:00",
-          author: "Ayşe Demir"
-        }
-      ],
-      auditLog: []
-    },
-    {
-      id: "3",
-      title: "Kalıp demiri eksik",
-      location: "C Blok - 1. Kat - Kiriş K5",
-      severity: "medium",
-      status: "resolved",
-      createdAt: "2024-08-20T14:20:00",
-      evidenceChain: [
-        {
-          id: "e6",
-          type: "initial",
-          title: "İlk Fotoğraf (Kırmızı Kalem İşaretli)",
-          description: "Kalıp demiri standart sayıda değil",
-          photoUrl: "https://via.placeholder.com/150",
-          timestamp: "2024-08-20T14:20:00",
-          author: "Mehmet Kaya"
-        },
-        {
-          id: "e7",
-          type: "notification",
-          title: "Müteahhit Bildirimi",
-          description: "Müteahhit firmaya eksiklik bildirildi",
-          timestamp: "2024-08-20T14:50:00",
-          author: "Mehmet Kaya"
-        },
-        {
-          id: "e8",
-          type: "correction",
-          title: "Düzeltme Fotoğrafı",
-          description: "Kalıp demiri eklendi",
-          photoUrl: "https://via.placeholder.com/150",
-          timestamp: "2024-08-21T10:00:00",
-          author: "Müteahhit Ekibi"
-        },
-        {
-          id: "e9",
-          type: "closed",
-          title: "Kapatma Onayı",
-          description: "Eksiklik düzeltildi ve onaylandı",
-          timestamp: "2024-08-21T11:00:00",
-          author: "Ahmet Yılmaz"
-        }
-      ],
-      auditLog: [
-        {
-          id: "a2",
-          action: "STATUS_CHANGE",
-          status: "resolved",
-          reason: "Düzeltme onaylandı, eksiklik giderildi",
-          timestamp: "2024-08-21T11:00:00",
-          user: "Ahmet Yılmaz",
-          ipAddress: "192.168.1.45"
-        }
-      ]
+  useEffect(() => {
+    fetchDeficiencies()
+  }, [])
+
+  const fetchDeficiencies = async () => {
+    try {
+      const response = await fetch("/api/admin/deficiencies")
+      if (response.ok) {
+        const data = await response.json()
+        setDeficiencies(data)
+      } else {
+        setDeficiencies([])
+      }
+    } catch (error) {
+      console.error("Failed to fetch deficiencies:", error)
+      setDeficiencies([])
+    } finally {
+      setLoading(false)
     }
-  ])
-
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      setUploadFormData({ ...uploadFormData, photo: file })
-      // Mock GPS coordinates
-      setMockGPS({
-        lat: (36.8 + Math.random() * 0.1).toFixed(6),
-        lng: (30.5 + Math.random() * 0.1).toFixed(6)
-      })
-    }
-  }
-
-  const handleVoiceRecording = () => {
-    setIsRecording(true)
-    // Simulate recording for 3 seconds
-    setTimeout(() => {
-      setIsRecording(false)
-      setIsProcessing(true)
-      // Simulate processing for 2 seconds
-      setTimeout(() => {
-        setIsProcessing(false)
-        // Auto-fill form with mock data
-        setUploadFormData({
-          controlType: "Donatı",
-          section: "C12 Kolonu - 2. Kat",
-          photo: uploadFormData.photo
-        })
-        // Mock GPS coordinates
-        setMockGPS({
-          lat: (36.8 + Math.random() * 0.1).toFixed(6),
-          lng: (30.5 + Math.random() * 0.1).toFixed(6)
-        })
-      }, 2000)
-    }, 3000)
-  }
-
-  const handleStatusChange = (id: string, newStatus: string) => {
-    setStatusChangeTarget({ id, newStatus })
-    setIsAuditModalOpen(true)
-    setAuditReason("")
-  }
-
-  const handleAuditSubmit = () => {
-    if (!auditReason.trim() || !statusChangeTarget) return
-    
-    // In a real app, this would update the deficiency's audit log
-    console.log("Audit log entry:", {
-      action: "STATUS_CHANGE",
-      status: statusChangeTarget.newStatus,
-      reason: auditReason,
-      timestamp: new Date().toISOString(),
-      user: "Admin",
-      ipAddress: "192.168.1.45"
-    })
-    
-    setIsAuditModalOpen(false)
-    setAuditReason("")
-    setStatusChangeTarget(null)
-  }
-
-  const getSeverityBadge = (severity: string) => {
-    const badges = {
-      critical: "bg-red-500/20 text-red-400 border-red-500/30",
-      high: "bg-orange-500/20 text-orange-400 border-orange-500/30",
-      medium: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
-      low: "bg-blue-500/20 text-blue-400 border-blue-500/30"
-    }
-    const labels = {
-      critical: "Kritik",
-      high: "Yüksek",
-      medium: "Orta",
-      low: "Düşük"
-    }
-    return (
-      <span className={`px-3 py-1 rounded-full text-xs font-medium border ${badges[severity as keyof typeof badges]}`}>
-        {labels[severity as keyof typeof labels]}
-      </span>
-    )
   }
 
   const getStatusBadge = (status: string) => {
-    const badges = {
-      open: "bg-red-500/20 text-red-400",
-      in_progress: "bg-yellow-500/20 text-yellow-400",
-      resolved: "bg-green-500/20 text-green-400"
-    }
-    const labels = {
-      open: "Açık",
-      in_progress: "İşlemde",
-      resolved: "Çözüldü"
-    }
-    return (
-      <span className={`px-3 py-1 rounded-full text-xs font-medium ${badges[status as keyof typeof badges]}`}>
-        {labels[status as keyof typeof labels]}
-      </span>
-    )
-  }
-
-  const getEvidenceIcon = (type: string) => {
-    switch (type) {
-      case "initial": return XCircle
-      case "notification": return AlertCircle
-      case "correction": return Camera
-      case "closed": return CheckCircle
-      default: return AlertCircle
+    switch (status) {
+      case "OPEN":
+        return <span className="px-3 py-1 bg-red-500/20 text-red-400 rounded-full text-xs font-medium">AÇIK</span>
+      case "FIX_PENDING":
+        return <span className="px-3 py-1 bg-yellow-500/20 text-yellow-400 rounded-full text-xs font-medium">DÜZELTME BEKLİYOR</span>
+      case "VERIFY_PENDING":
+        return <span className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-xs font-medium">KONTROL BEKLİYOR</span>
+      case "CLOSED":
+        return <span className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-xs font-medium">KAPATILDI</span>
+      default:
+        return <span className="px-3 py-1 bg-slate-500/20 text-slate-400 rounded-full text-xs font-medium">{status}</span>
     }
   }
 
-  const getEvidenceColor = (type: string) => {
-    switch (type) {
-      case "initial": return "text-red-400 bg-red-500/20 border-red-500/30"
-      case "notification": return "text-orange-400 bg-orange-500/20 border-orange-500/30"
-      case "correction": return "text-blue-400 bg-blue-500/20 border-blue-500/30"
-      case "closed": return "text-green-400 bg-green-500/20 border-green-500/30"
-      default: return "text-slate-400 bg-slate-500/20 border-slate-500/30"
+  const getSeverityBadge = (severity: string) => {
+    switch (severity) {
+      case "CRITICAL":
+        return <span className="px-3 py-1 bg-red-600/20 text-red-400 border border-red-500/30 rounded-full text-xs font-medium">KRİTİK</span>
+      case "HIGH":
+        return <span className="px-3 py-1 bg-orange-500/20 text-orange-400 border border-orange-500/30 rounded-full text-xs font-medium">YÜKSEK</span>
+      case "MEDIUM":
+        return <span className="px-3 py-1 bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 rounded-full text-xs font-medium">ORTA</span>
+      case "LOW":
+        return <span className="px-3 py-1 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-full text-xs font-medium">DÜŞÜK</span>
+      default:
+        return <span className="px-3 py-1 bg-slate-500/20 text-slate-400 border border-slate-500/30 rounded-full text-xs font-medium">{severity}</span>
     }
   }
+
+  const filteredDeficiencies = deficiencies.filter(deficiency => {
+    const matchesSearch = deficiency.project?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         deficiency.project?.yibfNo?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         deficiency.element.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         deficiency.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         deficiency.location?.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesStatus = statusFilter === "ALL" || deficiency.status === statusFilter
+    const matchesSeverity = severityFilter === "ALL" || deficiency.severity === severityFilter
+    return matchesSearch && matchesStatus && matchesSeverity
+  })
 
   return (
-    <div className="p-6">
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-            <AlertCircle className="w-8 h-8 text-orange-400" />
-            Eksiklik Yönetimi
-          </h1>
-          <p className="text-slate-400 mt-1">Şantiye eksiklikleri ve kanıt zinciri takibi</p>
-        </div>
-        <button
-          onClick={() => setIsSmartUploadOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors"
-        >
-          <Camera className="w-5 h-5" />
-          Akıllı Fotoğraf Yükle
-        </button>
+    <div className="min-h-screen bg-slate-950 p-6">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-white mb-2">Saha Eksiklikleri</h1>
+        <p className="text-slate-400">Şantiye eksikliklerini ve kanıt zincirini yönetin</p>
       </div>
 
-      {/* Deficiencies List */}
-      <div className="space-y-4">
-        {deficiencies.map((deficiency) => (
-          <div key={deficiency.id} className="bg-slate-900/50 backdrop-blur-lg rounded-2xl border border-slate-800 overflow-hidden">
-            {/* Deficiency Header */}
-            <div className="p-6 border-b border-slate-800">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-lg font-semibold text-white">{deficiency.title}</h3>
-                    {getSeverityBadge(deficiency.severity)}
-                    {getStatusBadge(deficiency.status)}
-                  </div>
-                  <p className="text-slate-400 text-sm mb-2">{deficiency.location}</p>
-                  <p className="text-slate-500 text-xs">
-                    Oluşturulma: {new Date(deficiency.createdAt).toLocaleString('tr-TR')}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleStatusChange(deficiency.id, deficiency.status === 'open' ? 'in_progress' : deficiency.status === 'in_progress' ? 'resolved' : 'open')}
-                    className="px-3 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-lg transition-colors text-sm"
-                  >
-                    Durum Değiştir
-                  </button>
-                  <button
-                    onClick={() => setSelectedDeficiency(deficiency)}
-                    className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors text-sm"
-                  >
-                    Kanıt Zincirini Gör
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Evidence Chain Preview */}
-            <div className="p-4 bg-slate-800/30">
-              <div className="flex items-center gap-2 text-sm">
-                <span className="text-slate-400">Kanıt Adımları:</span>
-                {deficiency.evidenceChain.map((step, index) => (
-                  <div key={step.id} className="flex items-center">
-                    {index > 0 && <span className="text-slate-600 mx-2">→</span>}
-                    <span className={`px-2 py-1 rounded text-xs font-medium border ${getEvidenceColor(step.type)}`}>
-                      {index + 1}. {step.title.split('(')[0].trim()}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
+      {/* Actions Bar */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6">
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="relative flex-1 md:w-80">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Eksiklik ara..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
+            />
           </div>
-        ))}
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500"
+          >
+            <option value="ALL">Tüm Durumlar</option>
+            <option value="OPEN">Açık</option>
+            <option value="FIX_PENDING">Düzeltme Bekliyor</option>
+            <option value="VERIFY_PENDING">Kontrol Bekliyor</option>
+            <option value="CLOSED">Kapatıldı</option>
+          </select>
+          <select
+            value={severityFilter}
+            onChange={(e) => setSeverityFilter(e.target.value)}
+            className="px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500"
+          >
+            <option value="ALL">Tüm Önem Düzeyleri</option>
+            <option value="CRITICAL">Kritik</option>
+            <option value="HIGH">Yüksek</option>
+            <option value="MEDIUM">Orta</option>
+            <option value="LOW">Düşük</option>
+          </select>
+        </div>
       </div>
 
-      {/* Smart Photo Upload Modal */}
-      {isSmartUploadOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 rounded-2xl border border-slate-800 w-full max-w-lg">
-            <div className="flex items-center justify-between p-6 border-b border-slate-800">
-              <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <Camera className="w-6 h-6 text-blue-400" />
-                Akıllı Fotoğraf Yükleme
-              </h2>
-              <button
-                onClick={() => {
-                  setIsSmartUploadOpen(false)
-                  setUploadFormData({ controlType: "", section: "", photo: null })
-                  setMockGPS(null)
-                }}
-                className="text-slate-400 hover:text-white"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-slate-400 text-sm mb-2">Kontrol Tipi</label>
-                <select
-                  value={uploadFormData.controlType}
-                  onChange={(e) => setUploadFormData({ ...uploadFormData, controlType: e.target.value })}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
-                >
-                  <option value="">Seçiniz</option>
-                  <option value="donati">Donatı</option>
-                  <option value="beton">Beton</option>
-                  <option value="kalip">Kalıp</option>
-                  <option value="duvar">Duvar</option>
-                  <option value="doseme">Döşeme</option>
-                  <option value="kolon">Kolon</option>
-                  <option value="kiris">Kiriş</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-slate-400 text-sm mb-2">İlgili Bölüm</label>
-                <select
-                  value={uploadFormData.section}
-                  onChange={(e) => setUploadFormData({ ...uploadFormData, section: e.target.value })}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
-                >
-                  <option value="">Seçiniz</option>
-                  <option value="temel">Temel</option>
-                  <option value="bodrum">Bodrum</option>
-                  <option value="zemin">Zemin Kat</option>
-                  <option value="1kat">1. Kat</option>
-                  <option value="2kat">2. Kat</option>
-                  <option value="cati">Çatı</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-slate-400 text-sm mb-2">Fotoğraf</label>
-                <label className="flex items-center justify-center w-full h-32 bg-slate-800 border-2 border-dashed border-slate-700 rounded-lg cursor-pointer hover:border-blue-500 transition-colors">
-                  <div className="text-center">
-                    <Upload className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-                    <span className="text-slate-400 text-sm">
-                      {uploadFormData.photo ? uploadFormData.photo.name : "Fotoğraf seçmek için tıklayın"}
-                    </span>
-                  </div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handlePhotoUpload}
-                    className="hidden"
-                  />
-                </label>
-              </div>
-
-              {/* Voice Recording Button */}
-              <div className="bg-gradient-to-r from-purple-900/20 to-blue-900/20 rounded-xl p-4 border border-purple-500/30">
-                <button
-                  onClick={handleVoiceRecording}
-                  disabled={isRecording || isProcessing}
-                  className="w-full flex items-center justify-center gap-3 px-4 py-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isRecording ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      <span>Dinleniyor...</span>
-                    </>
-                  ) : isProcessing ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      <span>İşleniyor...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Mic className="w-5 h-5" />
-                      <span>🎤 Sesli Kayıt</span>
-                    </>
-                  )}
-                </button>
-                <p className="text-slate-400 text-xs text-center mt-2">
-                  Konarak eksiklik girişi yapabilirsiniz
-                </p>
-              </div>
-
-              {/* GPS and Timestamp Card */}
-              {mockGPS && (
-                <div className="bg-gradient-to-r from-blue-900/20 to-indigo-900/20 rounded-xl p-4 border border-blue-500/30">
-                  <h4 className="text-sm font-semibold text-blue-300 mb-3 flex items-center gap-2">
-                    <MapPin className="w-4 h-4" />
-                    Konum ve Zaman Bilgisi
-                  </h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-green-400" />
-                      <div>
-                        <p className="text-xs text-slate-400">GPS Koordinatı</p>
-                        <p className="text-sm text-white font-mono">{mockGPS.lat}, {mockGPS.lng}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-blue-400" />
-                      <div>
-                        <p className="text-xs text-slate-400">Zaman Damgası</p>
-                        <p className="text-sm text-white">{new Date().toLocaleString('tr-TR')}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 col-span-2">
-                      <User className="w-4 h-4 text-purple-400" />
-                      <div>
-                        <p className="text-xs text-slate-400">Denetçi</p>
-                        <p className="text-sm text-white">Admin</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="p-6 border-t border-slate-800 flex justify-end gap-3">
-              <button
-                onClick={() => {
-                  setIsSmartUploadOpen(false)
-                  setUploadFormData({ controlType: "", section: "", photo: null })
-                  setMockGPS(null)
-                }}
-                className="px-4 py-2 text-slate-400 hover:text-white transition-colors"
-              >
-                İptal
-              </button>
-              <button
-                onClick={() => {
-                  // Handle upload logic here
-                  setIsSmartUploadOpen(false)
-                  setUploadFormData({ controlType: "", section: "", photo: null })
-                  setMockGPS(null)
-                }}
-                disabled={!uploadFormData.photo || !uploadFormData.controlType || !uploadFormData.section}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Yükle
-              </button>
-            </div>
-          </div>
+      {/* Cards Grid */}
+      {loading ? (
+        <div className="text-center py-12 text-slate-400">
+          Yükleniyor...
         </div>
-      )}
-
-      {/* Evidence Chain Modal */}
-      {selectedDeficiency && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 rounded-2xl border border-slate-800 w-full max-w-2xl max-h-[90vh] overflow-hidden">
-            <div className="flex items-center justify-between p-6 border-b border-slate-800">
-              <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <AlertCircle className="w-6 h-6 text-orange-400" />
-                Kanıt Zinciri
-              </h2>
-              <button
-                onClick={() => setSelectedDeficiency(null)}
-                className="text-slate-400 hover:text-white"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-            <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold text-white mb-2">{selectedDeficiency.title}</h3>
-                <p className="text-slate-400 text-sm">{selectedDeficiency.location}</p>
+      ) : filteredDeficiencies.length === 0 ? (
+        <div className="text-center py-12 text-slate-400">
+          Henüz eksiklik kaydı bulunmuyor
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredDeficiencies.map((deficiency) => (
+            <div key={deficiency.id} className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden hover:border-slate-700 transition-colors">
+              {/* Card Header */}
+              <div className="p-4 border-b border-slate-800">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1">
+                    <h3 className="text-white font-semibold mb-1">{deficiency.element}</h3>
+                    <p className="text-slate-400 text-sm">{deficiency.category}</p>
+                  </div>
+                  {getSeverityBadge(deficiency.severity)}
+                </div>
+                <div className="flex items-center gap-2 text-xs text-slate-500">
+                  <span>{deficiency.floor}</span>
+                  {deficiency.location && <span>• {deficiency.location}</span>}
+                </div>
               </div>
 
-              {/* Timeline */}
-              <div className="space-y-6">
-                {selectedDeficiency.evidenceChain.map((step, index) => {
-                  const Icon = getEvidenceIcon(step.type)
-                  return (
-                    <div key={step.id} className="relative pl-8">
-                      {/* Timeline Line */}
-                      {index < selectedDeficiency.evidenceChain.length - 1 && (
-                        <div className="absolute left-3 top-8 bottom-0 w-0.5 bg-slate-700" />
-                      )}
-                      {/* Timeline Dot */}
-                      <div className={`absolute left-0 top-0 w-6 h-6 rounded-full border-2 flex items-center justify-center ${getEvidenceColor(step.type)}`}>
-                        <Icon className="w-3 h-3" />
-                      </div>
-                      {/* Content */}
-                      <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-                        <div className="flex items-start justify-between mb-2">
-                          <h4 className="font-medium text-white">{step.title}</h4>
-                          <span className="text-xs text-slate-500">
-                            {new Date(step.timestamp).toLocaleString('tr-TR')}
-                          </span>
-                        </div>
-                        <p className="text-slate-400 text-sm mb-3">{step.description}</p>
-                        <div className="flex items-center gap-2 text-xs text-slate-500">
-                          <User className="w-3 h-3" />
-                          <span>{step.author}</span>
-                        </div>
-                        {step.photoUrl && (
-                          <div className="mt-3">
-                            <img
-                              src={step.photoUrl}
-                              alt="Evidence"
-                              className="w-full h-32 object-cover rounded-lg"
-                            />
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-
-              {/* Audit Log Section */}
-              {selectedDeficiency.auditLog && selectedDeficiency.auditLog.length > 0 && (
-                <div className="mt-8 pt-6 border-t border-slate-700">
-                  <h4 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                    <AlertCircle className="w-5 h-5 text-orange-400" />
-                    Denetim Kayıtları (Audit Log)
-                  </h4>
-                  <div className="space-y-3">
-                    {selectedDeficiency.auditLog.map((log) => (
-                      <div key={log.id} className="bg-gradient-to-r from-orange-900/20 to-red-900/20 rounded-xl p-4 border border-orange-500/30">
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <span className="px-2 py-1 bg-orange-500/20 text-orange-400 rounded text-xs font-medium">
-                              {log.action}
-                            </span>
-                            <span className="text-white font-medium">{log.status}</span>
-                          </div>
-                          <span className="text-xs text-slate-500">
-                            {new Date(log.timestamp).toLocaleString('tr-TR')}
-                          </span>
-                        </div>
-                        <p className="text-slate-300 text-sm mb-3">{log.reason}</p>
-                        <div className="flex items-center gap-4 text-xs text-slate-500">
-                          <div className="flex items-center gap-1">
-                            <User className="w-3 h-3" />
-                            <span>{log.user}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <MapPin className="w-3 h-3" />
-                            <span>IP: {log.ipAddress}</span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+              {/* Card Body */}
+              <div className="p-4">
+                <p className="text-slate-300 text-sm mb-4 line-clamp-3">{deficiency.description}</p>
+                
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">Proje:</span>
+                    <span className="text-white">{deficiency.project?.name || '-'}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">YİBF No:</span>
+                    <span className="text-white">{deficiency.project?.yibfNo || '-'}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">Denetçi:</span>
+                    <span className="text-white">{deficiency.inspector?.name || '-'}</span>
                   </div>
                 </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+              </div>
 
-      {/* Audit Trail Modal */}
-      {isAuditModalOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 rounded-2xl border border-slate-800 w-full max-w-md">
-            <div className="flex items-center justify-between p-6 border-b border-slate-800">
-              <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <AlertCircle className="w-6 h-6 text-orange-400" />
-                Durum Değişikliği
-              </h2>
-              <button
-                onClick={() => setIsAuditModalOpen(false)}
-                className="text-slate-400 hover:text-white"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-slate-400 text-sm mb-2">Yeni Durum</label>
-                <div className="px-4 py-2 bg-slate-800 rounded-lg text-white">
-                  {statusChangeTarget?.newStatus === 'resolved' ? 'Çözüldü' : 
-                   statusChangeTarget?.newStatus === 'in_progress' ? 'İşlemde' : 
-                   statusChangeTarget?.newStatus === 'open' ? 'Açık' : statusChangeTarget?.newStatus}
+              {/* Card Footer */}
+              <div className="p-4 bg-slate-800/50 border-t border-slate-800">
+                <div className="flex items-center justify-between">
+                  {getStatusBadge(deficiency.status)}
+                  <span className="text-slate-500 text-xs">
+                    {new Date(deficiency.createdAt).toLocaleDateString('tr-TR')}
+                  </span>
                 </div>
               </div>
-              <div>
-                <label className="block text-slate-400 text-sm mb-2">
-                  Neden / Açıklama <span className="text-red-400">*</span>
-                </label>
-                <textarea
-                  value={auditReason}
-                  onChange={(e) => setAuditReason(e.target.value)}
-                  placeholder="Bu değişikliği neden yapıyorsunuz?"
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 resize-none"
-                  rows={4}
-                  required
-                />
-              </div>
-              <div className="bg-orange-900/20 rounded-lg p-3 border border-orange-500/30">
-                <p className="text-orange-400 text-xs">
-                  ⚠️ Bu işlem denetim kaydına eklenecek ve değiştirilemez.
-                </p>
-              </div>
             </div>
-            <div className="p-6 border-t border-slate-800 flex justify-end gap-3">
-              <button
-                onClick={() => {
-                  setIsAuditModalOpen(false)
-                  setAuditReason("")
-                  setStatusChangeTarget(null)
-                }}
-                className="px-4 py-2 text-slate-400 hover:text-white transition-colors"
-              >
-                İptal
-              </button>
-              <button
-                onClick={handleAuditSubmit}
-                disabled={!auditReason.trim()}
-                className="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Onayla
-              </button>
-            </div>
-          </div>
+          ))}
         </div>
       )}
     </div>

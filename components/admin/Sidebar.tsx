@@ -109,6 +109,8 @@ export default function AdminSidebar() {
     { href: "/admin/blueprints/draw", label: "Serbest Çizim / Plan", requiredPermission: null, icon: Pen, category: "YAPI DENETİM & KONTROL" },
     { href: "/admin/qa-qc/materials", label: "Malzeme Onayları", requiredPermission: null, icon: CheckCircle, category: "YAPI DENETİM & KALİTE" },
     { href: "/admin/qa-qc/ncr", label: "Uygunsuzluk & DÖF", requiredPermission: null, icon: AlertOctagon, category: "YAPI DENETİM & KALİTE" },
+    { href: "/admin/inspections", label: "Denetim Kayıtları", requiredPermission: null, icon: ClipboardCheck, category: "YAPI DENETİM & KONTROL" },
+    { href: "/admin/deficiencies", label: "Saha Eksiklikleri", requiredPermission: null, icon: AlertTriangle, category: "YAPI DENETİM & KONTROL" },
     { href: "/admin/isg", label: "İSG Dashboard & Analiz", requiredPermission: null, icon: MapPin, category: "İSG & Risk Yönetimi" },
     { href: "/admin/isg/master-plan", label: "Vaziyet ve Risk Planı", requiredPermission: null, icon: Map, category: "İSG & Risk Yönetimi" },
     { href: "/admin/isg/certificates", label: "Evrak & Sertifikalar", requiredPermission: null, icon: FileText, category: "İSG & Risk Yönetimi" },
