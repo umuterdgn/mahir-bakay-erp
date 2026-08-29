@@ -20,15 +20,79 @@ export default async function ProjectDetailPage({
 }) {
   const resolvedParams = await params
   
-  const project = await prisma.project.findUnique({
-    where: { id: resolvedParams.id },
-    include: {
-      company: true,
-      archives: true,
-      transactions: true,
-      siteZones: true
-    }
-  }) as any
+  let project
+  try {
+    project = await prisma.project.findUnique({
+      where: { id: resolvedParams.id },
+      include: {
+        company: true,
+        archives: true,
+        transactions: true,
+        siteZones: true,
+        inspections: {
+          include: {
+            inspector: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          },
+          orderBy: {
+            inspectionDate: 'desc'
+          }
+        },
+        deficiencies: {
+          include: {
+            inspector: {
+              select: {
+                id: true,
+                name: true
+              }
+            },
+            reporter: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          },
+          orderBy: {
+            createdAt: 'desc'
+          }
+        },
+        documents: {
+          include: {
+            uploadedBy: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          },
+          orderBy: {
+            createdAt: 'desc'
+          }
+        },
+        auditLogs: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          },
+          orderBy: {
+            createdAt: 'desc'
+          }
+        }
+      }
+    }) as any
+  } catch (error) {
+    console.error("Failed to fetch project:", error)
+    notFound()
+  }
 
   if (!project) {
     notFound()
@@ -76,13 +140,20 @@ export default async function ProjectDetailPage({
         </Link>
       </div>
 
-      {/* Header */}
+      {/* Header - Digital Twin Card */}
       <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 mb-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white mb-2">
-              {project.name || project.title}
-            </h1>
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white">
+                {project.name || project.title}
+              </h1>
+              {project.yibfNo && (
+                <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full text-sm font-medium border border-blue-200 dark:border-blue-800">
+                  YİBF: {project.yibfNo}
+                </span>
+              )}
+            </div>
             <div className="flex flex-wrap items-center gap-4 text-slate-600 dark:text-slate-400">
               {project.company && (
                 <span className="flex items-center">
@@ -104,6 +175,15 @@ export default async function ProjectDetailPage({
                   </span>
                 </span>
               )}
+              {project.locationCity && (
+                <span className="flex items-center">
+                  <span className="mr-2">Konum:</span>
+                  <span className="text-slate-900 dark:text-white font-medium">
+                    {project.locationCity}
+                    {project.district && `, ${project.district}`}
+                  </span>
+                </span>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -115,10 +195,68 @@ export default async function ProjectDetailPage({
             )}
           </div>
         </div>
+
+        {/* Digital Twin Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-6 border-t border-slate-200 dark:border-slate-700">
+          {/* Health Score */}
+          <div className="bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 rounded-lg p-4 border border-emerald-200 dark:border-emerald-800">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">Sağlık Skoru</span>
+              <span className={`text-2xl font-bold ${project.healthScore >= 80 ? 'text-emerald-600 dark:text-emerald-400' : project.healthScore >= 50 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'}`}>
+                {project.healthScore}
+              </span>
+            </div>
+            <div className="w-full bg-emerald-200 dark:bg-emerald-800 rounded-full h-2">
+              <div 
+                className={`h-2 rounded-full transition-all ${project.healthScore >= 80 ? 'bg-emerald-500' : project.healthScore >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                style={{ width: `${project.healthScore}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Progress */}
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-blue-700 dark:text-blue-400">İlerleme</span>
+              <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                {project.progress}%
+              </span>
+            </div>
+            <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2">
+              <div 
+                className="h-2 rounded-full bg-blue-500 transition-all"
+                style={{ width: `${project.progress}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Quick Stats */}
+          <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
+            <div className="grid grid-cols-3 gap-2">
+              <div className="text-center">
+                <span className="block text-2xl font-bold text-purple-600 dark:text-purple-400">{project.inspections?.length || 0}</span>
+                <span className="text-xs text-purple-700 dark:text-purple-400">Denetim</span>
+              </div>
+              <div className="text-center">
+                <span className="block text-2xl font-bold text-pink-600 dark:text-pink-400">{project.deficiencies?.length || 0}</span>
+                <span className="text-xs text-pink-700 dark:text-pink-400">Eksiklik</span>
+              </div>
+              <div className="text-center">
+                <span className="block text-2xl font-bold text-indigo-600 dark:text-indigo-400">{project.documents?.length || 0}</span>
+                <span className="text-xs text-indigo-700 dark:text-indigo-400">Belge</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Timeline */}
-      <ProjectTimeline />
+      <ProjectTimeline 
+        inspections={project.inspections}
+        deficiencies={project.deficiencies}
+        documents={project.documents}
+        auditLogs={project.auditLogs}
+      />
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
