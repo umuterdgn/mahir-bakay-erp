@@ -6,7 +6,7 @@
  */
 
 import { useState } from "react"
-import { Camera, MapPin, Clock, User, AlertCircle, CheckCircle, XCircle, Plus, X, Upload } from "lucide-react"
+import { Camera, MapPin, Clock, User, AlertCircle, CheckCircle, XCircle, Plus, X, Upload, Mic, Loader2 } from "lucide-react"
 
 type EvidenceStep = {
   id: string
@@ -37,6 +37,8 @@ export default function DeficienciesPage() {
     photo: null as File | null
   })
   const [mockGPS, setMockGPS] = useState<{ lat: string; lng: string } | null>(null)
+  const [isRecording, setIsRecording] = useState(false)
+  const [isProcessing, setIsProcessing] = useState(false)
 
   // Mock data for deficiencies
   const [deficiencies] = useState<Deficiency[]>([
@@ -159,6 +161,30 @@ export default function DeficienciesPage() {
         lng: (30.5 + Math.random() * 0.1).toFixed(6)
       })
     }
+  }
+
+  const handleVoiceRecording = () => {
+    setIsRecording(true)
+    // Simulate recording for 3 seconds
+    setTimeout(() => {
+      setIsRecording(false)
+      setIsProcessing(true)
+      // Simulate processing for 2 seconds
+      setTimeout(() => {
+        setIsProcessing(false)
+        // Auto-fill form with mock data
+        setUploadFormData({
+          controlType: "Donatı",
+          section: "C12 Kolonu - 2. Kat",
+          photo: uploadFormData.photo
+        })
+        // Mock GPS coordinates
+        setMockGPS({
+          lat: (36.8 + Math.random() * 0.1).toFixed(6),
+          lng: (30.5 + Math.random() * 0.1).toFixed(6)
+        })
+      }, 2000)
+    }, 3000)
   }
 
   const getSeverityBadge = (severity: string) => {
@@ -353,6 +379,35 @@ export default function DeficienciesPage() {
                     className="hidden"
                   />
                 </label>
+              </div>
+
+              {/* Voice Recording Button */}
+              <div className="bg-gradient-to-r from-purple-900/20 to-blue-900/20 rounded-xl p-4 border border-purple-500/30">
+                <button
+                  onClick={handleVoiceRecording}
+                  disabled={isRecording || isProcessing}
+                  className="w-full flex items-center justify-center gap-3 px-4 py-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isRecording ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>Dinleniyor...</span>
+                    </>
+                  ) : isProcessing ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>İşleniyor...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Mic className="w-5 h-5" />
+                      <span>🎤 Sesli Kayıt</span>
+                    </>
+                  )}
+                </button>
+                <p className="text-slate-400 text-xs text-center mt-2">
+                  Konarak eksiklik girişi yapabilirsiniz
+                </p>
               </div>
 
               {/* GPS and Timestamp Card */}

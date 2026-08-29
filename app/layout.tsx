@@ -11,6 +11,7 @@ import { Toaster } from "react-hot-toast";
 import OfflineStatus from "@/components/OfflineStatus";
 import OfflineSyncManager from "@/components/OfflineSyncManager";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import AILegislationAssistant from "@/components/AILegislationAssistant";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -52,6 +53,7 @@ export default function RootLayout({
         <ThemeProvider>
           <OfflineStatus />
           <OfflineSyncManager />
+          <AILegislationAssistant />
           {children}
           <Toaster position="bottom-right" />
         </ThemeProvider>
