@@ -20,6 +20,8 @@
     "@mlightcad/data-model": "^1.13.0",
     "@mlightcad/mtext-renderer": "^0.12.4",
     "@mlightcad/three-renderer": "^1.6.0",
+    "@neondatabase/serverless": "^1.1.0",
+    "@prisma/adapter-neon": "^7.10.0",
     "@prisma/client": "^6.19.3",
     "@react-three/drei": "^10.7.8",
     "@react-three/fiber": "^9.7.0",
@@ -72,6 +74,7 @@
     "uploadthing": "^7.7.4",
     "web-ifc": "^0.0.77",
     "web-ifc-viewer": "^1.0.218",
+    "ws": "^8.21.3",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
@@ -85,6 +88,7 @@
     "@types/react-canvas-draw": "^1.2.4",
     "@types/react-dom": "^19",
     "@types/three": "0.165.0",
+    "@types/ws": "^8.18.1",
     "eslint": "^9",
     "eslint-config-next": "16.2.12",
     "tailwindcss": "^4",
