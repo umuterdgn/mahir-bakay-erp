@@ -18,6 +18,16 @@ type EvidenceStep = {
   author: string
 }
 
+type AuditLog = {
+  id: string
+  action: string
+  status: string
+  reason: string
+  timestamp: string
+  user: string
+  ipAddress: string
+}
+
 type Deficiency = {
   id: string
   title: string
@@ -25,6 +35,7 @@ type Deficiency = {
   severity: "critical" | "high" | "medium" | "low"
   status: "open" | "in_progress" | "resolved"
   evidenceChain: EvidenceStep[]
+  auditLog: AuditLog[]
   createdAt: string
 }
 
@@ -39,6 +50,9 @@ export default function DeficienciesPage() {
   const [mockGPS, setMockGPS] = useState<{ lat: string; lng: string } | null>(null)
   const [isRecording, setIsRecording] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [isAuditModalOpen, setIsAuditModalOpen] = useState(false)
+  const [auditReason, setAuditReason] = useState("")
+  const [statusChangeTarget, setStatusChangeTarget] = useState<{ id: string; newStatus: string } | null>(null)
 
   // Mock data for deficiencies
   const [deficiencies] = useState<Deficiency[]>([
@@ -76,6 +90,17 @@ export default function DeficienciesPage() {
           timestamp: "2024-08-26T14:00:00",
           author: "Mehmet Kaya"
         }
+      ],
+      auditLog: [
+        {
+          id: "a1",
+          action: "STATUS_CHANGE",
+          status: "in_progress",
+          reason: "Müteahhit düzeltme başlattı",
+          timestamp: "2024-08-25T11:30:00",
+          user: "Ahmet Yılmaz",
+          ipAddress: "192.168.1.45"
+        }
       ]
     },
     {
@@ -103,49 +128,61 @@ export default function DeficienciesPage() {
           timestamp: "2024-08-27T09:45:00",
           author: "Ayşe Demir"
         }
-      ]
+      ],
+      auditLog: []
     },
     {
       id: "3",
-      title: "Kalıp sökümü erken yapıldı",
-      location: "C Blok - 1. Kat - Kiriş K1",
+      title: "Kalıp demiri eksik",
+      location: "C Blok - 1. Kat - Kiriş K5",
       severity: "medium",
       status: "resolved",
-      createdAt: "2024-08-20T16:00:00",
+      createdAt: "2024-08-20T14:20:00",
       evidenceChain: [
         {
           id: "e6",
           type: "initial",
           title: "İlk Fotoğraf (Kırmızı Kalem İşaretli)",
-          description: "Kalıp 7 gün yerine 5 günde söküldü",
+          description: "Kalıp demiri standart sayıda değil",
           photoUrl: "https://via.placeholder.com/150",
-          timestamp: "2024-08-20T16:00:00",
-          author: "Ali Öztürk"
+          timestamp: "2024-08-20T14:20:00",
+          author: "Mehmet Kaya"
         },
         {
           id: "e7",
           type: "notification",
           title: "Müteahhit Bildirimi",
-          description: "Müteahhit firmaya erken kalıp sökümü bildirildi",
-          timestamp: "2024-08-20T16:30:00",
-          author: "Ali Öztürk"
+          description: "Müteahhit firmaya eksiklik bildirildi",
+          timestamp: "2024-08-20T14:50:00",
+          author: "Mehmet Kaya"
         },
         {
           id: "e8",
           type: "correction",
           title: "Düzeltme Fotoğrafı",
-          description: "Yapısal analiz yapıldı, sorun bulunmadı",
+          description: "Kalıp demiri eklendi",
           photoUrl: "https://via.placeholder.com/150",
-          timestamp: "2024-08-22T10:00:00",
-          author: "Mühendislik Ekibi"
+          timestamp: "2024-08-21T10:00:00",
+          author: "Müteahhit Ekibi"
         },
         {
           id: "e9",
           type: "closed",
-          title: "Kapatıldı (Yeşil)",
-          description: "Eksiklik kapatıldı, onaylandı",
-          timestamp: "2024-08-22T11:00:00",
-          author: "Ali Öztürk"
+          title: "Kapatma Onayı",
+          description: "Eksiklik düzeltildi ve onaylandı",
+          timestamp: "2024-08-21T11:00:00",
+          author: "Ahmet Yılmaz"
+        }
+      ],
+      auditLog: [
+        {
+          id: "a2",
+          action: "STATUS_CHANGE",
+          status: "resolved",
+          reason: "Düzeltme onaylandı, eksiklik giderildi",
+          timestamp: "2024-08-21T11:00:00",
+          user: "Ahmet Yılmaz",
+          ipAddress: "192.168.1.45"
         }
       ]
     }
@@ -185,6 +222,30 @@ export default function DeficienciesPage() {
         })
       }, 2000)
     }, 3000)
+  }
+
+  const handleStatusChange = (id: string, newStatus: string) => {
+    setStatusChangeTarget({ id, newStatus })
+    setIsAuditModalOpen(true)
+    setAuditReason("")
+  }
+
+  const handleAuditSubmit = () => {
+    if (!auditReason.trim() || !statusChangeTarget) return
+    
+    // In a real app, this would update the deficiency's audit log
+    console.log("Audit log entry:", {
+      action: "STATUS_CHANGE",
+      status: statusChangeTarget.newStatus,
+      reason: auditReason,
+      timestamp: new Date().toISOString(),
+      user: "Admin",
+      ipAddress: "192.168.1.45"
+    })
+    
+    setIsAuditModalOpen(false)
+    setAuditReason("")
+    setStatusChangeTarget(null)
   }
 
   const getSeverityBadge = (severity: string) => {
@@ -282,12 +343,20 @@ export default function DeficienciesPage() {
                     Oluşturulma: {new Date(deficiency.createdAt).toLocaleString('tr-TR')}
                   </p>
                 </div>
-                <button
-                  onClick={() => setSelectedDeficiency(deficiency)}
-                  className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors text-sm"
-                >
-                  Kanıt Zincirini Gör
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleStatusChange(deficiency.id, deficiency.status === 'open' ? 'in_progress' : deficiency.status === 'in_progress' ? 'resolved' : 'open')}
+                    className="px-3 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-lg transition-colors text-sm"
+                  >
+                    Durum Değiştir
+                  </button>
+                  <button
+                    onClick={() => setSelectedDeficiency(deficiency)}
+                    className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors text-sm"
+                  >
+                    Kanıt Zincirini Gör
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -534,6 +603,111 @@ export default function DeficienciesPage() {
                   )
                 })}
               </div>
+
+              {/* Audit Log Section */}
+              {selectedDeficiency.auditLog && selectedDeficiency.auditLog.length > 0 && (
+                <div className="mt-8 pt-6 border-t border-slate-700">
+                  <h4 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <AlertCircle className="w-5 h-5 text-orange-400" />
+                    Denetim Kayıtları (Audit Log)
+                  </h4>
+                  <div className="space-y-3">
+                    {selectedDeficiency.auditLog.map((log) => (
+                      <div key={log.id} className="bg-gradient-to-r from-orange-900/20 to-red-900/20 rounded-xl p-4 border border-orange-500/30">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-1 bg-orange-500/20 text-orange-400 rounded text-xs font-medium">
+                              {log.action}
+                            </span>
+                            <span className="text-white font-medium">{log.status}</span>
+                          </div>
+                          <span className="text-xs text-slate-500">
+                            {new Date(log.timestamp).toLocaleString('tr-TR')}
+                          </span>
+                        </div>
+                        <p className="text-slate-300 text-sm mb-3">{log.reason}</p>
+                        <div className="flex items-center gap-4 text-xs text-slate-500">
+                          <div className="flex items-center gap-1">
+                            <User className="w-3 h-3" />
+                            <span>{log.user}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <MapPin className="w-3 h-3" />
+                            <span>IP: {log.ipAddress}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Audit Trail Modal */}
+      {isAuditModalOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 rounded-2xl border border-slate-800 w-full max-w-md">
+            <div className="flex items-center justify-between p-6 border-b border-slate-800">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <AlertCircle className="w-6 h-6 text-orange-400" />
+                Durum Değişikliği
+              </h2>
+              <button
+                onClick={() => setIsAuditModalOpen(false)}
+                className="text-slate-400 hover:text-white"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-slate-400 text-sm mb-2">Yeni Durum</label>
+                <div className="px-4 py-2 bg-slate-800 rounded-lg text-white">
+                  {statusChangeTarget?.newStatus === 'resolved' ? 'Çözüldü' : 
+                   statusChangeTarget?.newStatus === 'in_progress' ? 'İşlemde' : 
+                   statusChangeTarget?.newStatus === 'open' ? 'Açık' : statusChangeTarget?.newStatus}
+                </div>
+              </div>
+              <div>
+                <label className="block text-slate-400 text-sm mb-2">
+                  Neden / Açıklama <span className="text-red-400">*</span>
+                </label>
+                <textarea
+                  value={auditReason}
+                  onChange={(e) => setAuditReason(e.target.value)}
+                  placeholder="Bu değişikliği neden yapıyorsunuz?"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 resize-none"
+                  rows={4}
+                  required
+                />
+              </div>
+              <div className="bg-orange-900/20 rounded-lg p-3 border border-orange-500/30">
+                <p className="text-orange-400 text-xs">
+                  ⚠️ Bu işlem denetim kaydına eklenecek ve değiştirilemez.
+                </p>
+              </div>
+            </div>
+            <div className="p-6 border-t border-slate-800 flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setIsAuditModalOpen(false)
+                  setAuditReason("")
+                  setStatusChangeTarget(null)
+                }}
+                className="px-4 py-2 text-slate-400 hover:text-white transition-colors"
+              >
+                İptal
+              </button>
+              <button
+                onClick={handleAuditSubmit}
+                disabled={!auditReason.trim()}
+                className="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Onayla
+              </button>
             </div>
           </div>
         </div>
