@@ -14,13 +14,7 @@ neonConfig.webSocketConstructor = ws
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined }
 
 export const prisma = globalForPrisma.prisma ?? (() => {
-  const connectionString = process.env.DATABASE_URL
-  
-  if (!connectionString) {
-    console.error("🚨 KRİTİK HATA: DATABASE_URL bulunamadı veya Next.js tarafından henüz yüklenmedi!")
-    // Fallback olarak standart PrismaClient döndür ki sayfa anında 500'e düşmesin
-    return new PrismaClient()
-  }
+  const connectionString = process.env.DATABASE_URL || "postgresql://neondb_owner:npg_K4iMd0SvNtQZ@ep-bold-dew-ag5mbbwd.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require"
   
   const pool = new Pool({ connectionString })
   const adapter = new PrismaNeon(pool)
