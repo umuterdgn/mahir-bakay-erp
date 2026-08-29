@@ -97,9 +97,26 @@ export default async function AdminDashboard() {
           <WeatherWidget city="İstanbul" />
         </div>
 
-        {/* Stat Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-          {/* Active Projects */}
+        {/* AI Morning Report */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-6 border border-blue-200 dark:border-blue-800 mb-6 shadow-sm">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 bg-blue-600 dark:bg-blue-500 rounded-xl flex items-center justify-center flex-shrink-0">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">AI Asistan Sabah Raporu</h3>
+              <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+                Günaydın. Bugün şirketinizde 23 kontrol planlandı. 3 kritik eksiklik bulunuyor. 2 hakediş onay bekliyor. YİBF #14585'te kontrol gecikme riski var.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* YDS Stat Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
+          {/* Aktif Yapılar */}
           <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
@@ -109,50 +126,64 @@ export default async function AdminDashboard() {
               </div>
               <span className="text-3xl font-bold text-slate-900 dark:text-white">{totalProjects}</span>
             </div>
-            <p className="text-slate-700 dark:text-slate-300 font-medium">Aktif Projeler</p>
-            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Devam eden inşaat projeleri</p>
+            <p className="text-slate-700 dark:text-slate-300 font-medium">Aktif Yapılar</p>
+            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Denetimdeki yapılar</p>
           </div>
 
-          {/* Registered Personnel */}
+          {/* Bugün Kontrol */}
           <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
             <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-slate-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-              </div>
-              <span className="text-3xl font-bold text-slate-900 dark:text-white">{totalPersonnel}</span>
-            </div>
-            <p className="text-slate-700 dark:text-slate-300 font-medium">Kayıtlı Personel</p>
-            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Sistemde kayıtlı işçiler</p>
-          </div>
-
-          {/* Workers on Site Today */}
-          <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-slate-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-12 h-12 bg-green-50 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
+                <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
               <span className="text-3xl font-bold text-slate-900 dark:text-white">{todayCheckins}</span>
             </div>
-            <p className="text-slate-700 dark:text-slate-300 font-medium">Bugün Sahadaki İşçi</p>
-            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Giriş yapmış personel</p>
+            <p className="text-slate-700 dark:text-slate-300 font-medium">Bugün Kontrol</p>
+            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Planlanan denetimler</p>
           </div>
 
-          {/* Upcoming Tasks */}
+          {/* Bekleyen İşler */}
           <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
             <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-slate-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-12 h-12 bg-orange-50 dark:bg-orange-900/20 rounded-lg flex items-center justify-center">
+                <svg className="w-6 h-6 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
               <span className="text-3xl font-bold text-slate-900 dark:text-white">{upcomingReminders.length}</span>
             </div>
-            <p className="text-slate-700 dark:text-slate-300 font-medium">Yaklaşan Görevler</p>
-            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Sonraki 7 gün içinde</p>
+            <p className="text-slate-700 dark:text-slate-300 font-medium">Bekleyen İşler</p>
+            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Onay bekleyenler</p>
+          </div>
+
+          {/* Yaklaşan Beton */}
+          <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-purple-50 dark:bg-purple-900/20 rounded-lg flex items-center justify-center">
+                <svg className="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8-4m8 4V17" />
+                </svg>
+              </div>
+              <span className="text-3xl font-bold text-slate-900 dark:text-white">6</span>
+            </div>
+            <p className="text-slate-700 dark:text-slate-300 font-medium">Yaklaşan Beton</p>
+            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Bu hafta döküm</p>
+          </div>
+
+          {/* Eksik Evrak */}
+          <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 bg-red-50 dark:bg-red-900/20 rounded-lg flex items-center justify-center">
+                <svg className="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <span className="text-3xl font-bold text-slate-900 dark:text-white">9</span>
+            </div>
+            <p className="text-slate-700 dark:text-slate-300 font-medium">Eksik Evrak</p>
+            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Tamamlanması gereken</p>
           </div>
         </div>
 
@@ -311,7 +342,7 @@ export default async function AdminDashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 mb-6">
           <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-4">Hızlı İşlemler</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Link
@@ -370,6 +401,118 @@ export default async function AdminDashboard() {
                 <div className="text-sm text-slate-600 dark:text-slate-400">Gelir-gider</div>
               </div>
             </Link>
+          </div>
+        </div>
+
+        {/* YİBF Risk Radar */}
+        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-white">YİBF Risk Radarı</h2>
+            <Link href="/admin/projects" className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 text-sm">
+              Tümünü Gör →
+            </Link>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-700">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700 dark:text-slate-300">YİBF No</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700 dark:text-slate-300">Müteahhit</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700 dark:text-slate-300">Health Score</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700 dark:text-slate-300">Teknik Risk</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700 dark:text-slate-300">Finansal Risk</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700 dark:text-slate-300">Durum</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                  <td className="py-3 px-4 text-sm text-slate-900 dark:text-white font-medium">#14585</td>
+                  <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-300">Yılmaz İnşaat</td>
+                  <td className="py-3 px-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-16 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                        <div className="h-full bg-red-500 rounded-full" style={{ width: '45%' }} />
+                      </div>
+                      <span className="text-sm font-medium text-red-600 dark:text-red-400">45</span>
+                    </div>
+                  </td>
+                  <td className="py-3 px-4 text-sm text-red-600 dark:text-red-400 font-medium">Yüksek</td>
+                  <td className="py-3 px-4 text-sm text-orange-600 dark:text-orange-400 font-medium">Orta</td>
+                  <td className="py-3 px-4">
+                    <span className="px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-full text-xs font-medium">Kritik 🔴</span>
+                  </td>
+                </tr>
+                <tr className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                  <td className="py-3 px-4 text-sm text-slate-900 dark:text-white font-medium">#14592</td>
+                  <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-300">Kaya Yapı</td>
+                  <td className="py-3 px-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-16 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                        <div className="h-full bg-orange-500 rounded-full" style={{ width: '68%' }} />
+                      </div>
+                      <span className="text-sm font-medium text-orange-600 dark:text-orange-400">68</span>
+                    </div>
+                  </td>
+                  <td className="py-3 px-4 text-sm text-orange-600 dark:text-orange-400 font-medium">Orta</td>
+                  <td className="py-3 px-4 text-sm text-yellow-600 dark:text-yellow-400 font-medium">Düşük</td>
+                  <td className="py-3 px-4">
+                    <span className="px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded-full text-xs font-medium">Takip 🟠</span>
+                  </td>
+                </tr>
+                <tr className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                  <td className="py-3 px-4 text-sm text-slate-900 dark:text-white font-medium">#14601</td>
+                  <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-300">Demir Grup</td>
+                  <td className="py-3 px-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-16 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                        <div className="h-full bg-green-500 rounded-full" style={{ width: '85%' }} />
+                      </div>
+                      <span className="text-sm font-medium text-green-600 dark:text-green-400">85</span>
+                    </div>
+                  </td>
+                  <td className="py-3 px-4 text-sm text-green-600 dark:text-green-400 font-medium">Düşük</td>
+                  <td className="py-3 px-4 text-sm text-green-600 dark:text-green-400 font-medium">Düşük</td>
+                  <td className="py-3 px-4">
+                    <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-xs font-medium">Normal 🟢</span>
+                  </td>
+                </tr>
+                <tr className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                  <td className="py-3 px-4 text-sm text-slate-900 dark:text-white font-medium">#14615</td>
+                  <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-300">Özkan İnşaat</td>
+                  <td className="py-3 px-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-16 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                        <div className="h-full bg-orange-500 rounded-full" style={{ width: '72%' }} />
+                      </div>
+                      <span className="text-sm font-medium text-orange-600 dark:text-orange-400">72</span>
+                    </div>
+                  </td>
+                  <td className="py-3 px-4 text-sm text-yellow-600 dark:text-yellow-400 font-medium">Düşük</td>
+                  <td className="py-3 px-4 text-sm text-orange-600 dark:text-orange-400 font-medium">Orta</td>
+                  <td className="py-3 px-4">
+                    <span className="px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded-full text-xs font-medium">Takip 🟠</span>
+                  </td>
+                </tr>
+                <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                  <td className="py-3 px-4 text-sm text-slate-900 dark:text-white font-medium">#14623</td>
+                  <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-300">Star Yapı</td>
+                  <td className="py-3 px-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-16 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                        <div className="h-full bg-green-500 rounded-full" style={{ width: '92%' }} />
+                      </div>
+                      <span className="text-sm font-medium text-green-600 dark:text-green-400">92</span>
+                    </div>
+                  </td>
+                  <td className="py-3 px-4 text-sm text-green-600 dark:text-green-400 font-medium">Düşük</td>
+                  <td className="py-3 px-4 text-sm text-green-600 dark:text-green-400 font-medium">Düşük</td>
+                  <td className="py-3 px-4">
+                    <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-xs font-medium">Normal 🟢</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
