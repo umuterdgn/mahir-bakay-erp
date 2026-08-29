@@ -22,8 +22,9 @@ export async function GET(request: Request) {
 
     console.log("📋 Projects API - Session:", { userRole, userId })
 
-    // SITE_MANAGER ise sadece kendi projelerini görebilir
-    const roleWhereClause = userRole === "SITE_MANAGER" && userId 
+    // SITE_MANAGER veya SUBCONTRACTOR ise sadece kendi projelerini görebilir
+    const isAdmin = userRole === "ADMIN" || userRole === "SUPER_ADMIN"
+    const roleWhereClause = !isAdmin && userId 
       ? { managerId: userId }
       : {}
 

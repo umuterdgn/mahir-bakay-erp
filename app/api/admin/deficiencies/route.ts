@@ -6,10 +6,38 @@
 
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { auth } from "@/lib/auth"
 
 export async function GET() {
   try {
+    const session = await auth()
+    const userRole = session?.user?.role
+    const userId = session?.user?.id
+
+    console.log(" Deficiencies API - Session:", { userRole, userId })
+
+    // Admin olmayan kullanıcılar sadece kendi projelerindeki eksiklikleri görebilir
+    const isAdmin = userRole === "ADMIN" || userRole === "SUPER_ADMIN"
+    
+    let whereClause = {}
+    
+    if (!isAdmin && userId) {
+      // Önce kullanıcının yönettiği projeleri bul
+      const userProjects = await prisma.project.findMany({
+        where: { managerId: userId },
+        select: { id: true }
+      })
+      
+      const projectIds = userProjects.map(p => p.id)
+      
+      // Sadece bu projelerdeki eksiklikleri getir
+      whereClause = {
+        projectId: { in: projectIds }
+      }
+    }
+
     const deficiencies = await prisma.deficiency.findMany({
+      where: whereClause,
       include: {
         project: {
           select: {

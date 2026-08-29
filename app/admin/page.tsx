@@ -20,6 +20,7 @@ export default async function AdminDashboard() {
 
   // Check if user is subcontractor or client
   const isClientPortal = (userRole as string) === "SUBCONTRACTOR" || (userRole as string) === "MUTEAHHIT_MUSTERI"
+  const userId = session?.user?.id
 
   // Fetch dashboard statistics (only for admin users)
   let totalProjects = 0
@@ -30,6 +31,46 @@ export default async function AdminDashboard() {
   let totalRevenue = { _sum: { amount: 0 as number | null } }
   let totalExpenses = { _sum: { amount: 0 as number | null } }
   let lowStockCount = 0
+
+  // Contractor-specific data
+  let contractorProjects: any[] = []
+  let contractorAverageProgress = 0
+  let contractorOpenDeficiencies = 0
+
+  if (isClientPortal && userId) {
+    try {
+      // Fetch contractor's managed projects
+      contractorProjects = await prisma.project.findMany({
+        where: { managerId: userId },
+        select: {
+          id: true,
+          name: true,
+          yibfNo: true,
+          progress: true,
+          status: true
+        }
+      }).catch(() => [])
+
+      // Calculate average progress
+      if (contractorProjects.length > 0) {
+        const totalProgress = contractorProjects.reduce((sum, p) => sum + (p.progress || 0), 0)
+        contractorAverageProgress = Math.round(totalProgress / contractorProjects.length)
+      }
+
+      // Count open deficiencies for contractor's projects
+      const projectIds = contractorProjects.map(p => p.id)
+      if (projectIds.length > 0) {
+        contractorOpenDeficiencies = await prisma.deficiency.count({
+          where: {
+            projectId: { in: projectIds },
+            status: 'OPEN'
+          }
+        }).catch(() => 0)
+      }
+    } catch (error) {
+      console.error('Error fetching contractor data:', error)
+    }
+  }
 
   if (!isClientPortal) {
     try {
@@ -139,127 +180,72 @@ export default async function AdminDashboard() {
         {isClientPortal ? (
           // Client Portal View
           <div className="space-y-6">
-            {/* Project Info Card */}
+            {/* Projects Overview */}
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-6 border border-blue-200 dark:border-blue-800">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Projem</h2>
-                  <p className="text-slate-600 dark:text-slate-400 mt-1">YİBF #14582</p>
+                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Projelerim</h2>
+                  <p className="text-slate-600 dark:text-slate-400 mt-1">Toplam {contractorProjects.length} proje yönetiyorsunuz</p>
                 </div>
-                <span className="px-4 py-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-sm font-medium">
-                  Aktif
-                </span>
               </div>
             </div>
 
-            {/* Progress Bar */}
+            {/* Average Progress */}
             <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">İlerleme Durumu</h3>
-                <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">%82</span>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Ortalama İlerleme</h3>
+                <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">%{contractorAverageProgress}</span>
               </div>
               <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-4">
-                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 h-4 rounded-full transition-all" style={{ width: '82%' }} />
+                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 h-4 rounded-full transition-all" style={{ width: `${contractorAverageProgress}%` }} />
               </div>
             </div>
 
-            {/* Inspection Schedule */}
+            {/* Open Deficiencies */}
             <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800">
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Kontrol Takvimi</h3>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4">
-                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">Son Kontrol</p>
-                  <p className="text-lg font-semibold text-slate-900 dark:text-white">26 Ağustos 2024</p>
-                </div>
-                <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4">
-                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">Yaklaşan Kontrol</p>
-                  <p className="text-lg font-semibold text-blue-600 dark:text-blue-400">28 Ağustos 2024</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Deficiency Summary */}
-            <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800">
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Eksiklik Özeti</h3>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 border border-red-200 dark:border-red-800">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-red-500/20 rounded-lg flex items-center justify-center">
-                      <svg className="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="text-3xl font-bold text-red-600 dark:text-red-400">2</p>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">Açık Eksiklik</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200 dark:border-green-800">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
-                      <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="text-3xl font-bold text-green-600 dark:text-green-400">18</p>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">Tamamlanan</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800">
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Hızlı İşlemler</h3>
-              <div className="grid md:grid-cols-2 gap-4">
-                <Link href="/admin/deficiencies" className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-                  <svg className="w-5 h-5 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                  </svg>
-                  <span className="text-slate-900 dark:text-white font-medium">Eksiklikleri Gör</span>
-                </Link>
-                <Link href="/admin/finance" className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-                  <svg className="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span className="text-slate-900 dark:text-white font-medium">Hakedişler</span>
-                </Link>
-              </div>
-            </div>
-
-            {/* Control Team Rating */}
-            <div className="bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 rounded-xl p-6 border border-yellow-200 dark:border-yellow-800">
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                <svg className="w-5 h-5 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                </svg>
-                Kontrol Ekibi Değerlendirmesi
-              </h3>
-              <p className="text-slate-600 dark:text-slate-400 text-sm mb-4">Denetim ekibinin performansını değerlendirin</p>
-              
-              <div className="flex items-center gap-2 mb-4">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    className="w-10 h-10 text-yellow-400 hover:text-yellow-300 transition-colors focus:outline-none"
-                    title={`${star} yıldız`}
-                  >
-                    <svg className="w-full h-full" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Açık Eksiklikler</h3>
+              <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 border border-red-200 dark:border-red-800">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-red-500/20 rounded-lg flex items-center justify-center">
+                    <svg className="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
-                  </button>
-                ))}
+                  </div>
+                  <div>
+                    <p className="text-3xl font-bold text-red-600 dark:text-red-400">{contractorOpenDeficiencies}</p>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">Açık Eksiklik</p>
+                  </div>
+                </div>
               </div>
+            </div>
 
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-500 dark:text-slate-400">Henüz değerlendirme yok</span>
-                <button className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 font-medium">
-                  Değerlendir
-                </button>
-              </div>
+            {/* Projects List */}
+            <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Proje Listesi</h3>
+              {contractorProjects.length === 0 ? (
+                <p className="text-slate-500 dark:text-slate-400">Henüz proje atanmamış</p>
+              ) : (
+                <div className="space-y-3">
+                  {contractorProjects.map((project) => (
+                    <Link
+                      key={project.id}
+                      href={`/admin/projects/${project.id}`}
+                      className="block bg-slate-50 dark:bg-slate-800 rounded-lg p-4 border border-slate-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-500 transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-slate-900 dark:text-white">{project.name}</p>
+                          <p className="text-sm text-slate-600 dark:text-slate-400">{project.yibfNo || 'YİBF Yok'}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-lg font-semibold text-blue-600 dark:text-blue-400">%{project.progress}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">İlerleme</p>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         ) : (
