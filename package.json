@@ -20,8 +20,6 @@
     "@mlightcad/data-model": "^1.13.0",
     "@mlightcad/mtext-renderer": "^0.12.4",
     "@mlightcad/three-renderer": "^1.6.0",
-    "@neondatabase/serverless": "^1.1.0",
-    "@prisma/adapter-neon": "^7.10.0",
     "@prisma/client": "^6.19.3",
     "@react-three/drei": "^10.7.8",
     "@react-three/fiber": "^9.7.0",
@@ -32,7 +30,6 @@
     "@velipso/polybool": "^2.0.11",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.3",
-    "bufferutil": "^4.1.0",
     "cloudinary": "^2.10.0",
     "convertapi": "^1.15.0",
     "crypto-js": "^4.2.0",
@@ -73,10 +70,8 @@
     "recharts": "^3.10.1",
     "three": "0.165.0",
     "uploadthing": "^7.7.4",
-    "utf-8-validate": "^6.0.6",
     "web-ifc": "^0.0.77",
     "web-ifc-viewer": "^1.0.218",
-    "ws": "^8.21.3",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
