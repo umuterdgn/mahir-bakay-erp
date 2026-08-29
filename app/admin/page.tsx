@@ -32,73 +32,86 @@ export default async function AdminDashboard() {
   let lowStockCount = 0
 
   if (!isClientPortal) {
-    const [
-      totalProjectsCount,
-      totalPersonnelCount,
-      todayCheckinsCount,
-      reminders,
-      logs,
-      revenue,
-      expenses,
-      stockCount
-    ] = await Promise.all([
-      prisma.project.count(),
-      prisma.personel.count(),
-      prisma.attendanceRecord.count({
-        where: {
-          date: {
-            gte: new Date(new Date().setHours(0, 0, 0, 0))
+    try {
+      const [
+        totalProjectsCount,
+        totalPersonnelCount,
+        todayCheckinsCount,
+        reminders,
+        logs,
+        revenue,
+        expenses,
+        stockCount
+      ] = await Promise.all([
+        prisma.project.count().catch(() => 0),
+        prisma.personel.count().catch(() => 0),
+        prisma.attendanceRecord.count({
+          where: {
+            date: {
+              gte: new Date(new Date().setHours(0, 0, 0, 0))
+            }
           }
-        }
-      }),
-      prisma.reminder.findMany({
-        where: {
-          date: {
-            gte: new Date(),
-            lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // Next 7 days
+        }).catch(() => 0),
+        prisma.reminder.findMany({
+          where: {
+            date: {
+              gte: new Date(),
+              lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // Next 7 days
+            },
+            isCompleted: false
           },
-          isCompleted: false
-        },
-        include: {
-          project: true
-        },
-        orderBy: { date: 'asc' },
-        take: 10
-      }),
-      prisma.systemLog.findMany({
-        orderBy: { createdAt: 'desc' },
-        take: 5
-      }),
-      // Financial summary
-      prisma.personelPayment.aggregate({
-        _sum: { amount: true },
-        where: {
-          type: 'PRIM' // Consider payments as revenue
-        }
-      }),
-      prisma.personelPayment.aggregate({
-        _sum: { amount: true },
-        where: {
-          type: { in: ['AVANS', 'ELDEN'] } // Consider advances as expenses
-        }
-      }),
-      // Low stock count
-      prisma.inventory.count({
-        where: {
-          quantity: {
-            lt: 10 // Items with quantity less than 10
+          include: {
+            project: true
+          },
+          orderBy: { date: 'asc' },
+          take: 10
+        }).catch(() => []),
+        prisma.systemLog.findMany({
+          orderBy: { createdAt: 'desc' },
+          take: 5
+        }).catch(() => []),
+        // Financial summary
+        prisma.personelPayment.aggregate({
+          _sum: { amount: true },
+          where: {
+            type: 'PRIM' // Consider payments as revenue
           }
-        }
-      })
-    ])
-    totalProjects = totalProjectsCount
-    totalPersonnel = totalPersonnelCount
-    todayCheckins = todayCheckinsCount
-    upcomingReminders = reminders
-    recentLogs = logs
-    totalRevenue = revenue
-    totalExpenses = expenses
-    lowStockCount = stockCount
+        }).catch(() => ({ _sum: { amount: 0 } })),
+        prisma.personelPayment.aggregate({
+          _sum: { amount: true },
+          where: {
+            type: { in: ['AVANS', 'ELDEN'] } // Consider advances as expenses
+          }
+        }).catch(() => ({ _sum: { amount: 0 } })),
+        // Low stock count
+        prisma.inventory.count({
+          where: {
+            quantity: {
+              lt: 10 // Items with quantity less than 10
+            }
+          }
+        }).catch(() => 0)
+      ])
+      totalProjects = totalProjectsCount
+      totalPersonnel = totalPersonnelCount
+      todayCheckins = todayCheckinsCount
+      upcomingReminders = reminders
+      recentLogs = logs
+      totalRevenue = revenue
+      totalExpenses = expenses
+      lowStockCount = stockCount
+    } catch (error) {
+      console.error('Database connection error, using fallback values:', error)
+      // Fallback values when database is unreachable
+      totalProjects = 0
+      totalPersonnel = 0
+      todayCheckins = 0
+      upcomingReminders = []
+      recentLogs = []
+      totalRevenue = { _sum: { amount: 0 } }
+      totalExpenses = { _sum: { amount: 0 } }
+      lowStockCount = 0
+    }
   }
 
   return (
