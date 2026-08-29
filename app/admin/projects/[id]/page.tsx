@@ -74,7 +74,7 @@ export default async function ProjectDetailPage({
             createdAt: 'desc'
           }
         },
-        auditLogs: {
+        audits: {
           include: {
             user: {
               select: {
@@ -255,7 +255,7 @@ export default async function ProjectDetailPage({
         inspections={project.inspections}
         deficiencies={project.deficiencies}
         documents={project.documents}
-        auditLogs={project.auditLogs}
+        auditLogs={project.audits}
       />
 
       {/* Main Content Grid */}
