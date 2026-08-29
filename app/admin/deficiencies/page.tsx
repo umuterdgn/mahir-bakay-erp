@@ -6,7 +6,8 @@
  */
 
 import { useState, useEffect } from "react"
-import { Camera, MapPin, Clock, User, AlertCircle, CheckCircle, XCircle, Plus, X, Upload, Mic, Loader2, Search, Filter } from "lucide-react"
+import { useSession } from "next-auth/react"
+import { Camera, MapPin, Clock, User, AlertCircle, CheckCircle, XCircle, Plus, X, Upload, Mic, Loader2, Search, Filter, FileText } from "lucide-react"
 
 interface Deficiency {
   id: string
@@ -42,14 +43,23 @@ interface Deficiency {
     id: string
     type: string
   } | null
+  proofUrl?: string | null
 }
 
 export default function DeficienciesPage() {
+  const { data: session } = useSession()
+  const userRole = session?.user?.role as string
+  const isContractor = userRole === "SUBCONTRACTOR" || userRole === "MUTEAHHIT_MUSTERI"
+  
   const [deficiencies, setDeficiencies] = useState<Deficiency[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("ALL")
   const [severityFilter, setSeverityFilter] = useState("ALL")
+  const [uploadModalOpen, setUploadModalOpen] = useState(false)
+  const [selectedDeficiency, setSelectedDeficiency] = useState<Deficiency | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const [proofFile, setProofFile] = useState<File | null>(null)
 
   useEffect(() => {
     fetchDeficiencies()
@@ -112,6 +122,51 @@ export default function DeficienciesPage() {
     const matchesSeverity = severityFilter === "ALL" || deficiency.severity === severityFilter
     return matchesSearch && matchesStatus && matchesSeverity
   })
+
+  const handleUploadProof = (deficiency: Deficiency) => {
+    setSelectedDeficiency(deficiency)
+    setUploadModalOpen(true)
+  }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setProofFile(e.target.files[0])
+    }
+  }
+
+  const handleSubmitProof = async () => {
+    if (!selectedDeficiency || !proofFile) return
+
+    setUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('proof', proofFile)
+      formData.append('deficiencyId', selectedDeficiency.id)
+
+      const response = await fetch('/api/admin/deficiencies/upload-proof', {
+        method: 'POST',
+        body: formData
+      })
+
+      if (response.ok) {
+        setUploadModalOpen(false)
+        setSelectedDeficiency(null)
+        setProofFile(null)
+        fetchDeficiencies()
+      } else {
+        alert('Kanıt yüklenirken hata oluştu')
+      }
+    } catch (error) {
+      console.error('Error uploading proof:', error)
+      alert('Kanıt yüklenirken hata oluştu')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const canUploadProof = (deficiency: Deficiency) => {
+    return isContractor && (deficiency.status === 'OPEN' || deficiency.status === 'FIX_PENDING')
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 p-6">
@@ -209,15 +264,79 @@ export default function DeficienciesPage() {
 
               {/* Card Footer */}
               <div className="p-4 bg-slate-800/50 border-t border-slate-800">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-3">
                   {getStatusBadge(deficiency.status)}
                   <span className="text-slate-500 text-xs">
                     {new Date(deficiency.createdAt).toLocaleDateString('tr-TR')}
                   </span>
                 </div>
+                {deficiency.proofUrl && (
+                  <div className="flex items-center gap-2 text-xs text-green-400 mb-3">
+                    <FileText className="w-3 h-3" />
+                    <span>Kanıt yüklendi</span>
+                  </div>
+                )}
+                {canUploadProof(deficiency) && (
+                  <button
+                    onClick={() => handleUploadProof(deficiency)}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm transition-colors"
+                  >
+                    <Upload className="w-4 h-4" />
+                    <span>Kanıt Yükle ve Onaya Gönder</span>
+                  </button>
+                )}
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Upload Modal */}
+      {uploadModalOpen && selectedDeficiency && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-900 rounded-xl border border-slate-800 p-6 w-full max-w-md">
+            <h3 className="text-xl font-bold text-white mb-4">Düzeltme Kanıtı Yükle</h3>
+            <p className="text-slate-400 text-sm mb-4">
+              {selectedDeficiency.element} - {selectedDeficiency.project?.yibfNo}
+            </p>
+            
+            <div className="mb-4">
+              <label className="block text-slate-300 text-sm mb-2">Kanıt Dosyası (Fotoğraf/Doküman)</label>
+              <input
+                type="file"
+                accept="image/*,.pdf"
+                onChange={handleFileSelect}
+                className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setUploadModalOpen(false)}
+                disabled={uploading}
+                className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors disabled:opacity-50"
+              >
+                İptal
+              </button>
+              <button
+                onClick={handleSubmitProof}
+                disabled={!proofFile || uploading}
+                className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {uploading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Yükleniyor...</span>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4" />
+                    <span>Yükle ve Gönder</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
