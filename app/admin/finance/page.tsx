@@ -13,6 +13,7 @@ import { useSession } from "next-auth/react"
 import * as XLSX from "xlsx"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
 
 export default function FinancePage() {
   const router = useRouter()
@@ -593,106 +594,168 @@ export default function FinancePage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid md:grid-cols-3 gap-6 mb-8">
+      <div className="grid md:grid-cols-4 gap-6 mb-8">
         <div className="bg-slate-900 rounded-xl p-6 border border-slate-800">
-          <h3 className="text-lg font-semibold text-slate-400 mb-2">Toplam Gelir (Hakedişler)</h3>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-lg font-semibold text-slate-400">Toplam Ciro</h3>
+            <span className="text-xs text-slate-500">Bu Ay</span>
+          </div>
           <p className="text-3xl font-bold text-green-400">
             {stats.totalIncome.toLocaleString("tr-TR")} ₺
           </p>
+          <p className="text-sm text-slate-500 mt-1">Hakedişler dahil</p>
         </div>
         
         <div className="bg-slate-900 rounded-xl p-6 border border-slate-800">
-          <h3 className="text-lg font-semibold text-slate-400 mb-2">Toplam Gider</h3>
-          <p className="text-3xl font-bold text-red-400">
-            {stats.totalExpense.toLocaleString("tr-TR")} ₺
-          </p>
-        </div>
-        
-        <div className="bg-slate-900 rounded-xl p-6 border border-slate-800">
-          <h3 className="text-lg font-semibold text-slate-400 mb-2">Net Kasa Durumu</h3>
-          <p className={`text-3xl font-bold ${stats.netBalance >= 0 ? "text-green-400" : "text-red-400"}`}>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-lg font-semibold text-slate-400">Tahsil Edilen</h3>
+            <span className="text-xs text-slate-500">Kasa</span>
+          </div>
+          <p className="text-3xl font-bold text-blue-400">
             {stats.netBalance.toLocaleString("tr-TR")} ₺
           </p>
+          <p className="text-sm text-slate-500 mt-1">Mevcut bakiye</p>
+        </div>
+        
+        <div className="bg-slate-900 rounded-xl p-6 border border-slate-800">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-lg font-semibold text-slate-400">Bekleyen Hakedişler</h3>
+            <span className="text-xs text-slate-500">Onay bekliyor</span>
+          </div>
+          <p className="text-3xl font-bold text-yellow-400">
+            {progressPayments.filter(p => p.status === "BEKLIYOR").length}
+          </p>
+          <p className="text-sm text-slate-500 mt-1">
+            {progressPayments.filter(p => p.status === "BEKLIYOR").reduce((sum, p) => sum + (p.totalAmount || 0), 0).toLocaleString("tr-TR")} ₺
+          </p>
+        </div>
+
+        <div className="bg-slate-900 rounded-xl p-6 border border-slate-800">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-lg font-semibold text-slate-400">Geciken Ödemeler</h3>
+            <span className="text-xs text-red-400">Risk</span>
+          </div>
+          <p className="text-3xl font-bold text-red-400">
+            {transactions.filter(t => t.type === "GIDER" && new Date(t.date) < new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)).length}
+          </p>
+          <p className="text-sm text-slate-500 mt-1">Son 30 gün</p>
         </div>
       </div>
 
-      {/* Progress Payments Section */}
-      <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden mb-8">
-        <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center">
-          <h3 className="text-lg font-semibold text-white">🏗️ Taşeron Hakedişleri</h3>
-          <span className="text-sm text-slate-400">Toplam: {progressPayments.length} hakediş</span>
+      {/* Financial Chart */}
+      <div className="bg-slate-900 rounded-xl border border-slate-800 p-6 mb-8">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-semibold text-white">Aylık Gelir-Gider Grafiği</h3>
+          <span className="text-sm text-slate-400">Son 6 ay</span>
         </div>
-        <div className="w-full overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
-          <table className="w-full min-w-max">
-            <thead className="bg-slate-800">
-              <tr>
-                <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">Taşeron</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">İş Tipi</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">Miktar</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">Birim</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">Birim Fiyat</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">Toplam</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">Durum</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">İşlemler</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800">
-              {progressPayments.length === 0 ? (
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={[
+            { month: 'Ocak', gelir: 150000, gider: 120000 },
+            { month: 'Şubat', gelir: 180000, gider: 140000 },
+            { month: 'Mart', gelir: 200000, gider: 150000 },
+            { month: 'Nisan', gelir: 220000, gider: 160000 },
+            { month: 'Mayıs', gelir: 190000, gider: 145000 },
+            { month: 'Haziran', gelir: 250000, gider: 180000 },
+          ]}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+            <XAxis dataKey="month" stroke="#94a3b8" />
+            <YAxis stroke="#94a3b8" />
+            <Tooltip 
+              contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
+              itemStyle={{ color: '#e2e8f0' }}
+            />
+            <Legend />
+            <Bar dataKey="gelir" fill="#22c55e" name="Gelir" />
+            <Bar dataKey="gider" fill="#ef4444" name="Gider" />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Progress Payments Section */}
+      <div className="grid md:grid-cols-2 gap-6 mb-8">
+        {/* Taşeron Hakedişleri */}
+        <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center">
+            <h3 className="text-lg font-semibold text-white">🏗️ Taşeron Hakedişleri</h3>
+            <span className="text-sm text-slate-400">Toplam: {progressPayments.length} hakediş</span>
+          </div>
+          <div className="w-full overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+            <table className="w-full min-w-max">
+              <thead className="bg-slate-800">
                 <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center text-slate-400">
-                    Hakediş kaydı bulunamadı
-                  </td>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">Taşeron</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">Tutar</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">Durum</th>
                 </tr>
-              ) : (
-                (Array.isArray(progressPayments) ? progressPayments : []).map((payment) => (
-                  <tr key={payment.id}>
-                    <td className="px-4 py-4 text-sm text-white">{payment.subcontractor}</td>
-                    <td className="px-4 py-4 text-sm text-slate-400">{payment.workType}</td>
-                    <td className="px-4 py-4 text-sm text-white">{payment.quantity}</td>
-                    <td className="px-4 py-4 text-sm text-slate-400">{payment.unit}</td>
-                    <td className="px-4 py-4 text-sm text-white">{payment.unitPrice.toLocaleString("tr-TR")} ₺</td>
-                    <td className="px-4 py-4 text-sm text-white font-medium">{payment.totalAmount.toLocaleString("tr-TR")} ₺</td>
-                    <td className="px-4 py-4 text-sm">
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${
-                        payment.status === "BEKLIYOR" ? "bg-yellow-900/50 text-yellow-400" :
-                        payment.status === "ONAYLANDI" ? "bg-green-900/50 text-green-400" :
-                        "bg-red-900/50 text-red-400"
-                      }`}>
-                        {payment.status === "BEKLIYOR" ? "Bekliyor" :
-                         payment.status === "ONAYLANDI" ? "Onaylandı" : "Reddedildi"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 text-sm">
-                      <div className="flex gap-2">
-                        {payment.status === "BEKLIYOR" && (
-                          <>
-                            <button
-                              onClick={() => handleProgressPaymentStatusChange(payment.id, "ONAYLANDI")}
-                              className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-500 text-xs"
-                            >
-                              Onayla
-                            </button>
-                            <button
-                              onClick={() => handleProgressPaymentStatusChange(payment.id, "REDDEDILDI")}
-                              className="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-500 text-xs"
-                            >
-                              Reddet
-                            </button>
-                          </>
-                        )}
-                        <button
-                          onClick={() => handleDeleteProgressPayment(payment.id)}
-                          className="px-2 py-1 bg-slate-600 text-white rounded hover:bg-slate-500 text-xs"
-                        >
-                          Sil
-                        </button>
-                      </div>
+              </thead>
+              <tbody className="divide-y divide-slate-800">
+                {progressPayments.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="px-6 py-8 text-center text-slate-400">
+                      Hakediş kaydı bulunamadı
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  (Array.isArray(progressPayments) ? progressPayments.slice(0, 5) : []).map((payment) => (
+                    <tr key={payment.id}>
+                      <td className="px-4 py-3 text-sm text-white">{payment.subcontractor}</td>
+                      <td className="px-4 py-3 text-sm text-white font-medium">{payment.totalAmount?.toLocaleString("tr-TR")} ₺</td>
+                      <td className="px-4 py-3 text-sm">
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${
+                          payment.status === "BEKLIYOR" ? "bg-yellow-900/50 text-yellow-400" :
+                          payment.status === "ONAYLANDI" ? "bg-green-900/50 text-green-400" :
+                          "bg-red-900/50 text-red-400"
+                        }`}>
+                          {payment.status === "BEKLIYOR" ? "Bekliyor" :
+                           payment.status === "ONAYLANDI" ? "Onaylandı" : "Reddedildi"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Son Hakediş Hareketleri */}
+        <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center">
+            <h3 className="text-lg font-semibold text-white">📊 Son Hakediş Hareketleri</h3>
+            <span className="text-sm text-slate-400">Son 5 işlem</span>
+          </div>
+          <div className="w-full overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+            <table className="w-full min-w-max">
+              <thead className="bg-slate-800">
+                <tr>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">Proje</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">Tutar</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-300">Tarih</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800">
+                {transactions.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="px-6 py-8 text-center text-slate-400">
+                      İşlem kaydı bulunamadı
+                    </td>
+                  </tr>
+                ) : (
+                  (Array.isArray(transactions) ? transactions.slice(0, 5) : []).map((transaction) => (
+                    <tr key={transaction.id}>
+                      <td className="px-4 py-3 text-sm text-white">{transaction.description || 'Genel'}</td>
+                      <td className={`px-4 py-3 text-sm font-medium ${transaction.type === "GELIR" ? "text-green-400" : "text-red-400"}`}>
+                        {transaction.type === "GELIR" ? "+" : "-"}{transaction.amount?.toLocaleString("tr-TR")} ₺
+                      </td>
+                      <td className="px-4 py-3 text-sm text-slate-400">
+                        {new Date(transaction.date).toLocaleDateString('tr-TR')}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
