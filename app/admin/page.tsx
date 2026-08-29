@@ -10,6 +10,7 @@ import Link from "next/link"
 import FinancialChart from "../../components/admin/FinancialChart"
 import WeatherWidget from "@/components/ui/WeatherWidget"
 import AIReportGenerator from "@/components/AIReportGenerator"
+import DigitalizationScore from "@/components/DigitalizationScore"
 
 export const dynamic = 'force-dynamic'
 
@@ -113,9 +114,10 @@ export default async function AdminDashboard() {
               Hoş geldiniz, {session?.user?.name || 'Admin'}
             </p>
           </div>
-          {!isClientPortal && (
-            <AIReportGenerator />
-          )}
+          <div className="flex items-center gap-3">
+            {!isClientPortal && <DigitalizationScore />}
+            {!isClientPortal && <AIReportGenerator />}
+          </div>
         </div>
       </div>
 
@@ -364,6 +366,69 @@ export default async function AdminDashboard() {
               { month: 'Haziran', gelir: 250000, gider: 180000 },
             ]}
           />
+        </div>
+
+        {/* Efficiency / Time Loss Analysis */}
+        <div className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 rounded-xl p-6 border border-orange-200 dark:border-orange-800 mb-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+              <svg className="w-6 h-6 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Zaman Kaybı Analizi
+            </h2>
+            <span className="text-sm text-slate-600 dark:text-slate-400">Bu ay</span>
+          </div>
+
+          <div className="mb-6">
+            <p className="text-slate-700 dark:text-slate-300 mb-4">Nerede zaman kaybediyorsunuz?</p>
+            
+            <div className="space-y-4">
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-slate-900 dark:text-white font-medium">Evrak Girişi</span>
+                  <span className="text-orange-600 dark:text-orange-400 font-bold">42 saat</span>
+                </div>
+                <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-3">
+                  <div className="bg-orange-500 h-3 rounded-full" style={{ width: '42%' }} />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-slate-900 dark:text-white font-medium">Ulaşım</span>
+                  <span className="text-red-600 dark:text-red-400 font-bold">118 saat</span>
+                </div>
+                <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-3">
+                  <div className="bg-red-500 h-3 rounded-full" style={{ width: '118%' }} />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-slate-900 dark:text-white font-medium">Raporlama</span>
+                  <span className="text-yellow-600 dark:text-yellow-400 font-bold">28 saat</span>
+                </div>
+                <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-3">
+                  <div className="bg-yellow-500 h-3 rounded-full" style={{ width: '28%' }} />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 rounded-xl p-4 border border-green-300 dark:border-green-700">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <div>
+                <h4 className="text-green-900 dark:text-green-100 font-semibold">Tahmini AI Tasarrufu</h4>
+                <p className="text-green-800 dark:text-green-200 text-lg font-bold">170 saat</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Dual Panel Grid */}
