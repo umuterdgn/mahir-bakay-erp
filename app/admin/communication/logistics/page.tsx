@@ -7,7 +7,7 @@
 
 
 import { useState, useEffect } from "react"
-import { Truck, Clock, MapPin, Phone, CheckCircle, AlertCircle, Plus, Calendar, X } from "lucide-react"
+import { Truck, Clock, MapPin, Phone, CheckCircle, AlertCircle, Plus, Calendar, X, Route, Users, Zap } from "lucide-react"
 import toast from "react-hot-toast"
 
 interface LogisticsItem {
@@ -151,6 +151,116 @@ export default function LogisticsPage() {
           <Plus className="w-5 h-5" />
           Yeni Randevu
         </button>
+      </div>
+
+      {/* AI Route Optimization and Personnel Workload */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        {/* AI Route Optimization Card */}
+        <div className="bg-gradient-to-br from-purple-900/20 to-blue-900/20 rounded-xl p-6 border border-purple-500/30">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center">
+              <Route className="w-6 h-6 text-purple-400" />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-white">AI Görev Dağıtımı ve Rota Optimizasyonu</h2>
+              <p className="text-slate-400 text-sm">Akıllı rota planlama</p>
+            </div>
+          </div>
+          
+          <div className="space-y-4">
+            <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-slate-400 text-sm">Orijinal Tahmini Yol</span>
+                <span className="text-2xl font-bold text-red-400">118 km</span>
+              </div>
+              <div className="w-full bg-slate-700 rounded-full h-2">
+                <div className="bg-red-500 h-2 rounded-full" style={{ width: '100%' }} />
+              </div>
+            </div>
+
+            <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-slate-400 text-sm">AI Rota Önerisi</span>
+                <span className="text-2xl font-bold text-green-400">76 km</span>
+              </div>
+              <div className="w-full bg-slate-700 rounded-full h-2">
+                <div className="bg-green-500 h-2 rounded-full" style={{ width: '64%' }} />
+              </div>
+              <p className="text-green-400 text-sm mt-2">Görevleri yeniden sıralayarak toplam mesafeyi düşürebilirim</p>
+            </div>
+
+            <button className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-lg transition-colors font-medium">
+              <Zap className="w-5 h-5" />
+              Rotayı Optimize Et ve Ekiplere Bildir
+            </button>
+          </div>
+        </div>
+
+        {/* Personnel Workload Card */}
+        <div className="bg-gradient-to-br from-orange-900/20 to-amber-900/20 rounded-xl p-6 border border-orange-500/30">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-12 h-12 bg-orange-500/20 rounded-lg flex items-center justify-center">
+              <Users className="w-6 h-6 text-orange-400" />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-white">Personel İş Yükü</h2>
+              <p className="text-slate-400 text-sm">Günlük kapasite analizi</p>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
+                    <span className="text-green-400 text-sm font-medium">A</span>
+                  </div>
+                  <span className="text-white font-medium">Ahmet</span>
+                </div>
+                <span className="px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs font-medium">Optimum</span>
+              </div>
+              <p className="text-slate-400 text-sm">09:00 Yapı A, 11:30 Yapı B</p>
+            </div>
+
+            <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-red-500/20 rounded-full flex items-center justify-center">
+                    <span className="text-red-400 text-sm font-medium">M</span>
+                  </div>
+                  <span className="text-white font-medium">Mehmet</span>
+                </div>
+                <span className="px-2 py-1 bg-red-500/20 text-red-400 rounded text-xs font-medium">Kritik</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 bg-slate-700 rounded-full h-2">
+                  <div className="bg-red-500 h-2 rounded-full" style={{ width: '85%' }} />
+                </div>
+                <span className="text-red-400 text-sm font-medium">%85</span>
+              </div>
+              <p className="text-slate-400 text-sm mt-2">Yoğunluk yüksek - görev dağıtımı önerilir</p>
+            </div>
+
+            <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center">
+                    <span className="text-blue-400 text-sm font-medium">A</span>
+                  </div>
+                  <span className="text-white font-medium">Ayşe</span>
+                </div>
+                <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded text-xs font-medium">Normal</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 bg-slate-700 rounded-full h-2">
+                  <div className="bg-blue-500 h-2 rounded-full" style={{ width: '60%' }} />
+                </div>
+                <span className="text-blue-400 text-sm font-medium">%60</span>
+              </div>
+              <p className="text-slate-400 text-sm mt-2">10:00 Yapı C, 14:00 Yapı D</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Vertical List View */}
