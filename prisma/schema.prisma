@@ -45,6 +45,7 @@ enum UserRole {
   ENGINEER
   SUBCONTRACTOR
   CLIENT
+  MUTEAHHIT_MUSTERI
 }
 
 enum CompanyType {

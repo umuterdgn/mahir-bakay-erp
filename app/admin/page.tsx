@@ -14,67 +14,90 @@ export const dynamic = 'force-dynamic'
 
 export default async function AdminDashboard() {
   const session = await auth()
+  const userRole = session?.user?.role
 
-  // Fetch dashboard statistics
-  const [
-    totalProjects,
-    totalPersonnel,
-    todayCheckins,
-    upcomingReminders,
-    recentLogs,
-    totalRevenue,
-    totalExpenses,
-    lowStockCount
-  ] = await Promise.all([
-    prisma.project.count(),
-    prisma.personel.count(),
-    prisma.attendanceRecord.count({
-      where: {
-        date: {
-          gte: new Date(new Date().setHours(0, 0, 0, 0))
+  // Check if user is subcontractor or client
+  const isClientPortal = (userRole as string) === "SUBCONTRACTOR" || (userRole as string) === "MUTEAHHIT_MUSTERI"
+
+  // Fetch dashboard statistics (only for admin users)
+  let totalProjects = 0
+  let totalPersonnel = 0
+  let todayCheckins = 0
+  let upcomingReminders: any[] = []
+  let recentLogs: any[] = []
+  let totalRevenue = { _sum: { amount: 0 as number | null } }
+  let totalExpenses = { _sum: { amount: 0 as number | null } }
+  let lowStockCount = 0
+
+  if (!isClientPortal) {
+    const [
+      totalProjectsCount,
+      totalPersonnelCount,
+      todayCheckinsCount,
+      reminders,
+      logs,
+      revenue,
+      expenses,
+      stockCount
+    ] = await Promise.all([
+      prisma.project.count(),
+      prisma.personel.count(),
+      prisma.attendanceRecord.count({
+        where: {
+          date: {
+            gte: new Date(new Date().setHours(0, 0, 0, 0))
+          }
         }
-      }
-    }),
-    prisma.reminder.findMany({
-      where: {
-        date: {
-          gte: new Date(),
-          lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // Next 7 days
+      }),
+      prisma.reminder.findMany({
+        where: {
+          date: {
+            gte: new Date(),
+            lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // Next 7 days
+          },
+          isCompleted: false
         },
-        isCompleted: false
-      },
-      include: {
-        project: true
-      },
-      orderBy: { date: 'asc' },
-      take: 10
-    }),
-    prisma.systemLog.findMany({
-      orderBy: { createdAt: 'desc' },
-      take: 5
-    }),
-    // Financial summary
-    prisma.personelPayment.aggregate({
-      _sum: { amount: true },
-      where: {
-        type: 'PRIM' // Consider payments as revenue
-      }
-    }),
-    prisma.personelPayment.aggregate({
-      _sum: { amount: true },
-      where: {
-        type: { in: ['AVANS', 'ELDEN'] } // Consider advances as expenses
-      }
-    }),
-    // Low stock count
-    prisma.inventory.count({
-      where: {
-        quantity: {
-          lt: 10 // Items with quantity less than 10
+        include: {
+          project: true
+        },
+        orderBy: { date: 'asc' },
+        take: 10
+      }),
+      prisma.systemLog.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: 5
+      }),
+      // Financial summary
+      prisma.personelPayment.aggregate({
+        _sum: { amount: true },
+        where: {
+          type: 'PRIM' // Consider payments as revenue
         }
-      }
-    })
-  ])
+      }),
+      prisma.personelPayment.aggregate({
+        _sum: { amount: true },
+        where: {
+          type: { in: ['AVANS', 'ELDEN'] } // Consider advances as expenses
+        }
+      }),
+      // Low stock count
+      prisma.inventory.count({
+        where: {
+          quantity: {
+            lt: 10 // Items with quantity less than 10
+          }
+        }
+      })
+    ])
+    totalProjects = totalProjectsCount
+    totalPersonnel = totalPersonnelCount
+    todayCheckins = todayCheckinsCount
+    upcomingReminders = reminders
+    recentLogs = logs
+    totalRevenue = revenue
+    totalExpenses = expenses
+    lowStockCount = stockCount
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
@@ -82,7 +105,7 @@ export default async function AdminDashboard() {
       <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
-            Ana Gösterge Paneli
+            {isClientPortal ? "Müteahhit Portalı" : "Ana Gösterge Paneli"}
           </h1>
           <p className="text-slate-600 dark:text-slate-400 mt-1">
             Hoş geldiniz, {session?.user?.name || 'Admin'}
@@ -92,6 +115,103 @@ export default async function AdminDashboard() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
+        {isClientPortal ? (
+          // Client Portal View
+          <div className="space-y-6">
+            {/* Project Info Card */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-6 border border-blue-200 dark:border-blue-800">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Projem</h2>
+                  <p className="text-slate-600 dark:text-slate-400 mt-1">YİBF #14582</p>
+                </div>
+                <span className="px-4 py-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-sm font-medium">
+                  Aktif
+                </span>
+              </div>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">İlerleme Durumu</h3>
+                <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">%82</span>
+              </div>
+              <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-4">
+                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 h-4 rounded-full transition-all" style={{ width: '82%' }} />
+              </div>
+            </div>
+
+            {/* Inspection Schedule */}
+            <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Kontrol Takvimi</h3>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4">
+                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">Son Kontrol</p>
+                  <p className="text-lg font-semibold text-slate-900 dark:text-white">26 Ağustos 2024</p>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4">
+                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">Yaklaşan Kontrol</p>
+                  <p className="text-lg font-semibold text-blue-600 dark:text-blue-400">28 Ağustos 2024</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Deficiency Summary */}
+            <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Eksiklik Özeti</h3>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 border border-red-200 dark:border-red-800">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-red-500/20 rounded-lg flex items-center justify-center">
+                      <svg className="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-3xl font-bold text-red-600 dark:text-red-400">2</p>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">Açık Eksiklik</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200 dark:border-green-800">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
+                      <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-3xl font-bold text-green-600 dark:text-green-400">18</p>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">Tamamlanan</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Hızlı İşlemler</h3>
+              <div className="grid md:grid-cols-2 gap-4">
+                <Link href="/admin/deficiencies" className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                  <svg className="w-5 h-5 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                  <span className="text-slate-900 dark:text-white font-medium">Eksiklikleri Gör</span>
+                </Link>
+                <Link href="/admin/finance" className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                  <svg className="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="text-slate-900 dark:text-white font-medium">Hakedişler</span>
+                </Link>
+              </div>
+            </div>
+          </div>
+        ) : (
+          // Admin Dashboard View
+          <>
         {/* Weather Widget */}
         <div className="mb-6">
           <WeatherWidget city="İstanbul" />
@@ -515,6 +635,8 @@ export default async function AdminDashboard() {
             </table>
           </div>
         </div>
+          </>
+        )}
       </div>
     </div>
   )
