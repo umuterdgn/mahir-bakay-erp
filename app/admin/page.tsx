@@ -9,6 +9,7 @@ import { prisma } from "@/lib/prisma"
 import Link from "next/link"
 import FinancialChart from "../../components/admin/FinancialChart"
 import WeatherWidget from "@/components/ui/WeatherWidget"
+import AIReportGenerator from "@/components/AIReportGenerator"
 
 export const dynamic = 'force-dynamic'
 
@@ -103,13 +104,18 @@ export default async function AdminDashboard() {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       {/* Header */}
       <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
-            {isClientPortal ? "Müteahhit Portalı" : "Ana Gösterge Paneli"}
-          </h1>
-          <p className="text-slate-600 dark:text-slate-400 mt-1">
-            Hoş geldiniz, {session?.user?.name || 'Admin'}
-          </p>
+        <div className="max-w-7xl mx-auto px-4 py-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+              {isClientPortal ? "Müteahhit Portalı" : "Ana Gösterge Paneli"}
+            </h1>
+            <p className="text-slate-600 dark:text-slate-400 mt-1">
+              Hoş geldiniz, {session?.user?.name || 'Admin'}
+            </p>
+          </div>
+          {!isClientPortal && (
+            <AIReportGenerator />
+          )}
         </div>
       </div>
 

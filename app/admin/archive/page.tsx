@@ -8,6 +8,7 @@
 
 import { useState, useEffect } from "react"
 import { toast } from "react-hot-toast"
+import { History, FileText, Clock, User, X, Download } from "lucide-react"
 
 export default function AdminArchivePage() {
   const [archives, setArchives] = useState<any[]>([])
@@ -21,6 +22,8 @@ export default function AdminArchivePage() {
   const [tempFile, setTempFile] = useState<File | null>(null)
   const [modalProjectId, setModalProjectId] = useState("")
   const [modalDocumentName, setModalDocumentName] = useState("")
+  const [isVersionModalOpen, setIsVersionModalOpen] = useState(false)
+  const [selectedArchive, setSelectedArchive] = useState<any>(null)
 
   useEffect(() => {
     fetchArchives()
@@ -263,6 +266,16 @@ export default function AdminArchivePage() {
                   {new Date(archive.uploadedAt).toLocaleDateString("tr-TR")}
                 </td>
                 <td className="px-6 py-4 text-right text-sm space-x-2">
+                  <button
+                    onClick={() => {
+                      setSelectedArchive(archive)
+                      setIsVersionModalOpen(true)
+                    }}
+                    className="text-purple-400 hover:text-purple-300 flex items-center gap-1"
+                  >
+                    <History className="w-4 h-4" />
+                    Versiyonlar
+                  </button>
                   <a
                     href={archive.driveUrl}
                     target="_blank"
@@ -291,6 +304,84 @@ export default function AdminArchivePage() {
         </table>
         </div>
       </div>
+
+      {/* Version History Modal */}
+      {isVersionModalOpen && selectedArchive && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-slate-900 rounded-xl p-6 border border-slate-800 w-full max-w-lg mx-4 shadow-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold text-white flex items-center gap-2">
+                <History className="w-5 h-5 text-purple-400" />
+                Versiyon Geçmişi
+              </h3>
+              <button
+                onClick={() => {
+                  setIsVersionModalOpen(false)
+                  setSelectedArchive(null)
+                }}
+                className="text-slate-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="mb-4 pb-4 border-b border-slate-800">
+              <p className="text-white font-medium">{selectedArchive.documentName || selectedArchive.fileName}</p>
+              <p className="text-slate-400 text-sm">{selectedArchive.project?.name || selectedArchive.project?.title || 'Genel Evrak'}</p>
+            </div>
+
+            <div className="space-y-3">
+              {/* Mock version data */}
+              <div className="bg-green-900/20 rounded-lg p-4 border border-green-500/30">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-green-400 font-medium">v3 (AKTİF)</span>
+                  <span className="text-xs text-slate-400">{new Date().toLocaleDateString('tr-TR')}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-slate-300 mb-2">
+                  <User className="w-4 h-4" />
+                  <span>Yükleyen: Ahmet</span>
+                </div>
+                <div className="text-sm text-slate-400">Değişim: Kolon Kesitleri</div>
+                <div className="flex gap-2 mt-3">
+                  <a
+                    href={selectedArchive.driveUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 px-3 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-500"
+                  >
+                    <Download className="w-3 h-3" />
+                    İndir
+                  </a>
+                </div>
+              </div>
+
+              <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-slate-400 font-medium">v2 (Eski)</span>
+                  <span className="text-xs text-slate-500">{new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toLocaleDateString('tr-TR')}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-slate-400 mb-2">
+                  <User className="w-4 h-4" />
+                  <span>Yükleyen: Mehmet</span>
+                </div>
+                <div className="text-sm text-slate-500">Değişim: Temel Projesi</div>
+              </div>
+
+              <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-slate-400 font-medium">v1 (Eski)</span>
+                  <span className="text-xs text-slate-500">{new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toLocaleDateString('tr-TR')}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-slate-400 mb-2">
+                  <User className="w-4 h-4" />
+                  <span>Yükleyen: Ayşe</span>
+                </div>
+                <div className="text-sm text-slate-500">İlk yükleme</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal */}
       {isModalOpen && (
