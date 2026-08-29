@@ -6,11 +6,64 @@
 
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
 export async function GET() {
   try {
+    // Hash the default password
+    const hashedPassword = await bcrypt.hash("123456", 10);
+
+    // 0. Create default users
+    await prisma.user.upsert({
+      where: { email: "admin@mahirbakay.com" },
+      update: {},
+      create: {
+        email: "admin@mahirbakay.com",
+        password: hashedPassword,
+        name: "OS Admin",
+        role: "ADMIN",
+        permissions: []
+      }
+    });
+
+    await prisma.user.upsert({
+      where: { email: "personel@mahirbakay.com" },
+      update: {},
+      create: {
+        email: "personel@mahirbakay.com",
+        password: hashedPassword,
+        name: "OS Personel",
+        role: "STAFF",
+        permissions: []
+      }
+    });
+
+    await prisma.user.upsert({
+      where: { email: "muteahhit@ornek.com" },
+      update: {},
+      create: {
+        email: "muteahhit@ornek.com",
+        password: hashedPassword,
+        name: "Müteahhit Admin",
+        role: "MUTEAHHIT" as any,
+        permissions: []
+      }
+    });
+
+    await prisma.user.upsert({
+      where: { email: "isci@ornek.com" },
+      update: {},
+      create: {
+        email: "isci@ornek.com",
+        password: hashedPassword,
+        name: "Müteahhit Personel",
+        role: "WORKER" as any,
+        permissions: []
+      }
+    });
+
     // 1. Personel Verileri
     const p1 = await prisma.personel.create({ data: { name: "Umut Erdoğan", position: "Şantiye Şefi", personnelNo: "P001", age: 35, birthDate: new Date("1990-01-01"), department: "Yönetim", currentSite: "İskenderun TOKİ", hireDate: new Date("2020-01-01"), status: "ACTIVE" } });
     const p2 = await prisma.personel.create({ data: { name: "Kutay Erdoğan", position: "İSG Uzmanı", personnelNo: "P002", age: 30, birthDate: new Date("1995-01-01"), department: "İSG", currentSite: "İskenderun TOKİ", hireDate: new Date("2021-01-01"), status: "ACTIVE" } });
