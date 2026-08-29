@@ -1,15 +1,19 @@
 import { PrismaClient } from '@prisma/client'
-import { neonConfig } from '@neondatabase/serverless'
+import { Pool, neonConfig } from '@neondatabase/serverless'
 import { PrismaNeon } from '@prisma/adapter-neon'
 import ws from 'ws'
 
-neonConfig.webSocketConstructor = ws
+// Eğer Node.js 22 native WebSocket'i varsa onu kullan (bufferUtil hatasını engeller), yoksa ws paketini kullan.
+neonConfig.webSocketConstructor = typeof globalThis.WebSocket !== 'undefined' ? globalThis.WebSocket : ws
 
-// Doğrudan bağlantı adresini (Hardcoded Fallback) tanımlıyoruz
-const connectionString = process.env.DATABASE_URL || "postgresql://neondb_owner:npg_K4iMd0SvNtQZ@ep-bold-dew-ag5mbbwd.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require";
+const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined }
 
-// globalThis hafızasını (cache zehirlenmesi yaptığı için) tamamen sildik.
-// Her seferinde tertemiz bir Adapter oluşturulacak.
-const adapter = new PrismaNeon({ connectionString })
+export const prisma = globalForPrisma.prisma ?? (() => {
+  const connectionString = process.env.DATABASE_URL || "postgresql://neondb_owner:npg_K4iMd0SvNtQZ@ep-bold-dew-ag5mbbwd.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require";
+  
+  const pool = new Pool({ connectionString })
+  const adapter = new PrismaNeon(pool)
+  return new PrismaClient({ adapter })
+})()
 
-export const prisma = new PrismaClient({ adapter })
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
