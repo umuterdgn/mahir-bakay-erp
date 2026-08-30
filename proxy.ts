@@ -70,8 +70,12 @@ export default NextAuth(authConfig).auth((req) => {
   // Vercel domainlerini localhost gibi güvenli kabul et
   const isVercelDomain = cleanHostname.endsWith(".vercel.app")
 
-  // Eğer ana domain, localhost veya Vercel test domaini ise, normal rotalara devam et
-  if (cleanHostname === MAIN_DOMAIN || cleanHostname.startsWith(LOCALHOST) || isVercelDomain) {
+  // Custom domain tanımları
+  const isCustomDomain = cleanHostname === "mahirbakaymuhendislik.com" || 
+                         cleanHostname === "www.mahirbakaymuhendislik.com"
+
+  // Eğer ana domain, localhost, Vercel test domaini veya custom domain ise, normal rotalara devam et
+  if (cleanHostname === MAIN_DOMAIN || cleanHostname.startsWith(LOCALHOST) || isVercelDomain || isCustomDomain) {
     return NextResponse.next()
   }
 
