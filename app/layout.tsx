@@ -19,13 +19,13 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Mahir Bakay Mühendislik",
-  description: "Geleceği inşa eden mühendislik çözümleri",
+  title: "Nexa ERP | Akıllı İnşaat ve Şantiye Yönetimi",
+  description: "Yapay zeka destekli, yeni nesil şantiye ve yapı denetim yönetim sistemi.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Mahir Bakay Mühendislik",
+    title: "Nexa ERP",
   },
   icons: {
     icon: [

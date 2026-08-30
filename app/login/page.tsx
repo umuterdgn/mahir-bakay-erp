@@ -5,12 +5,11 @@
  * This code is the property of NXA Software.
  */
 
-
 import { motion } from "framer-motion"
 import { useState } from "react"
 import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { Building, ShieldCheck, ArrowLeft } from "lucide-react"
+import { Building, ShieldCheck, ArrowLeft, Crown, HardHat, Wrench } from "lucide-react"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -83,6 +82,18 @@ export default function LoginPage() {
 
   const handleWorkerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setWorkerFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))
+  }
+
+  const handleDemoLogin = (role: "admin" | "site-manager" | "contractor") => {
+    const demoCredentials = {
+      admin: { email: "admin@nexa.com", password: "admin123" },
+      "site-manager": { email: "site@nexa.com", password: "site123" },
+      contractor: { email: "contractor@nexa.com", password: "contractor123" }
+    }
+
+    const creds = demoCredentials[role]
+    setAdminFormData(creds)
+    setActiveTab("admin")
   }
 
   if (!selectedType) {
@@ -169,40 +180,62 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center px-4 relative overflow-hidden">
-      {/* Background decorative elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl" />
+    <div className="min-h-screen bg-white flex flex-col lg:flex-row">
+      {/* Left Side - Branding (Desktop Only) */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-900 via-purple-900 to-slate-900 p-12 flex-col justify-center items-center relative overflow-hidden">
+        <div className="absolute inset-0">
+          <div className="absolute top-20 left-20 w-64 h-64 bg-blue-500/20 rounded-full blur-3xl" />
+          <div className="absolute bottom-20 right-20 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl" />
+        </div>
+        
+        <motion.div
+          initial={{ opacity: 0, x: -30 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.8 }}
+          className="relative z-10 text-center"
+        >
+          <h1 className="text-5xl font-bold text-white mb-4">
+            Şantiyenizi Geleceğe Taşıyın
+          </h1>
+          <p className="text-xl text-blue-100 mb-8">
+            Nexa ERP ile tüm operasyonlarınızı yapay zeka gücüyle tek merkezden yönetin
+          </p>
+          <div className="flex items-center justify-center gap-4">
+            <div className="w-12 h-1 bg-blue-400 rounded-full" />
+            <p className="text-blue-200 text-sm">Yapay Zeka Destekli</p>
+            <div className="w-12 h-1 bg-purple-400 rounded-full" />
+          </div>
+        </motion.div>
       </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="w-full max-w-md relative z-10"
-      >
-        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-2xl border border-white/20">
+      {/* Right Side - Login Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-white">
+        <motion.div
+          initial={{ opacity: 0, x: 30 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.8 }}
+          className="w-full max-w-md"
+        >
           <button
             onClick={() => setSelectedType(null)}
-            className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-6"
+            className="flex items-center gap-2 text-slate-400 hover:text-slate-600 transition-colors mb-6"
           >
             <ArrowLeft className="w-4 h-4" />
             <span className="text-sm">Geri Dön</span>
           </button>
 
           <div className="text-center mb-8">
-            <div className="w-16 h-16 mx-auto mb-4 bg-blue-600/20 rounded-full flex items-center justify-center">
+            <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
               {selectedType === "contractor" ? (
-                <Building className="w-8 h-8 text-blue-400" />
+                <Building className="w-8 h-8 text-blue-600" />
               ) : (
-                <ShieldCheck className="w-8 h-8 text-purple-400" />
+                <ShieldCheck className="w-8 h-8 text-purple-600" />
               )}
             </div>
-            <h1 className="text-3xl font-bold text-white mb-2">
+            <h1 className="text-3xl font-bold text-slate-900 mb-2">
               {selectedType === "contractor" ? "Müteahhit Girişi" : "Yapı Denetim Girişi"}
             </h1>
-            <p className="text-slate-300">
+            <p className="text-slate-500">
               {selectedType === "contractor"
                 ? "Nexa ERP - İnşaat Yönetim Sistemi"
                 : "Nexa ERP - Yapı Denetim Sistemi"}
@@ -210,13 +243,13 @@ export default function LoginPage() {
           </div>
 
           {/* Tabs */}
-          <div className="flex mb-6 bg-slate-800/50 rounded-lg p-1">
+          <div className="flex mb-6 bg-slate-100 rounded-lg p-1">
             <button
               onClick={() => setActiveTab("admin")}
               className={`flex-1 py-2 px-4 rounded-md transition-all ${
                 activeTab === "admin"
-                  ? "bg-blue-600 text-white"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-white text-slate-900 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
               }`}
             >
               Yönetici Girişi
@@ -225,8 +258,8 @@ export default function LoginPage() {
               onClick={() => setActiveTab("worker")}
               className={`flex-1 py-2 px-4 rounded-md transition-all ${
                 activeTab === "worker"
-                  ? "bg-blue-600 text-white"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-white text-slate-900 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
               }`}
             >
               Personel Girişi
@@ -237,7 +270,7 @@ export default function LoginPage() {
           {activeTab === "admin" && (
             <form onSubmit={handleAdminSubmit} className="space-y-6">
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-2">
+                <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
                   E-posta
                 </label>
                 <input
@@ -247,13 +280,13 @@ export default function LoginPage() {
                   required
                   value={adminFormData.email}
                   onChange={handleAdminChange}
-                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all backdrop-blur-sm"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   placeholder="admin@nexa.com"
                 />
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-2">
+                <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-2">
                   Şifre
                 </label>
                 <input
@@ -263,13 +296,13 @@ export default function LoginPage() {
                   required
                   value={adminFormData.password}
                   onChange={handleAdminChange}
-                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all backdrop-blur-sm"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   placeholder="••••••••"
                 />
               </div>
 
               {error && (
-                <div className="bg-red-500/20 border border-red-500/50 text-red-300 px-4 py-3 rounded-lg backdrop-blur-sm">
+                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
                   {error}
                 </div>
               )}
@@ -277,9 +310,9 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 rounded-lg font-medium hover:from-blue-500 hover:to-blue-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg font-medium hover:from-blue-500 hover:to-purple-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
               >
-                {isLoading ? "Giriş Yapılıyor..." : "Yönetici Paneline Git"}
+                {isLoading ? "Giriş Yapılıyor..." : "Giriş Yap"}
               </button>
             </form>
           )}
@@ -288,7 +321,7 @@ export default function LoginPage() {
           {activeTab === "worker" && (
             <form onSubmit={handleWorkerSubmit} className="space-y-6">
               <div>
-                <label htmlFor="username" className="block text-sm font-medium text-slate-300 mb-2">
+                <label htmlFor="username" className="block text-sm font-medium text-slate-700 mb-2">
                   Kullanıcı Adı
                 </label>
                 <input
@@ -298,13 +331,13 @@ export default function LoginPage() {
                   required
                   value={workerFormData.username}
                   onChange={handleWorkerChange}
-                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all backdrop-blur-sm"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   placeholder="ahmet.yilmaz"
                 />
               </div>
 
               <div>
-                <label htmlFor="workerPassword" className="block text-sm font-medium text-slate-300 mb-2">
+                <label htmlFor="workerPassword" className="block text-sm font-medium text-slate-700 mb-2">
                   Şifre
                 </label>
                 <input
@@ -314,13 +347,13 @@ export default function LoginPage() {
                   required
                   value={workerFormData.password}
                   onChange={handleWorkerChange}
-                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all backdrop-blur-sm"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   placeholder="••••••••"
                 />
               </div>
 
               {error && (
-                <div className="bg-red-500/20 border border-red-500/50 text-red-300 px-4 py-3 rounded-lg backdrop-blur-sm">
+                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
                   {error}
                 </div>
               )}
@@ -335,16 +368,50 @@ export default function LoginPage() {
             </form>
           )}
 
+          {/* Demo Fast-Pass Buttons */}
+          {activeTab === "admin" && (
+            <div className="mt-8">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="flex-1 h-px bg-slate-200" />
+                <span className="text-sm text-slate-400">Demo Girişleri</span>
+                <div className="flex-1 h-px bg-slate-200" />
+              </div>
+              <div className="grid grid-cols-1 gap-3">
+                <button
+                  onClick={() => handleDemoLogin("admin")}
+                  className="flex items-center gap-3 px-4 py-3 border-2 border-slate-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all group"
+                >
+                  <Crown className="w-5 h-5 text-amber-500 group-hover:text-amber-600" />
+                  <span className="text-slate-700 group-hover:text-slate-900 font-medium">Patron (Yönetici) Girişi</span>
+                </button>
+                <button
+                  onClick={() => handleDemoLogin("site-manager")}
+                  className="flex items-center gap-3 px-4 py-3 border-2 border-slate-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all group"
+                >
+                  <HardHat className="w-5 h-5 text-blue-500 group-hover:text-blue-600" />
+                  <span className="text-slate-700 group-hover:text-slate-900 font-medium">Şantiye Şefi Girişi</span>
+                </button>
+                <button
+                  onClick={() => handleDemoLogin("contractor")}
+                  className="flex items-center gap-3 px-4 py-3 border-2 border-slate-200 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-all group"
+                >
+                  <Wrench className="w-5 h-5 text-purple-500 group-hover:text-purple-600" />
+                  <span className="text-slate-700 group-hover:text-slate-900 font-medium">Müteahhit/Taşeron Girişi</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="mt-6 text-center">
             <a
               href="/"
-              className="text-slate-400 hover:text-white transition-colors text-sm"
+              className="text-slate-400 hover:text-slate-600 transition-colors text-sm"
             >
               Ana Sayfaya Dön
             </a>
           </div>
-        </div>
-      </motion.div>
+        </motion.div>
+      </div>
     </div>
   )
 }
