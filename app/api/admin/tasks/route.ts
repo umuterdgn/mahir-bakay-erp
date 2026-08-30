@@ -67,7 +67,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { title, description, status, projectId, assignedTo, dueDate } = body
+    const { title, description, status, projectId, assignedTo, dueDate, taskType } = body
 
     const task = await prisma.task.create({
       data: {
@@ -76,7 +76,8 @@ export async function POST(request: Request) {
         status: status || "TODO",
         projectId,
         assignedTo,
-        dueDate: dueDate ? new Date(dueDate) : null
+        dueDate: dueDate ? new Date(dueDate) : null,
+        taskType
       }
     })
 

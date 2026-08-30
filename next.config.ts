@@ -12,6 +12,7 @@ const withPWA = require('next-pwa')({
 });
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ['127.0.0.1'],
   transpilePackages: [
     '@mlightcad/cad-simple-viewer',
     '@mlightcad/three-renderer',

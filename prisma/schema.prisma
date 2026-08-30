@@ -1742,12 +1742,14 @@ model Task {
   professionId String? // Sorumlu Ekip/Birim ID
   profession  Profession? @relation(fields: [professionId], references: [id], onDelete: SetNull)
   dueDate     DateTime?
+  taskType    String?  // Görev tipi: Beton Kontrolü, Demir Kontrolü, Evrak Teslimi vb.
   createdAt   DateTime @default(now())
 
   @@index([status])
   @@index([projectId])
   @@index([professionId])
   @@index([dueDate])
+  @@index([taskType])
 }
 
 // ============================================================================

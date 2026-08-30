@@ -8,6 +8,7 @@
 
 import { useState, useEffect } from "react"
 import { toast } from "react-hot-toast"
+import { Calendar, ListTodo, Clock, MapPin, User } from "lucide-react"
 
 export default function TasksPage() {
   const [projects, setProjects] = useState<any[]>([])
@@ -20,13 +21,17 @@ export default function TasksPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [selectedTask, setSelectedTask] = useState<any>(null)
+  const [viewMode, setViewMode] = useState<"kanban" | "calendar">("kanban")
+  const [selectedDate, setSelectedDate] = useState(new Date())
   
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     projectId: "",
     assignedTo: "",
-    dueDate: ""
+    dueDate: "",
+    dueTime: "",
+    taskType: ""
   })
 
   useEffect(() => {
@@ -88,16 +93,26 @@ export default function TasksPage() {
 
     setIsSubmitting(true)
     try {
+      // Combine date and time for dueDate
+      let dueDate = null
+      if (formData.dueDate && formData.dueTime) {
+        dueDate = new Date(`${formData.dueDate}T${formData.dueTime}`)
+      } else if (formData.dueDate) {
+        dueDate = new Date(formData.dueDate)
+      }
+
       const response = await fetch("/api/admin/tasks", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          ...formData,
+          title: formData.title,
+          description: formData.description,
           projectId: formData.projectId || null,
           assignedTo: formData.assignedTo || null,
-          dueDate: formData.dueDate || null
+          dueDate: dueDate?.toISOString() || null,
+          taskType: formData.taskType || null
         })
       })
 
@@ -162,7 +177,9 @@ export default function TasksPage() {
       description: task.description || "",
       projectId: task.projectId || "",
       assignedTo: task.assignedTo || "",
-      dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : ""
+      dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : "",
+      dueTime: task.dueDate ? new Date(task.dueDate).toTimeString().split(' ')[0].substring(0, 5) : "",
+      taskType: task.taskType || ""
     })
     setIsEditModalOpen(true)
   }
@@ -177,6 +194,14 @@ export default function TasksPage() {
 
     setIsSubmitting(true)
     try {
+      // Combine date and time for dueDate
+      let dueDate = null
+      if (formData.dueDate && formData.dueTime) {
+        dueDate = new Date(`${formData.dueDate}T${formData.dueTime}`)
+      } else if (formData.dueDate) {
+        dueDate = new Date(formData.dueDate)
+      }
+
       const response = await fetch(`/api/admin/tasks/${selectedTask.id}`, {
         method: "PATCH",
         headers: {
@@ -187,7 +212,8 @@ export default function TasksPage() {
           description: formData.description,
           projectId: formData.projectId || null,
           assignedTo: formData.assignedTo || null,
-          dueDate: formData.dueDate || null
+          dueDate: dueDate?.toISOString() || null,
+          taskType: formData.taskType || null
         })
       })
 
@@ -213,7 +239,9 @@ export default function TasksPage() {
       description: "",
       projectId: "",
       assignedTo: "",
-      dueDate: ""
+      dueDate: "",
+      dueTime: "",
+      taskType: ""
     })
   }
 
@@ -223,7 +251,9 @@ export default function TasksPage() {
       description: "",
       projectId: selectedProjectId,
       assignedTo: "",
-      dueDate: ""
+      dueDate: "",
+      dueTime: "",
+      taskType: ""
     })
     setIsModalOpen(true)
   }
@@ -235,7 +265,9 @@ export default function TasksPage() {
       description: "",
       projectId: selectedProjectId,
       assignedTo: "",
-      dueDate: ""
+      dueDate: "",
+      dueTime: "",
+      taskType: ""
     })
   }
 
@@ -256,6 +288,77 @@ export default function TasksPage() {
     return dueDate < today
   }
 
+  // Calendar View Functions
+  const getDaysInMonth = (date: Date) => {
+    const year = date.getFullYear()
+    const month = date.getMonth()
+    const firstDay = new Date(year, month, 1)
+    const lastDay = new Date(year, month + 1, 0)
+    const daysInMonth = lastDay.getDate()
+    const startDayOfWeek = firstDay.getDay()
+    return { daysInMonth, startDayOfWeek }
+  }
+
+  const getTasksForDate = (date: Date) => {
+    return tasks.filter(task => {
+      if (!task.dueDate) return false
+      const taskDate = new Date(task.dueDate)
+      return taskDate.toDateString() === date.toDateString()
+    })
+  }
+
+  const getDailySchedule = () => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    
+    return tasks
+      .filter(task => {
+        if (!task.dueDate) return false
+        const taskDate = new Date(task.dueDate)
+        taskDate.setHours(0, 0, 0, 0)
+        return taskDate.toDateString() === today.toDateString()
+      })
+      .map(task => ({
+        ...task,
+        time: task.dueDate ? new Date(task.dueDate).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : 'Belirtilmemiş'
+      }))
+      .sort((a, b) => {
+        if (!a.dueDate || !b.dueDate) return 0
+        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+      })
+  }
+
+  const getNextStatus = (currentStatus: string) => {
+    switch (currentStatus) {
+      case "TODO": return "IN_PROGRESS"
+      case "IN_PROGRESS": return "IN_REVIEW"
+      case "IN_REVIEW": return "DONE"
+      case "DONE": return "TODO"
+      default: return "TODO"
+    }
+  }
+
+  const getButtonLabel = (status: string) => {
+    switch (status) {
+      case "TODO": return "Başla →"
+      case "IN_PROGRESS": return "Kontrol →"
+      case "IN_REVIEW": return "Onayla →"
+      case "DONE": return "Yeniden"
+      default: return "İleri →"
+    }
+  }
+
+  const prevMonth = () => {
+    setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1, 1))
+  }
+
+  const nextMonth = () => {
+    setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 1))
+  }
+
+  const monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"]
+  const dayNames = ["Paz", "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt"]
+
   if (isLoading) {
     return (
       <div className="lg:mt-0 mt-16">
@@ -266,58 +369,85 @@ export default function TasksPage() {
 
   return (
     <div className="lg:mt-0 mt-16">
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-wrap gap-4 justify-between items-center mb-8">
         <h1 className="text-2xl lg:text-3xl font-bold text-white">
-          📋 Kanban Görev Panosu
+          📋 Görevler & Takvim
         </h1>
-        <button
-          onClick={openModal}
-          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors font-medium flex items-center gap-2"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Yeni Görev Ekle
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setViewMode("kanban")}
+            className={`px-4 py-2 rounded-lg transition-colors font-medium flex items-center gap-2 ${
+              viewMode === "kanban" 
+                ? "bg-blue-600 text-white" 
+                : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+            }`}
+          >
+            <ListTodo className="w-5 h-5" />
+            Kanban
+          </button>
+          <button
+            onClick={() => setViewMode("calendar")}
+            className={`px-4 py-2 rounded-lg transition-colors font-medium flex items-center gap-2 ${
+              viewMode === "calendar" 
+                ? "bg-blue-600 text-white" 
+                : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+            }`}
+          >
+            <Calendar className="w-5 h-5" />
+            Takvim
+          </button>
+          <button
+            onClick={openModal}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors font-medium flex items-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Yeni Görev Ekle
+          </button>
+        </div>
       </div>
 
       {/* Project and Worker Filters */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <div className="bg-slate-900 rounded-xl p-6 border border-slate-800">
-          <label className="block text-sm font-medium text-slate-300 mb-2">Proje Filtrele</label>
-          <select
-            value={selectedProjectId}
-            onChange={(e) => setSelectedProjectId(e.target.value)}
-            className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
-          >
-            <option value="">Tüm Projeler</option>
-            {projects.map((project) => (
-              <option key={project.id} value={project.id}>
-                {project.name || project.title}
-              </option>
-            ))}
-          </select>
-        </div>
+      {viewMode === "kanban" && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div className="bg-slate-900 rounded-xl p-6 border border-slate-800">
+            <label className="block text-sm font-medium text-slate-300 mb-2">Proje Filtrele</label>
+            <select
+              value={selectedProjectId}
+              onChange={(e) => setSelectedProjectId(e.target.value)}
+              className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+            >
+              <option value="">Tüm Projeler</option>
+              {projects.map((project) => (
+                <option key={project.id} value={project.id}>
+                  {project.name || project.title}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        <div className="bg-slate-900 rounded-xl p-6 border border-slate-800">
-          <label className="block text-sm font-medium text-slate-300 mb-2">Personel Filtrele</label>
-          <select
-            value={selectedWorkerId}
-            onChange={(e) => setSelectedWorkerId(e.target.value)}
-            className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
-          >
-            <option value="">Tüm Personel</option>
-            {workers.map((worker) => (
-              <option key={worker.id} value={worker.id}>
-                {worker.name}
-              </option>
-            ))}
-          </select>
+          <div className="bg-slate-900 rounded-xl p-6 border border-slate-800">
+            <label className="block text-sm font-medium text-slate-300 mb-2">Personel Filtrele</label>
+            <select
+              value={selectedWorkerId}
+              onChange={(e) => setSelectedWorkerId(e.target.value)}
+              className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+            >
+              <option value="">Tüm Personel</option>
+              {workers.map((worker) => (
+                <option key={worker.id} value={worker.id}>
+                  {worker.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Kanban Board */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      {viewMode === "kanban" && (
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* TODO Column */}
         <div className="bg-slate-900 rounded-xl p-4 border border-slate-800">
           <div className="flex items-center justify-between mb-4">
@@ -430,6 +560,142 @@ export default function TasksPage() {
           </div>
         </div>
       </div>
+      )}
+
+      {/* Calendar View */}
+      {viewMode === "calendar" && (
+        <div className="space-y-6">
+          {/* Daily Schedule */}
+          <div className="bg-slate-900 rounded-xl p-6 border border-slate-800">
+            <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+              <Clock className="w-5 h-5" />
+              Bugünün Görev Planı
+            </h2>
+            <div className="space-y-3">
+              {getDailySchedule().length > 0 ? (
+                getDailySchedule().map((task) => (
+                  <div key={task.id} className="bg-slate-800 rounded-lg p-4 border border-slate-700">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-blue-400 font-medium">{task.time}</span>
+                          <span className="text-slate-500">•</span>
+                          <span className="text-slate-300 font-medium">{task.title}</span>
+                        </div>
+                        {task.description && (
+                          <p className="text-slate-400 text-sm mb-2">{task.description}</p>
+                        )}
+                        <div className="flex items-center gap-2 text-xs text-slate-500">
+                          {task.project && (
+                            <span className="bg-slate-700 px-2 py-1 rounded flex items-center gap-1">
+                              <MapPin className="w-3 h-3" />
+                              {task.project.name || task.project.title}
+                            </span>
+                          )}
+                          {task.worker && (
+                            <span className="bg-slate-700 px-2 py-1 rounded flex items-center gap-1">
+                              <User className="w-3 h-3" />
+                              {task.worker.name}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleUpdateStatus(task.id, getNextStatus(task.status))}
+                          className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded transition-colors"
+                        >
+                          {getButtonLabel(task.status)}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-slate-500">
+                  Bugün için planlanmış görev yok
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Monthly Calendar */}
+          <div className="bg-slate-900 rounded-xl p-6 border border-slate-800">
+            <div className="flex justify-between items-center mb-6">
+              <button
+                onClick={prevMonth}
+                className="px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors"
+              >
+                ←
+              </button>
+              <h2 className="text-xl font-semibold text-white">
+                {monthNames[selectedDate.getMonth()]} {selectedDate.getFullYear()}
+              </h2>
+              <button
+                onClick={nextMonth}
+                className="px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors"
+              >
+                →
+              </button>
+            </div>
+
+            <div className="grid grid-cols-7 gap-2 mb-2">
+              {dayNames.map(day => (
+                <div key={day} className="text-center text-sm font-medium text-slate-400 py-2">
+                  {day}
+                </div>
+              ))}
+            </div>
+
+            <div className="w-full overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+              <div className="grid grid-cols-7 gap-2 min-w-[800px]">
+                {(() => {
+                  const { daysInMonth, startDayOfWeek } = getDaysInMonth(selectedDate)
+                  return (
+                    <>
+                      {Array.from({ length: startDayOfWeek }).map((_, i) => (
+                        <div key={`empty-${i}`} className="h-24 bg-slate-800/50 rounded-lg"></div>
+                      ))}
+                      {Array.from({ length: daysInMonth }).map((_, i) => {
+                        const day = i + 1
+                        const date = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), day)
+                        const dayTasks = getTasksForDate(date)
+                        const isToday = date.toDateString() === new Date().toDateString()
+
+                        return (
+                          <div
+                            key={day}
+                            className={`h-24 bg-slate-800 rounded-lg p-2 overflow-hidden hover:bg-slate-700 transition-colors cursor-pointer ${
+                              isToday ? "ring-2 ring-blue-500" : ""
+                            }`}
+                          >
+                            <div className="text-sm text-slate-300 mb-1">{day}</div>
+                            <div className="space-y-1">
+                              {dayTasks.slice(0, 2).map((task) => (
+                                <div
+                                  key={task.id}
+                                  className="text-xs truncate p-1 rounded mb-1 bg-blue-900/30 text-blue-400"
+                                >
+                                  {task.title}
+                                </div>
+                              ))}
+                              {dayTasks.length > 2 && (
+                                <div className="text-xs text-slate-500">
+                                  +{dayTasks.length - 2} daha
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Edit Task Modal */}
       {isEditModalOpen && (
@@ -504,6 +770,37 @@ export default function TasksPage() {
                   onChange={handleInputChange}
                   className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Saat (Opsiyonel)</label>
+                <input
+                  type="time"
+                  name="dueTime"
+                  value={formData.dueTime}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Görev Tipi (Opsiyonel)</label>
+                <select
+                  name="taskType"
+                  value={formData.taskType}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                >
+                  <option value="">Görev Tipi Seçin</option>
+                  <option value="Beton Kontrolü">Beton Kontrolü</option>
+                  <option value="Demir Kontrolü">Demir Kontrolü</option>
+                  <option value="Evrak Teslimi">Evrak Teslimi</option>
+                  <option value="Saha Denetimi">Saha Denetimi</option>
+                  <option value="Malzeme Kontrolü">Malzeme Kontrolü</option>
+                  <option value="İSG Kontrolü">İSG Kontrolü</option>
+                  <option value="Toplantı">Toplantı</option>
+                  <option value="Diğer">Diğer</option>
+                </select>
               </div>
 
               <div className="flex gap-3 pt-4">
@@ -603,6 +900,37 @@ export default function TasksPage() {
                 />
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Saat (Opsiyonel)</label>
+                <input
+                  type="time"
+                  name="dueTime"
+                  value={formData.dueTime}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Görev Tipi (Opsiyonel)</label>
+                <select
+                  name="taskType"
+                  value={formData.taskType}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                >
+                  <option value="">Görev Tipi Seçin</option>
+                  <option value="Beton Kontrolü">Beton Kontrolü</option>
+                  <option value="Demir Kontrolü">Demir Kontrolü</option>
+                  <option value="Evrak Teslimi">Evrak Teslimi</option>
+                  <option value="Saha Denetimi">Saha Denetimi</option>
+                  <option value="Malzeme Kontrolü">Malzeme Kontrolü</option>
+                  <option value="İSG Kontrolü">İSG Kontrolü</option>
+                  <option value="Toplantı">Toplantı</option>
+                  <option value="Diğer">Diğer</option>
+                </select>
+              </div>
+
               <div className="flex gap-3 pt-4">
                 <button
                   type="button"
@@ -639,16 +967,6 @@ function TaskCard({ task, onStatusChange, onDelete, isOverdue, onEdit }: any) {
     }
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "TODO": return "bg-slate-700"
-      case "IN_PROGRESS": return "bg-blue-900/30 border-blue-800"
-      case "IN_REVIEW": return "bg-yellow-900/30 border-yellow-800"
-      case "DONE": return "bg-green-900/30 border-green-800"
-      default: return "bg-slate-700"
-    }
-  }
-
   const getButtonLabel = (status: string) => {
     switch (status) {
       case "TODO": return "Başla →"
@@ -656,6 +974,16 @@ function TaskCard({ task, onStatusChange, onDelete, isOverdue, onEdit }: any) {
       case "IN_REVIEW": return "Onayla →"
       case "DONE": return "Yeniden"
       default: return "İleri →"
+    }
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "TODO": return "bg-slate-700"
+      case "IN_PROGRESS": return "bg-blue-900/30 border-blue-800"
+      case "IN_REVIEW": return "bg-yellow-900/30 border-yellow-800"
+      case "DONE": return "bg-green-900/30 border-green-800"
+      default: return "bg-slate-700"
     }
   }
 
