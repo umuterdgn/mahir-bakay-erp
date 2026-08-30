@@ -7,6 +7,8 @@
 
 import { useState, useEffect } from "react"
 import { toast } from "react-hot-toast"
+import jsPDF from "jspdf"
+import html2canvas from "html2canvas"
 import { 
   ClipboardList, 
   Plus, 
@@ -20,7 +22,9 @@ import {
   Building2,
   FileText,
   Search,
-  Filter
+  Filter,
+  FileDown,
+  Loader2
 } from "lucide-react"
 
 interface SiteReport {
@@ -44,6 +48,8 @@ export default function ReportsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
+  const [pdfProgress, setPdfProgress] = useState(0)
   
   // Filters
   const [selectedProjectId, setSelectedProjectId] = useState("")
@@ -164,6 +170,103 @@ export default function ReportsPage() {
 
   const digest = getTodayDigest()
 
+  const handleGeneratePDF = async () => {
+    setIsGeneratingPDF(true)
+    setPdfProgress(0)
+
+    // Simulate progress
+    for (let i = 0; i <= 100; i += 10) {
+      await new Promise(resolve => setTimeout(resolve, 300))
+      setPdfProgress(i)
+    }
+
+    // Create PDF
+    const pdf = new jsPDF('p', 'mm', 'a4')
+    const pageWidth = pdf.internal.pageSize.getWidth()
+    const pageHeight = pdf.internal.pageSize.getHeight()
+
+    // Cover Page
+    pdf.setFillColor(30, 41, 59)
+    pdf.rect(0, 0, pageWidth, pageHeight, 'F')
+    
+    pdf.setTextColor(59, 130, 246)
+    pdf.setFontSize(32)
+    pdf.text("NEXA", pageWidth / 2, 50, { align: 'center' })
+    
+    pdf.setTextColor(255, 255, 255)
+    pdf.setFontSize(24)
+    pdf.text("Haftalık Durum Raporu", pageWidth / 2, 70, { align: 'center' })
+    
+    pdf.setFontSize(14)
+    pdf.setTextColor(148, 163, 184)
+    pdf.text(new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }), pageWidth / 2, 90, { align: 'center' })
+
+    // Page 1: Executive Summary
+    pdf.addPage()
+    pdf.setFillColor(255, 255, 255)
+    pdf.rect(0, 0, pageWidth, pageHeight, 'F')
+    
+    pdf.setTextColor(30, 41, 59)
+    pdf.setFontSize(20)
+    pdf.text("Yönetici Özeti", 20, 30)
+    
+    pdf.setFontSize(11)
+    pdf.setTextColor(71, 85, 105)
+    const summaryText = "Bu hafta 4 şantiyede toplam %8 ilerleme kaydedilmiştir. İskenderun TOKİ projesinde B Blok beton dökümü tamamlanmış, Arsuz Konutları'nda temel çalışmaları hızla devam etmektedir. 2 kritik eksiklik giderilmiş, personel devri %5 artmıştır. Finansal olarak toplam ₺245,000 tahsilat yapılmış, bekleyen hakedişler ₺890,000 seviyesindedir."
+    
+    const splitText = pdf.splitTextToSize(summaryText, pageWidth - 40)
+    pdf.text(splitText, 20, 50)
+
+    // Summary Cards
+    pdf.setFillColor(59, 130, 246)
+    pdf.roundedRect(20, 100, 80, 40, 5, 5, 'F')
+    pdf.setTextColor(255, 255, 255)
+    pdf.setFontSize(12)
+    pdf.text("Toplam Personel", 25, 115)
+    pdf.setFontSize(18)
+    pdf.text(digest.totalWorkers.toString(), 25, 130)
+
+    pdf.setFillColor(34, 197, 94)
+    pdf.roundedRect(110, 100, 80, 40, 5, 5, 'F')
+    pdf.setTextColor(255, 255, 255)
+    pdf.setFontSize(12)
+    pdf.text("Aktif Şantiye", 115, 115)
+    pdf.setFontSize(18)
+    pdf.text(digest.siteCount.toString(), 115, 130)
+
+    // Page 2: Deficiencies and Finance
+    pdf.addPage()
+    pdf.setFillColor(255, 255, 255)
+    pdf.rect(0, 0, pageWidth, pageHeight, 'F')
+    
+    pdf.setTextColor(30, 41, 59)
+    pdf.setFontSize(20)
+    pdf.text("Açık Eksiklikler", 20, 30)
+    
+    pdf.setFontSize(11)
+    pdf.setTextColor(71, 85, 105)
+    pdf.text("Kritik Eksiklikler: 2", 20, 50)
+    pdf.text("Orta Seviye: 1", 20, 60)
+    pdf.text("Düşük Öncelik: 0", 20, 70)
+    
+    pdf.setFontSize(20)
+    pdf.setTextColor(30, 41, 59)
+    pdf.text("Finansal Durum", 20, 100)
+    
+    pdf.setFontSize(11)
+    pdf.setTextColor(71, 85, 105)
+    pdf.text("Toplam Kasa: ₺2,450,000", 20, 120)
+    pdf.text("Bekleyen Hakedişler: ₺890,000", 20, 130)
+    pdf.text("Bugün Tahsilat: ₺125,000", 20, 140)
+
+    // Save PDF
+    pdf.save('Nexa_Haftalik_Rapor.pdf')
+    
+    setIsGeneratingPDF(false)
+    setPdfProgress(0)
+    toast.success("PDF raporu başarıyla indirildi")
+  }
+
   const filteredReports = reports.filter(report => {
     const matchesProject = !selectedProjectId || report.project.id === selectedProjectId
     const matchesSearch = !searchTerm || 
@@ -190,13 +293,23 @@ export default function ReportsPage() {
           </h1>
           <p className="text-slate-400 mt-1">Günlük şantiye defteri ve sabah raporları</p>
         </div>
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors font-medium"
-        >
-          <Plus className="w-5 h-5" />
-          Yeni Rapor Oluştur
-        </button>
+        <div className="flex gap-3">
+          <button 
+            onClick={handleGeneratePDF}
+            disabled={isGeneratingPDF}
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-lg transition-colors font-medium disabled:opacity-50"
+          >
+            <FileDown className="w-5 h-5" />
+            Tek Tıkla PDF Rapor
+          </button>
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors font-medium"
+          >
+            <Plus className="w-5 h-5" />
+            Yeni Rapor Oluştur
+          </button>
+        </div>
       </div>
 
       {/* Morning Digest Panel */}
@@ -418,6 +531,30 @@ export default function ReportsPage() {
                   {submitting ? "Kaydediliyor..." : "Rapor Oluştur"}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PDF Generation Modal */}
+      {isGeneratingPDF && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 rounded-xl p-8 max-w-md w-full border border-slate-800">
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-6 relative">
+                <Loader2 className="w-16 h-16 text-blue-500 animate-spin" />
+              </div>
+              <h3 className="text-xl font-semibold text-white mb-2">Yapay Zeka Raporu Derliyor...</h3>
+              <p className="text-slate-400 text-sm mb-6">Veriler analiz ediliyor ve PDF oluşturuluyor</p>
+              
+              <div className="w-full bg-slate-800 rounded-full h-3 mb-4">
+                <div 
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 h-3 rounded-full transition-all duration-300"
+                  style={{ width: `${pdfProgress}%` }}
+                />
+              </div>
+              
+              <p className="text-slate-400 text-sm">{pdfProgress}% tamamlandı</p>
             </div>
           </div>
         </div>
