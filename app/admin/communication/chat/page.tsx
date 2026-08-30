@@ -7,7 +7,8 @@
 
 
 import { useState, useEffect } from "react"
-import { MessageSquare, Send, Paperclip, Hash, User, Search, MoreVertical, AlertTriangle, FileText, CheckCircle, Plus, X, Users } from "lucide-react"
+import { toast } from "react-hot-toast"
+import { MessageSquare, Send, Paperclip, Hash, User, Search, MoreVertical, AlertTriangle, FileText, CheckCircle, Plus, X, Users, Mic, Bot, MoreHorizontal } from "lucide-react"
 
 interface ChatMessage {
   id: string
@@ -19,6 +20,7 @@ interface ChatMessage {
   attachmentUrl?: string
   isRead: boolean
   createdAt: Date
+  isAI?: boolean
 }
 
 interface Channel {
@@ -42,6 +44,9 @@ export default function ChatPage() {
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>([])
   const [projects, setProjects] = useState<any[]>([])
   const [personnel, setPersonnel] = useState<any[]>([])
+  const [isRecording, setIsRecording] = useState(false)
+  const [actionMenuOpen, setActionMenuOpen] = useState<string | null>(null)
+  const [isAIResponding, setIsAIResponding] = useState(false)
   const [channels, setChannels] = useState<Channel[]>([
     { 
       id: "1", 
@@ -158,10 +163,96 @@ export default function ChatPage() {
     channel.name.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!messageInput.trim()) return
-    // Send message logic here
+    
+    const newMessage: ChatMessage = {
+      id: Date.now().toString(),
+      senderId: "user1",
+      senderName: "Ahmet Yılmaz",
+      content: messageInput,
+      isRead: true,
+      createdAt: new Date()
+    }
+    
+    if (selectedChannel) {
+      const updatedChannel = {
+        ...selectedChannel,
+        messages: [...selectedChannel.messages, newMessage],
+        lastMessage: messageInput,
+        lastMessageTime: new Date()
+      }
+      setSelectedChannel(updatedChannel)
+      setChannels(channels.map(c => c.id === selectedChannel.id ? updatedChannel : c))
+    }
+    
+    // Check for @AI mention
+    if (messageInput.includes("@AI")) {
+      await handleAIResponse(messageInput)
+    }
+    
     setMessageInput("")
+  }
+
+  const handleAIResponse = async (userMessage: string) => {
+    setIsAIResponding(true)
+    
+    // Simulate AI processing
+    await new Promise(resolve => setTimeout(resolve, 1500))
+    
+    let aiResponse = ""
+    if (userMessage.includes("eksiklik") || userMessage.includes("deficiency")) {
+      aiResponse = "Şu an bu şantiyede 3 adet açık eksiklik (Deficiency) bulunmaktadır. Bunlardan 2'si kritik seviyededir."
+    } else if (userMessage.includes("proje") || userMessage.includes("ilerleme")) {
+      aiResponse = "Bu projenin genel ilerleme durumu %67'dir. B Blok tamamlanma aşamasında, C Blok temel aşamasında."
+    } else if (userMessage.includes("personel") || userMessage.includes("işçi")) {
+      aiResponse = "Bugün şantiyede 42 personel aktif olarak çalışıyor. 3 personel izinde."
+    } else {
+      aiResponse = "Sorunuzu anladım. Şu anda demo modunda çalışıyorum. Proje verileri, eksiklik durumu veya personel hakkında başka sorularınız varsa lütfen sorun."
+    }
+    
+    const aiMessage: ChatMessage = {
+      id: (Date.now() + 1).toString(),
+      senderId: "ai-bot",
+      senderName: "AI Asistan",
+      content: aiResponse,
+      isRead: true,
+      createdAt: new Date(),
+      isAI: true
+    }
+    
+    if (selectedChannel) {
+      const updatedChannel = {
+        ...selectedChannel,
+        messages: [...selectedChannel.messages, aiMessage],
+        lastMessage: aiResponse,
+        lastMessageTime: new Date()
+      }
+      setSelectedChannel(updatedChannel)
+      setChannels(channels.map(c => c.id === selectedChannel.id ? updatedChannel : c))
+    }
+    
+    setIsAIResponding(false)
+  }
+
+  const handleVoiceRecord = async () => {
+    setIsRecording(true)
+    
+    // Simulate speech-to-text (2-3 seconds)
+    await new Promise(resolve => setTimeout(resolve, 2500))
+    
+    setMessageInput("Bugün B Blok beton dökümü tamamlandı, paspayları kontrol edildi, sorun yok.")
+    setIsRecording(false)
+  }
+
+  const handleQuickAction = async (action: string, messageId: string) => {
+    setActionMenuOpen(null)
+    
+    if (action === "deficiency") {
+      toast.success("Mesaj eksiklik (Deficiency) olarak kaydedildi")
+    } else if (action === "sitereport") {
+      toast.success("Mesaj günlük rapora (SiteReport) eklendi")
+    }
   }
 
   useEffect(() => {
@@ -339,6 +430,22 @@ export default function ChatPage() {
 
             {/* Messages Area */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {isAIResponding && (
+                <div className="flex justify-start">
+                  <div className="max-w-md">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs text-slate-400">AI Asistan</span>
+                    </div>
+                    <div className="px-4 py-2 rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-500/30 text-white">
+                      <div className="flex items-center gap-2">
+                        <Bot className="w-4 h-4 text-blue-400 animate-pulse" />
+                        <span className="text-sm">Yanıt yazılıyor...</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
               {selectedChannel.messages.map((message) => (
                 <div
                   key={message.id}
@@ -346,11 +453,40 @@ export default function ChatPage() {
                 >
                   <div className={`max-w-md ${message.senderId === "user1" ? "order-2" : "order-1"}`}>
                     <div className={`flex items-center gap-2 mb-1 ${message.senderId === "user1" ? "justify-end" : "justify-start"}`}>
-                      <span className="text-xs text-slate-400">{message.senderName}</span>
+                      <div className="flex items-center gap-2">
+                        {message.isAI && <Bot className="w-3 h-3 text-blue-400" />}
+                        <span className="text-xs text-slate-400">{message.senderName}</span>
+                      </div>
                       <span className="text-xs text-slate-500">
                         {new Date(message.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
                       </span>
+                      <button
+                        onClick={() => setActionMenuOpen(actionMenuOpen === message.id ? null : message.id)}
+                        className="text-slate-500 hover:text-slate-300 transition-colors"
+                      >
+                        <MoreHorizontal className="w-3 h-3" />
+                      </button>
                     </div>
+                    
+                    {/* Quick Action Menu */}
+                    {actionMenuOpen === message.id && (
+                      <div className="absolute mb-2 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-10 w-48">
+                        <button
+                          onClick={() => handleQuickAction("deficiency", message.id)}
+                          className="w-full flex items-center gap-3 px-3 py-2 text-left text-slate-300 hover:bg-slate-700 rounded-t-lg transition-colors text-sm"
+                        >
+                          <AlertTriangle className="w-4 h-4 text-red-400" />
+                          Eksiklik Olarak Kaydet
+                        </button>
+                        <button
+                          onClick={() => handleQuickAction("sitereport", message.id)}
+                          className="w-full flex items-center gap-3 px-3 py-2 text-left text-slate-300 hover:bg-slate-700 rounded-b-lg transition-colors text-sm"
+                        >
+                          <FileText className="w-4 h-4 text-blue-400" />
+                          Günlük Rapora Ekle
+                        </button>
+                      </div>
+                    )}
                     
                     {message.attachmentType ? (
                       <a
@@ -371,7 +507,9 @@ export default function ChatPage() {
                       </a>
                     ) : (
                       <div className={`px-4 py-2 rounded-lg ${
-                        message.senderId === "user1"
+                        message.isAI
+                          ? "bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-500/30 text-white"
+                          : message.senderId === "user1"
                           ? "bg-blue-600 text-white"
                           : "bg-slate-700 text-white"
                       }`}>
@@ -435,16 +573,38 @@ export default function ChatPage() {
                 
                 <input
                   type="text"
-                  placeholder="Mesaj yazın..."
+                  placeholder="Mesaj yazın... (@AI ile soru sor)"
                   value={messageInput}
                   onChange={(e) => setMessageInput(e.target.value)}
                   onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
                   className="flex-1 px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
+                  disabled={isRecording}
                 />
                 
                 <button
+                  onClick={handleVoiceRecord}
+                  disabled={isRecording}
+                  className={`p-2 rounded-lg transition-colors ${
+                    isRecording
+                      ? "bg-red-500 text-white animate-pulse"
+                      : "text-slate-400 hover:text-white hover:bg-slate-700"
+                  }`}
+                >
+                  {isRecording ? (
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 bg-white rounded-full animate-ping" />
+                      <div className="w-2 h-2 bg-white rounded-full animate-ping" style={{ animationDelay: '0.2s' }} />
+                      <div className="w-2 h-2 bg-white rounded-full animate-ping" style={{ animationDelay: '0.4s' }} />
+                    </div>
+                  ) : (
+                    <Mic className="w-5 h-5" />
+                  )}
+                </button>
+                
+                <button
                   onClick={handleSendMessage}
-                  className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors"
+                  disabled={isRecording || isAIResponding}
+                  className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors disabled:opacity-50"
                 >
                   <Send className="w-5 h-5" />
                 </button>
