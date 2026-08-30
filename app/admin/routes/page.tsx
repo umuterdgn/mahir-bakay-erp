@@ -60,19 +60,19 @@ export default function RoutesPage() {
   ]
 
   const initialStops: Stop[] = [
-    { id: "0", name: "Nexa Merkez Ofis", address: "Merkez, İskenderun", order: 0, lat: 36.5875, lng: 35.9250, isStart: true },
-    { id: "1", name: "İskenderun TOKİ", address: "TOKİ Mahallesi, İskenderun", order: 1, lat: 36.5950, lng: 35.9350, isStart: false },
-    { id: "2", name: "Arsuz Konutları", address: "Arsuz Merkez, Arsuz", order: 2, lat: 36.4500, lng: 35.8800, isStart: false },
-    { id: "3", name: "Dörtyol Sitesi", address: "Dörtyol, Hatay", order: 3, lat: 36.8500, lng: 36.2200, isStart: false },
-    { id: "4", name: "Erzin Proje", address: "Erzin, Hatay", order: 4, lat: 36.9500, lng: 36.2000, isStart: false }
+    { id: "0", name: "Nexa Merkez Ofis", address: "Merkez, İskenderun", order: 0, lat: 36.58718, lng: 36.17347, isStart: true },
+    { id: "1", name: "İskenderun TOKİ", address: "TOKİ Mahallesi, İskenderun", order: 1, lat: 36.58, lng: 36.17, isStart: false },
+    { id: "2", name: "Arsuz Konutları", address: "Arsuz Merkez, Arsuz", order: 2, lat: 36.40, lng: 35.88, isStart: false },
+    { id: "3", name: "Dörtyol Sitesi", address: "Dörtyol, Hatay", order: 3, lat: 36.85, lng: 36.22, isStart: false },
+    { id: "4", name: "Erzin Proje", address: "Erzin, Hatay", order: 4, lat: 36.95, lng: 36.20, isStart: false }
   ]
 
   const optimizedStops: Stop[] = [
-    { id: "0", name: "Nexa Merkez Ofis", address: "Merkez, İskenderun", order: 0, lat: 36.5875, lng: 35.9250, isStart: true },
-    { id: "2", name: "Arsuz Konutları", address: "Arsuz Merkez, Arsuz", order: 1, lat: 36.4500, lng: 35.8800, isStart: false },
-    { id: "3", name: "Dörtyol Sitesi", address: "Dörtyol, Hatay", order: 2, lat: 36.8500, lng: 36.2200, isStart: false },
-    { id: "4", name: "Erzin Proje", address: "Erzin, Hatay", order: 3, lat: 36.9500, lng: 36.2000, isStart: false },
-    { id: "1", name: "İskenderun TOKİ", address: "TOKİ Mahallesi, İskenderun", order: 4, lat: 36.5950, lng: 35.9350, isStart: false }
+    { id: "0", name: "Nexa Merkez Ofis", address: "Merkez, İskenderun", order: 0, lat: 36.58718, lng: 36.17347, isStart: true },
+    { id: "2", name: "Arsuz Konutları", address: "Arsuz Merkez, Arsuz", order: 1, lat: 36.40, lng: 35.88, isStart: false },
+    { id: "3", name: "Dörtyol Sitesi", address: "Dörtyol, Hatay", order: 2, lat: 36.85, lng: 36.22, isStart: false },
+    { id: "4", name: "Erzin Proje", address: "Erzin, Hatay", order: 3, lat: 36.95, lng: 36.20, isStart: false },
+    { id: "1", name: "İskenderun TOKİ", address: "TOKİ Mahallesi, İskenderun", order: 4, lat: 36.58, lng: 36.17, isStart: false }
   ]
 
   useEffect(() => {
@@ -207,8 +207,8 @@ export default function RoutesPage() {
             
             <div className="h-[500px] rounded-lg overflow-hidden">
               <MapContainer
-                center={[36.5875, 35.9250]}
-                zoom={10}
+                center={[36.58718, 36.17347]}
+                zoom={11}
                 style={{ height: "100%", width: "100%" }}
                 className="z-0"
               >

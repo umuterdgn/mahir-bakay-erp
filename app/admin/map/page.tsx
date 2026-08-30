@@ -154,8 +154,8 @@ export default function MapPage() {
       <div className="flex-1 bg-slate-800/50 rounded-xl border border-slate-700 overflow-hidden">
         {typeof window !== 'undefined' && (
           <MapContainer
-            center={[41.0082, 28.9784]} // Istanbul center
-            zoom={10}
+            center={[36.58718, 36.17347]} // İskenderun center
+            zoom={11}
             style={{ height: '100%', width: '100%' }}
             className="z-0"
           >
