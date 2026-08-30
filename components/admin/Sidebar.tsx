@@ -65,7 +65,8 @@ import {
   Scan,
   GitCompare,
   Route,
-  PieChart
+  PieChart,
+  ScanText
 } from "lucide-react"
 
 export default function AdminSidebar() {
@@ -116,6 +117,7 @@ export default function AdminSidebar() {
     { href: "/admin/inspection/attachment", label: "Ataşman & Delil", requiredPermission: null, icon: FileCheck, category: "YAPI DENETİM & KONTROL" },
     { href: "/admin/inspection/documents", label: "Ruhsat & Evrak Arşivi", requiredPermission: null, icon: Archive, category: "YAPI DENETİM & KONTROL" },
     { href: "/admin/documents", label: "Dijital Evrak Arşivi", requiredPermission: null, icon: FileText, category: "YAPI DENETİM & KONTROL" },
+    { href: "/admin/smart-documents", label: "Akıllı Evrak Denetimi (OCR)", requiredPermission: null, icon: ScanText, category: "YAPI DENETİM & KONTROL" },
     { href: "/admin/reports", label: "Saha Raporları", requiredPermission: null, icon: ClipboardList, category: "YAPI DENETİM & KONTROL" },
     { href: "/admin/ai-assistant", label: "AI Asistan", requiredPermission: null, icon: Bot, category: "YAPI DENETİM & KONTROL" },
     { href: "/admin/ai-vision", label: "AI Görsel Analiz", requiredPermission: null, icon: Scan, category: "YAPI DENETİM & KONTROL" },
