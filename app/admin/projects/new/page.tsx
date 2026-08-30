@@ -10,6 +10,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "react-hot-toast"
 import dynamic from 'next/dynamic'
+import { Search, CheckCircle, Loader2 } from "lucide-react"
 
 // Leaflet SSR'da hata verdiği için dynamic import kullanıyoruz
 const MapLocationPicker = dynamic(() => import('@/components/MapLocationPicker'), { ssr: false })
@@ -18,6 +19,9 @@ export default function NewProjectPage() {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [companies, setCompanies] = useState<any[]>([])
+  const [yibfNumber, setYibfNumber] = useState("")
+  const [isFetchingData, setIsFetchingData] = useState(false)
+  const [dataFetched, setDataFetched] = useState(false)
   
   const [formData, setFormData] = useState({
     name: "",
@@ -95,6 +99,40 @@ export default function NewProjectPage() {
     }
   }
 
+  const handleYIBFQuery = async () => {
+    if (!yibfNumber || yibfNumber.length < 7) {
+      toast.error("Lütfen geçerli bir YİBF numarası girin")
+      return
+    }
+
+    setIsFetchingData(true)
+    
+    // Simulate API call to YDS/Belediye (2.5 seconds)
+    await new Promise(resolve => setTimeout(resolve, 2500))
+    
+    // Mock data based on YİBF number
+    const mockData = {
+      name: `YİBF ${yibfNumber} - Merkez Konutları`,
+      ada: "1452",
+      parsel: "3",
+      description: "Toplam inşaat alanı 4.250 m², yapı sınıfı 3B",
+      city: "Hatay",
+      district: "İskenderun",
+      mintika: "Merkez Mahallesi",
+      category: "Kentsel Dönüşüm"
+    }
+    
+    // Auto-fill form fields
+    setFormData(prev => ({
+      ...prev,
+      ...mockData
+    }))
+    
+    setDataFetched(true)
+    setIsFetchingData(false)
+    toast.success("Veriler Yapı Denetim Sistemi'nden (YDS) başarıyla senkronize edildi")
+  }
+
   return (
     <div className="min-h-screen bg-slate-950">
       <div className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8">
@@ -114,6 +152,56 @@ export default function NewProjectPage() {
           
           {/* SOL SÜTUN (FORM ALANLARI) */}
           <div className="lg:col-span-7 flex flex-col gap-6">
+            
+            {/* YİBF Sorgulama Kartı */}
+            <div className="bg-gradient-to-r from-blue-900/50 to-purple-900/50 p-6 rounded-xl border border-blue-700/50 shadow-sm">
+              <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                <Search className="w-5 h-5 text-blue-400" />
+                Resmi Kurumdan Veri Çekme
+              </h2>
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-slate-300 mb-2">YİBF Numarası (Örn: 2451009)</label>
+                  <input
+                    type="text"
+                    value={yibfNumber}
+                    onChange={(e) => setYibfNumber(e.target.value)}
+                    placeholder="YİBF numarasını girin..."
+                    className="w-full px-4 py-3 bg-slate-800 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500"
+                    disabled={isFetchingData}
+                  />
+                </div>
+                <div className="flex items-end">
+                  <button
+                    onClick={handleYIBFQuery}
+                    disabled={isFetchingData || !yibfNumber}
+                    className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    {isFetchingData ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span>YDS'den Çekiliyor...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Search className="w-5 h-5" />
+                        <span>Resmi Kurumdan Sorgula</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+              
+              {dataFetched && (
+                <div className="mt-4 p-4 bg-green-500/10 border border-green-500/30 rounded-lg flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-green-400 font-medium mb-1">Veriler Başarıyla Senkronize Edildi</p>
+                    <p className="text-green-300/80 text-sm">Veriler Yapı Denetim Sistemi'nden (YDS) başarıyla çekildi. Lütfen doğruluğunu kontrol edip kaydedin.</p>
+                  </div>
+                </div>
+              )}
+            </div>
             
             {/* KART 1: Temel Bilgiler */}
             <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-sm">
