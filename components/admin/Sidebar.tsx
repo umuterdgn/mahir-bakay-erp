@@ -67,7 +67,8 @@ import {
   Route,
   PieChart,
   ScanText,
-  Plane
+  Plane,
+  CalendarDays
 } from "lucide-react"
 
 export default function AdminSidebar() {
@@ -91,8 +92,9 @@ export default function AdminSidebar() {
   const allNavItems = [
     { href: "/admin", label: "Dashboard", requiredPermission: "DASHBOARD", icon: LayoutDashboard, category: "ANA MENÜ", adminOnly: true },
     { href: "/admin/map", label: "Şantiye Haritası", requiredPermission: null, icon: Map, category: "ANA MENÜ", adminOnly: true },
-    { href: "/admin/calendar", label: "Takvim", requiredPermission: null, icon: Calendar, category: "ANA MENÜ" },
-    { href: "/admin/site-reports", label: "Şantiye Günlüğü", requiredPermission: null, icon: ClipboardList, category: "ANA MENÜ" },
+    { href: "/admin/personnel", label: "Personel Takibi", requiredPermission: null, icon: Users, category: "İNSAN KAYNAKLARI" },
+    { href: "/admin/payroll", label: "Puantaj & Bordro", requiredPermission: null, icon: CalendarDays, category: "İNSAN KAYNAKLARI" },
+    { href: "/admin/shifts", label: "Vardiya Planlaması", requiredPermission: null, icon: Clock, category: "İNSAN KAYNAKLARI" },
     { href: "/admin/audits", label: "Taşeron Denetimleri", requiredPermission: null, icon: ShieldAlert, category: "TAŞERON YÖNETİMİ", contractorOnly: true },
     { href: "/admin/billing", label: "Hakediş Yönetimi", requiredPermission: null, icon: Wallet, category: "TAŞERON YÖNETİMİ", contractorOnly: true },
     { href: "/admin/subcontractors/contracts", label: "Taşeron Sözleşmeleri", requiredPermission: null, icon: FileSignature, category: "TAŞERON YÖNETİMİ", contractorOnly: true },
