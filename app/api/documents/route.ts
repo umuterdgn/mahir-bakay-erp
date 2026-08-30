@@ -10,7 +10,7 @@ import { prisma } from "@/lib/prisma"
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { title, category, fileUrl, projectId } = body
+    const { title, category, fileUrl, projectId, expiryDate } = body
 
     if (!title || !category || !fileUrl) {
       return NextResponse.json(
@@ -25,7 +25,17 @@ export async function POST(request: NextRequest) {
         title,
         category,
         fileUrl,
-        projectId: projectId || null
+        projectId: projectId || null,
+        expiryDate: expiryDate ? new Date(expiryDate) : null
+      },
+      include: {
+        project: {
+          select: {
+            id: true,
+            name: true,
+            title: true
+          }
+        }
       }
     })
 
@@ -41,7 +51,24 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url)
+    const projectId = searchParams.get("projectId")
+    const category = searchParams.get("category")
+
     const documents = await prisma.documentArchive.findMany({
+      where: {
+        ...(projectId && { projectId }),
+        ...(category && { category })
+      },
+      include: {
+        project: {
+          select: {
+            id: true,
+            name: true,
+            title: true
+          }
+        }
+      },
       orderBy: { createdAt: 'desc' }
     })
 

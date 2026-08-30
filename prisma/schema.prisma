@@ -1939,8 +1939,8 @@ model CoreTest {
 
 model DocumentArchive {
   id          String   @id @default(cuid())
-  projectId   String
-  project     Project  @relation(fields: [projectId], references: [id])
+  projectId   String?
+  project     Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
   title       String   // Örn: Yapı Ruhsatı, Zemin Etüdü
   category    String   // Örn: RUHSAT, PROJE_CIZIMI, TUTANAK
   fileUrl     String   // Cloudinary URL
