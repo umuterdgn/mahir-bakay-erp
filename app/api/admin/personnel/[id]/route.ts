@@ -32,6 +32,29 @@ export async function GET(
             project: true
           },
           orderBy: { date: "desc" }
+        },
+        assignedTasks: {
+          include: {
+            project: true
+          },
+          orderBy: { createdAt: "desc" }
+        },
+        assignedEquipment: {
+          include: {
+            project: true
+          }
+        },
+        inspectionRecords: {
+          include: {
+            yibf: true
+          },
+          orderBy: { timestamp: "desc" }
+        },
+        deficiencies: {
+          include: {
+            project: true
+          },
+          orderBy: { createdAt: "desc" }
         }
       }
     })

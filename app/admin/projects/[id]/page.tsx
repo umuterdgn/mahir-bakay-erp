@@ -76,7 +76,7 @@ export default async function ProjectDetailPage({
         },
         audits: {
           include: {
-            user: {
+            inspector: {
               select: {
                 id: true,
                 name: true
@@ -255,7 +255,7 @@ export default async function ProjectDetailPage({
         inspections={project.inspections}
         deficiencies={project.deficiencies}
         documents={project.documents}
-        auditLogs={project.audits}
+        audits={project.audits}
       />
 
       {/* Main Content Grid */}

@@ -45,7 +45,6 @@ export default async function AdminDashboard() {
         select: {
           id: true,
           name: true,
-          yibfNo: true,
           progress: true,
           status: true
         }
@@ -235,7 +234,7 @@ export default async function AdminDashboard() {
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="font-medium text-slate-900 dark:text-white">{project.name}</p>
-                          <p className="text-sm text-slate-600 dark:text-slate-400">{project.yibfNo || 'YİBF Yok'}</p>
+                          <p className="text-sm text-slate-600 dark:text-slate-400">{project.status || 'Durum Yok'}</p>
                         </div>
                         <div className="text-right">
                           <p className="text-lg font-semibold text-blue-600 dark:text-blue-400">%{project.progress}</p>

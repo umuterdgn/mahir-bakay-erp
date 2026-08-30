@@ -58,7 +58,7 @@ export async function POST(request: Request) {
     })
 
     const userProjectIds = userProjects.map(p => p.id)
-    if (!userProjectIds.includes(deficiency.projectId)) {
+    if (!deficiency.projectId || !userProjectIds.includes(deficiency.projectId)) {
       return NextResponse.json(
         { error: "Bu eksiklik size atanmamış" },
         { status: 403 }
@@ -82,7 +82,7 @@ export async function POST(request: Request) {
     const updatedDeficiency = await prisma.deficiency.update({
       where: { id: deficiencyId },
       data: {
-        proofUrl: mockProofUrl,
+        photoUrl: mockProofUrl,
         status: 'VERIFY_PENDING' // Only this status, NOT CLOSED
       }
     })
@@ -90,7 +90,7 @@ export async function POST(request: Request) {
     // Log the action in AuditLog
     await logAction(
       "PROOF_UPLOADED",
-      `Müteahhit ${deficiency.project?.yibfNo || deficiency.project?.name} için düzeltme kanıtı yükledi ve onay talep etti`,
+      `Müteahhit ${deficiency.project?.name} için düzeltme kanıtı yükledi ve onay talep etti`,
       userId || "Unknown"
     )
 

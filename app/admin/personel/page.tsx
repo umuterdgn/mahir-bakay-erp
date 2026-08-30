@@ -37,12 +37,14 @@ export default function AdminPersonelPage() {
   }
 
   const [personnel, setPersonnel] = useState<any[]>([])
+  const [inspectorStats, setInspectorStats] = useState<any[]>([])
   const [isAdding, setIsAdding] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null })
 
   useEffect(() => {
     fetchPersonnel()
+    fetchInspectorStats()
   }, [])
 
   const fetchPersonnel = async () => {
@@ -56,6 +58,18 @@ export default function AdminPersonelPage() {
       console.error("Failed to fetch personnel:", error)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const fetchInspectorStats = async () => {
+    try {
+      const response = await fetch("/api/admin/personnel/stats")
+      if (response.ok) {
+        const data = await response.json()
+        setInspectorStats(data)
+      }
+    } catch (error) {
+      console.error("Failed to fetch inspector stats:", error)
     }
   }
 
@@ -95,89 +109,67 @@ export default function AdminPersonelPage() {
 
       {/* Inspector Performance Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-gradient-to-br from-blue-900/20 to-indigo-900/20 rounded-xl p-4 border border-blue-500/30">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
-              <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-            </div>
-            <div>
-              <h3 className="text-white font-semibold">Denetçi A</h3>
-              <p className="text-slate-400 text-xs">Ahmet Yılmaz</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-2 text-center">
-            <div>
-              <p className="text-2xl font-bold text-blue-400">142</p>
-              <p className="text-xs text-slate-400">Kontrol</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-green-400">34dk</p>
-              <p className="text-xs text-slate-400">Ort. Süre</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-orange-400">28</p>
-              <p className="text-xs text-slate-400">Eksiklik</p>
-            </div>
-          </div>
-        </div>
+        {inspectorStats.slice(0, 3).map((inspector, index) => {
+          const colors = [
+            {
+              bg: 'from-blue-900/20 to-indigo-900/20',
+              border: 'border-blue-500/30',
+              iconBg: 'bg-blue-500/20',
+              iconColor: 'text-blue-400',
+              statColor: 'text-blue-400'
+            },
+            {
+              bg: 'from-purple-900/20 to-pink-900/20',
+              border: 'border-purple-500/30',
+              iconBg: 'bg-purple-500/20',
+              iconColor: 'text-purple-400',
+              statColor: 'text-purple-400'
+            },
+            {
+              bg: 'from-emerald-900/20 to-teal-900/20',
+              border: 'border-emerald-500/30',
+              iconBg: 'bg-emerald-500/20',
+              iconColor: 'text-emerald-400',
+              statColor: 'text-emerald-400'
+            }
+          ]
+          const color = colors[index % colors.length]
 
-        <div className="bg-gradient-to-br from-purple-900/20 to-pink-900/20 rounded-xl p-4 border border-purple-500/30">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
-              <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
+          return (
+            <div key={inspector.id} className={`bg-gradient-to-br ${color.bg} rounded-xl p-4 border ${color.border}`}>
+              <div className="flex items-center gap-3 mb-3">
+                <div className={`w-10 h-10 ${color.iconBg} rounded-lg flex items-center justify-center`}>
+                  <svg className={`w-5 h-5 ${color.iconColor}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-white font-semibold">Denetçi {String.fromCharCode(65 + index)}</h3>
+                  <p className="text-slate-400 text-xs">{inspector.name}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div>
+                  <p className={`text-2xl font-bold ${color.statColor}`}>{inspector.inspectionCount}</p>
+                  <p className="text-xs text-slate-400">Kontrol</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-green-400">{inspector.averageDuration}dk</p>
+                  <p className="text-xs text-slate-400">Ort. Süre</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-orange-400">{inspector.deficiencyCount}</p>
+                  <p className="text-xs text-slate-400">Eksiklik</p>
+                </div>
+              </div>
             </div>
-            <div>
-              <h3 className="text-white font-semibold">Denetçi B</h3>
-              <p className="text-slate-400 text-xs">Mehmet Kaya</p>
-            </div>
+          )
+        })}
+        {inspectorStats.length === 0 && (
+          <div className="col-span-3 text-center text-slate-400 py-8">
+            Henüz denetçi kaydı bulunmuyor
           </div>
-          <div className="grid grid-cols-3 gap-2 text-center">
-            <div>
-              <p className="text-2xl font-bold text-purple-400">98</p>
-              <p className="text-xs text-slate-400">Kontrol</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-green-400">28dk</p>
-              <p className="text-xs text-slate-400">Ort. Süre</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-orange-400">15</p>
-              <p className="text-xs text-slate-400">Eksiklik</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-br from-emerald-900/20 to-teal-900/20 rounded-xl p-4 border border-emerald-500/30">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center">
-              <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-            </div>
-            <div>
-              <h3 className="text-white font-semibold">Denetçi C</h3>
-              <p className="text-slate-400 text-xs">Ayşe Demir</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-2 text-center">
-            <div>
-              <p className="text-2xl font-bold text-emerald-400">87</p>
-              <p className="text-xs text-slate-400">Kontrol</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-green-400">31dk</p>
-              <p className="text-xs text-slate-400">Ort. Süre</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-orange-400">12</p>
-              <p className="text-xs text-slate-400">Eksiklik</p>
-            </div>
-          </div>
-        </div>
+        )}
       </div>
 
       {isAdding ? (

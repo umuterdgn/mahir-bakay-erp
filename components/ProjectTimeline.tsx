@@ -22,10 +22,10 @@ interface ProjectTimelineProps {
   inspections?: any[]
   deficiencies?: any[]
   documents?: any[]
-  auditLogs?: any[]
+  audits?: any[]
 }
 
-export default function ProjectTimeline({ inspections = [], deficiencies = [], documents = [], auditLogs = [] }: ProjectTimelineProps) {
+export default function ProjectTimeline({ inspections = [], deficiencies = [], documents = [], audits = [] }: ProjectTimelineProps) {
   // Merge all events into a single timeline
   const events: TimelineEvent[] = []
 
@@ -72,15 +72,15 @@ export default function ProjectTimeline({ inspections = [], deficiencies = [], d
   })
 
   // Add audit logs
-  auditLogs.forEach((auditLog) => {
+  audits.forEach((auditLog) => {
     events.push({
       id: `audit-${auditLog.id}`,
       type: "audit",
-      title: `Denetim Kaydı: ${auditLog.action}`,
-      description: auditLog.reason || "Açıklama yok",
+      title: `Denetim: ${auditLog.title}`,
+      description: auditLog.notes || "Açıklama yok",
       date: new Date(auditLog.createdAt),
-      status: auditLog.action,
-      person: auditLog.user?.name,
+      status: auditLog.status,
+      person: auditLog.inspector?.name,
       severity: "normal"
     })
   })
@@ -127,7 +127,10 @@ export default function ProjectTimeline({ inspections = [], deficiencies = [], d
       "FIX_PENDING": { label: "Düzeltme Bekliyor", color: "bg-orange-500/20 text-orange-400" },
       "VERIFY_PENDING": { label: "Kontrol Bekliyor", color: "bg-blue-500/20 text-blue-400" },
       "ACTIVE": { label: "Aktif", color: "bg-green-500/20 text-green-400" },
-      "STATUS_CHANGE": { label: "Durum Değişikliği", color: "bg-purple-500/20 text-purple-400" }
+      "STATUS_CHANGE": { label: "Durum Değişikliği", color: "bg-purple-500/20 text-purple-400" },
+      "PASSED": { label: "Geçti", color: "bg-green-500/20 text-green-400" },
+      "FAILED": { label: "Kaldı", color: "bg-red-500/20 text-red-400" },
+      "ACTION_REQUIRED": { label: "İşlem Gerekiyor", color: "bg-orange-500/20 text-orange-400" }
     }
 
     const badge = statusMap[status]

@@ -12,6 +12,11 @@ import { logPersonnelAction } from "@/lib/logger"
 export async function GET() {
   try {
     const personnel = await prisma.personel.findMany({
+      where: {
+        role: {
+          notIn: ['ADMIN', 'MUTEAHHIT']
+        }
+      },
       include: {
         profession: true
       },

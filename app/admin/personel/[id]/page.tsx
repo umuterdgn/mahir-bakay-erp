@@ -24,6 +24,10 @@ export default function PersonelDetailPage({
   const [assignedInventory, setAssignedInventory] = useState<any[]>([])
   const [attendanceRecords, setAttendanceRecords] = useState<any[]>([])
   const [certificates, setCertificates] = useState<any[]>([])
+  const [assignedTasks, setAssignedTasks] = useState<any[]>([])
+  const [assignedEquipment, setAssignedEquipment] = useState<any[]>([])
+  const [inspectionRecords, setInspectionRecords] = useState<any[]>([])
+  const [deficiencies, setDeficiencies] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [calculatedValues, setCalculatedValues] = useState({
     toplamKazanilan: 0,
@@ -176,11 +180,23 @@ export default function PersonelDetailPage({
         if (data.payments) {
           setPayments(data.payments)
         }
-        if (data.assignedItems) {
-          setAssignedInventory(data.assignedItems)
+        if (data.inventoryHistory) {
+          setAssignedInventory(data.inventoryHistory)
         }
         if (data.attendanceRecords) {
           setAttendanceRecords(data.attendanceRecords)
+        }
+        if (data.assignedTasks) {
+          setAssignedTasks(data.assignedTasks)
+        }
+        if (data.assignedEquipment) {
+          setAssignedEquipment(data.assignedEquipment)
+        }
+        if (data.inspectionRecords) {
+          setInspectionRecords(data.inspectionRecords)
+        }
+        if (data.deficiencies) {
+          setDeficiencies(data.deficiencies)
         }
       } else {
         notFound()
@@ -1027,6 +1043,54 @@ export default function PersonelDetailPage({
           </div>
         </div>
 
+        {/* Atanan Projeler ve Görevler */}
+        <div className="mt-8 pt-6 border-t border-slate-800">
+          <h3 className="text-lg font-semibold text-white border-b border-slate-800 pb-2 mb-4">Atanan Projeler ve Görevler</h3>
+          
+          {assignedTasks.length === 0 ? (
+            <div className="bg-slate-800 rounded-lg p-4 md:p-6 border border-slate-700 text-center text-slate-400">
+              Atanan proje/görev bulunmuyor
+            </div>
+          ) : (
+            <div className="bg-slate-800 rounded-lg border border-slate-700 overflow-x-auto">
+              <table className="w-full min-w-[500px]">
+                <thead>
+                  <tr className="border-b border-slate-700 bg-slate-800/50">
+                    <th className="text-left py-3 px-2 md:px-4 text-slate-400 font-medium text-xs md:text-sm">Görev Adı</th>
+                    <th className="text-left py-3 px-2 md:px-4 text-slate-400 font-medium text-xs md:text-sm">Proje</th>
+                    <th className="text-left py-3 px-2 md:px-4 text-slate-400 font-medium text-xs md:text-sm">Durum</th>
+                    <th className="text-left py-3 px-2 md:px-4 text-slate-400 font-medium text-xs md:text-sm">Son Tarih</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {assignedTasks.map((task) => (
+                    <tr key={task.id} className="border-b border-slate-700 hover:bg-slate-800/50">
+                      <td className="py-3 px-2 md:px-4 text-white text-xs md:text-sm break-words">{task.title}</td>
+                      <td className="py-3 px-2 md:px-4 text-white text-xs md:text-sm break-words">{task.project?.name || "-"}</td>
+                      <td className="py-3 px-2 md:px-4 text-white text-xs md:text-sm break-words">
+                        <span className={`px-2 py-1 rounded text-xs ${
+                          task.status === 'DONE' ? 'bg-green-500/20 text-green-400' :
+                          task.status === 'IN_PROGRESS' ? 'bg-blue-500/20 text-blue-400' :
+                          task.status === 'IN_REVIEW' ? 'bg-purple-500/20 text-purple-400' :
+                          'bg-slate-500/20 text-slate-400'
+                        }`}>
+                          {task.status === 'DONE' ? 'Tamamlandı' :
+                           task.status === 'IN_PROGRESS' ? 'Devam Ediyor' :
+                           task.status === 'IN_REVIEW' ? 'İncelemede' :
+                           task.status}
+                        </span>
+                      </td>
+                      <td className="py-3 px-2 md:px-4 text-white text-xs md:text-sm break-words">
+                        {task.dueDate ? new Date(task.dueDate).toLocaleDateString("tr-TR") : "-"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
         {/* Zimmetli Ekipmanlar */}
         <div className="mt-8 pt-6 border-t border-slate-800">
           <h3 className="text-lg font-semibold text-white border-b border-slate-800 pb-2 mb-4">Zimmetli Ekipmanlar</h3>
@@ -1050,13 +1114,161 @@ export default function PersonelDetailPage({
                 <tbody>
                   {assignedInventory.map((item) => (
                     <tr key={item.id} className="border-b border-slate-700 hover:bg-slate-800/50">
-                      <td className="py-3 px-2 md:px-4 text-white text-xs md:text-sm break-words">{item.name}</td>
+                      <td className="py-3 px-2 md:px-4 text-white text-xs md:text-sm break-words">{item.inventory?.name || "-"}</td>
                       <td className="py-3 px-2 md:px-4 text-white text-xs md:text-sm break-words">{item.quantity}</td>
-                      <td className="py-3 px-2 md:px-4 text-white text-xs md:text-sm break-words">{item.unit}</td>
+                      <td className="py-3 px-2 md:px-4 text-white text-xs md:text-sm break-words">{item.inventory?.unit || "-"}</td>
                       <td className="py-3 px-2 md:px-4 text-white text-xs md:text-sm break-words">{item.project?.name || "-"}</td>
                       <td className="py-3 px-2 md:px-4 text-white text-xs md:text-sm break-words">
                         {new Date(item.createdAt).toLocaleDateString("tr-TR")}
                       </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Atanan Ekipmanlar */}
+        <div className="mt-8 pt-6 border-t border-slate-800">
+          <h3 className="text-lg font-semibold text-white border-b border-slate-800 pb-2 mb-4">Atanan Ekipmanlar</h3>
+          
+          {assignedEquipment.length === 0 ? (
+            <div className="bg-slate-800 rounded-lg p-4 md:p-6 border border-slate-700 text-center text-slate-400">
+              Atanan ekipman bulunmuyor
+            </div>
+          ) : (
+            <div className="bg-slate-800 rounded-lg border border-slate-700 overflow-x-auto">
+              <table className="w-full min-w-[500px]">
+                <thead>
+                  <tr className="border-b border-slate-700 bg-slate-800/50">
+                    <th className="text-left py-3 px-2 md:px-4 text-slate-400 font-medium text-xs md:text-sm">Ekipman Adı</th>
+                    <th className="text-left py-3 px-2 md:px-4 text-slate-400 font-medium text-xs md:text-sm">Tür</th>
+                    <th className="text-left py-3 px-2 md:px-4 text-slate-400 font-medium text-xs md:text-sm">Proje</th>
+                    <th className="text-left py-3 px-2 md:px-4 text-slate-400 font-medium text-xs md:text-sm">Durum</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {assignedEquipment.map((equipment) => (
+                    <tr key={equipment.id} className="border-b border-slate-700 hover:bg-slate-800/50">
+                      <td className="py-3 px-2 md:px-4 text-white text-xs md:text-sm break-words">{equipment.name}</td>
+                      <td className="py-3 px-2 md:px-4 text-white text-xs md:text-sm break-words">{equipment.type}</td>
+                      <td className="py-3 px-2 md:px-4 text-white text-xs md:text-sm break-words">{equipment.project?.name || "-"}</td>
+                      <td className="py-3 px-2 md:px-4 text-white text-xs md:text-sm break-words">
+                        <span className={`px-2 py-1 rounded text-xs ${
+                          equipment.status === 'ACTIVE' ? 'bg-green-500/20 text-green-400' :
+                          equipment.status === 'MAINTENANCE' ? 'bg-yellow-500/20 text-yellow-400' :
+                          'bg-red-500/20 text-red-400'
+                        }`}>
+                          {equipment.status === 'ACTIVE' ? 'Aktif' :
+                           equipment.status === 'MAINTENANCE' ? 'Bakımda' :
+                           equipment.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Denetim Kayıtları */}
+        <div className="mt-8 pt-6 border-t border-slate-800">
+          <h3 className="text-lg font-semibold text-white border-b border-slate-800 pb-2 mb-4">Denetim Kayıtları</h3>
+          
+          {inspectionRecords.length === 0 ? (
+            <div className="bg-slate-800 rounded-lg p-4 md:p-6 border border-slate-700 text-center text-slate-400">
+              Denetim kaydı bulunmuyor
+            </div>
+          ) : (
+            <div className="bg-slate-800 rounded-lg border border-slate-700 overflow-x-auto">
+              <table className="w-full min-w-[500px]">
+                <thead>
+                  <tr className="border-b border-slate-700 bg-slate-800/50">
+                    <th className="text-left py-3 px-2 md:px-4 text-slate-400 font-medium text-xs md:text-sm">Kategori</th>
+                    <th className="text-left py-3 px-2 md:px-4 text-slate-400 font-medium text-xs md:text-sm">Durum</th>
+                    <th className="text-left py-3 px-2 md:px-4 text-slate-400 font-medium text-xs md:text-sm">YİBF Proje</th>
+                    <th className="text-left py-3 px-2 md:px-4 text-slate-400 font-medium text-xs md:text-sm">Tarih</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {inspectionRecords.map((record) => (
+                    <tr key={record.id} className="border-b border-slate-700 hover:bg-slate-800/50">
+                      <td className="py-3 px-2 md:px-4 text-white text-xs md:text-sm break-words">{record.category}</td>
+                      <td className="py-3 px-2 md:px-4 text-white text-xs md:text-sm break-words">
+                        <span className={`px-2 py-1 rounded text-xs ${
+                          record.status === 'PASS' ? 'bg-green-500/20 text-green-400' :
+                          record.status === 'FAIL' ? 'bg-red-500/20 text-red-400' :
+                          'bg-yellow-500/20 text-yellow-400'
+                        }`}>
+                          {record.status === 'PASS' ? 'Geçti' :
+                           record.status === 'FAIL' ? 'Kaldı' :
+                           'Beklemede'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-2 md:px-4 text-white text-xs md:text-sm break-words">{record.yibf?.yibfNo || "-"}</td>
+                      <td className="py-3 px-2 md:px-4 text-white text-xs md:text-sm break-words">
+                        {new Date(record.timestamp).toLocaleDateString("tr-TR")}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Bulunan Eksiklikler */}
+        <div className="mt-8 pt-6 border-t border-slate-800">
+          <h3 className="text-lg font-semibold text-white border-b border-slate-800 pb-2 mb-4">Bulunan Eksiklikler</h3>
+          
+          {deficiencies.length === 0 ? (
+            <div className="bg-slate-800 rounded-lg p-4 md:p-6 border border-slate-700 text-center text-slate-400">
+              Eksiklik kaydı bulunmuyor
+            </div>
+          ) : (
+            <div className="bg-slate-800 rounded-lg border border-slate-700 overflow-x-auto">
+              <table className="w-full min-w-[500px]">
+                <thead>
+                  <tr className="border-b border-slate-700 bg-slate-800/50">
+                    <th className="text-left py-3 px-2 md:px-4 text-slate-400 font-medium text-xs md:text-sm">Kategori</th>
+                    <th className="text-left py-3 px-2 md:px-4 text-slate-400 font-medium text-xs md:text-sm">Eleman</th>
+                    <th className="text-left py-3 px-2 md:px-4 text-slate-400 font-medium text-xs md:text-sm">Öncelik</th>
+                    <th className="text-left py-3 px-2 md:px-4 text-slate-400 font-medium text-xs md:text-sm">Durum</th>
+                    <th className="text-left py-3 px-2 md:px-4 text-slate-400 font-medium text-xs md:text-sm">Proje</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {deficiencies.map((deficiency) => (
+                    <tr key={deficiency.id} className="border-b border-slate-700 hover:bg-slate-800/50">
+                      <td className="py-3 px-2 md:px-4 text-white text-xs md:text-sm break-words">{deficiency.category}</td>
+                      <td className="py-3 px-2 md:px-4 text-white text-xs md:text-sm break-words">{deficiency.element}</td>
+                      <td className="py-3 px-2 md:px-4 text-white text-xs md:text-sm break-words">
+                        <span className={`px-2 py-1 rounded text-xs ${
+                          deficiency.priority === 'CRITICAL' ? 'bg-red-500/20 text-red-400' :
+                          deficiency.priority === 'HIGH' ? 'bg-orange-500/20 text-orange-400' :
+                          deficiency.priority === 'MEDIUM' ? 'bg-yellow-500/20 text-yellow-400' :
+                          'bg-slate-500/20 text-slate-400'
+                        }`}>
+                          {deficiency.priority === 'CRITICAL' ? 'Kritik' :
+                           deficiency.priority === 'HIGH' ? 'Yüksek' :
+                           deficiency.priority === 'MEDIUM' ? 'Orta' :
+                           deficiency.priority}
+                        </span>
+                      </td>
+                      <td className="py-3 px-2 md:px-4 text-white text-xs md:text-sm break-words">
+                        <span className={`px-2 py-1 rounded text-xs ${
+                          deficiency.status === 'CLOSED' ? 'bg-green-500/20 text-green-400' :
+                          deficiency.status === 'OPEN' ? 'bg-red-500/20 text-red-400' :
+                          'bg-yellow-500/20 text-yellow-400'
+                        }`}>
+                          {deficiency.status === 'CLOSED' ? 'Kapatıldı' :
+                           deficiency.status === 'OPEN' ? 'Açık' :
+                           deficiency.status}
+                        </span>
+                      </td>
+                      <td className="py-3 px-2 md:px-4 text-white text-xs md:text-sm break-words">{deficiency.project?.name || "-"}</td>
                     </tr>
                   ))}
                 </tbody>
