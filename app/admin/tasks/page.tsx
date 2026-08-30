@@ -651,46 +651,51 @@ export default function TasksPage() {
               <div className="grid grid-cols-7 gap-2 min-w-[800px]">
                 {(() => {
                   const { daysInMonth, startDayOfWeek } = getDaysInMonth(selectedDate)
-                  return (
-                    <>
-                      {Array.from({ length: startDayOfWeek }).map((_, i) => (
-                        <div key={`empty-${i}`} className="h-24 bg-slate-800/50 rounded-lg"></div>
-                      ))}
-                      {Array.from({ length: daysInMonth }).map((_, i) => {
-                        const day = i + 1
-                        const date = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), day)
-                        const dayTasks = getTasksForDate(date)
-                        const isToday = date.toDateString() === new Date().toDateString()
+                  const calendarDays = []
+                  
+                  // Empty cells for days before the first day of the month
+                  for (let i = 0; i < startDayOfWeek; i++) {
+                    calendarDays.push(
+                      <div key={`empty-${i}`} className="h-24 bg-slate-800/50 rounded-lg"></div>
+                    )
+                  }
+                  
+                  // Actual days of the month
+                  for (let i = 0; i < daysInMonth; i++) {
+                    const day = i + 1
+                    const date = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), day)
+                    const dayTasks = getTasksForDate(date)
+                    const isToday = date.toDateString() === new Date().toDateString()
 
-                        return (
-                          <div
-                            key={day}
-                            className={`h-24 bg-slate-800 rounded-lg p-2 overflow-hidden hover:bg-slate-700 transition-colors cursor-pointer ${
-                              isToday ? "ring-2 ring-blue-500" : ""
-                            }`}
-                          >
-                            <div className="text-sm text-slate-300 mb-1">{day}</div>
-                            <div className="space-y-1">
-                              {dayTasks.slice(0, 2).map((task) => (
-                                <div
-                                  key={task.id}
-                                  className="text-xs truncate p-1 rounded mb-1 bg-blue-900/30 text-blue-400"
-                                >
-                                  {task.title}
-                                </div>
-                              ))}
-                              {dayTasks.length > 2 && (
-                                <div className="text-xs text-slate-500">
-                                  +{dayTasks.length - 2} daha
-                                </div>
-                              )}
+                    calendarDays.push(
+                      <div
+                        key={day}
+                        className={`h-24 bg-slate-800 rounded-lg p-2 overflow-hidden hover:bg-slate-700 transition-colors cursor-pointer ${
+                          isToday ? "ring-2 ring-blue-500" : ""
+                        }`}
+                      >
+                        <div className="text-sm text-slate-300 mb-1">{day}</div>
+                        <div className="space-y-1">
+                          {dayTasks.slice(0, 2).map((task) => (
+                            <div
+                              key={task.id}
+                              className="text-xs truncate p-1 rounded mb-1 bg-blue-900/30 text-blue-400"
+                            >
+                              {task.title}
                             </div>
-                          </div>
-                        )
-                      })}
-                    </>
-                  )
-                })}
+                          ))}
+                          {dayTasks.length > 2 && (
+                            <div className="text-xs text-slate-500">
+                              +{dayTasks.length - 2} daha
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  }
+                  
+                  return calendarDays
+                })()}
               </div>
             </div>
           </div>

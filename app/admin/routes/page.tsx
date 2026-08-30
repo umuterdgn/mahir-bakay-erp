@@ -100,7 +100,7 @@ export default function RoutesPage() {
   }
 
   const getRouteDashArray = () => {
-    return isOptimized ? null : "10, 10"
+    return isOptimized ? undefined : "10, 10"
   }
 
   return (

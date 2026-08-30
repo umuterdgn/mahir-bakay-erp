@@ -10,10 +10,22 @@ import { Home, FileText, Camera, User, Bell, FolderKanban, DollarSign, AlertTria
 import { useSession } from "next-auth/react"
 import { toast } from "react-hot-toast"
 
+export const dynamic = 'force-dynamic'
+
 export default function ContractorMobilePage() {
   const [activeTab, setActiveTab] = useState("home")
   const [uploadModalOpen, setUploadModalOpen] = useState(false)
-  const { data: session } = useSession()
+  const session = useSession()
+  
+  const userName = session?.data?.user?.name || "Müteahhit"
+
+  if (session?.status === "loading") {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="text-white">Yükleniyor...</div>
+      </div>
+    )
+  }
 
   const contractorData = {
     pendingPayment: 120000,
@@ -53,7 +65,7 @@ export default function ContractorMobilePage() {
             <div>
               <p className="text-slate-400 text-sm">Hoş Geldiniz,</p>
               <h1 className="text-xl font-bold text-white">
-                {session?.user?.name || "Müteahhit"} Bey
+                {userName} Bey
               </h1>
             </div>
             <button className="p-2 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition-colors relative">
