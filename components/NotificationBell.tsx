@@ -7,6 +7,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 import { Bell, X, CheckCircle, AlertTriangle, Info, AlertCircle, Check, ExternalLink } from "lucide-react";
 
 interface Notification {
@@ -16,50 +17,32 @@ interface Notification {
   type: "INFO" | "WARNING" | "ERROR" | "SUCCESS" | "URGENT";
   isRead: boolean;
   link?: string;
-  createdAt: Date;
+  createdAt: string;
 }
 
 export default function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      id: "1",
-      title: "YİBF 14582 için 2 yeni eksiklik",
-      message: "Kolon C12 ve Kiriş K5'te uygunsuzluk tespit edildi.",
-      type: "URGENT",
-      isRead: false,
-      link: "/inspection/yibf/14582",
-      createdAt: new Date(Date.now() - 3600000),
-    },
-    {
-      id: "2",
-      title: "Kontrol Gecikmesi Uyarısı",
-      message: "3 yapıda planlanan kontrol zamanı aşıldı.",
-      type: "WARNING",
-      isRead: false,
-      link: "/inspection/dispatch",
-      createdAt: new Date(Date.now() - 7200000),
-    },
-    {
-      id: "3",
-      title: "PDF Rapor Oluşturuldu",
-      message: "Ağustos ayı yönetim raporu başarıyla oluşturuldu.",
-      type: "SUCCESS",
-      isRead: true,
-      link: "/inspection/reports",
-      createdAt: new Date(Date.now() - 86400000),
-    },
-    {
-      id: "4",
-      title: "Yeni Görev Atandı",
-      message: "Bugün için 5 yeni denetim görevi atandı.",
-      type: "INFO",
-      isRead: true,
-      link: "/inspection/dispatch",
-      createdAt: new Date(Date.now() - 172800000),
-    },
-  ]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      const response = await fetch("/api/admin/notifications");
+      if (response.ok) {
+        const data = await response.json();
+        setNotifications(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch notifications:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
@@ -103,17 +86,36 @@ export default function NotificationBell() {
     }
   };
 
-  const markAsRead = (id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
-    );
+  const markAsRead = async (id: string) => {
+    try {
+      await fetch("/api/admin/notifications", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notificationId: id })
+      })
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+      );
+    } catch (error) {
+      console.error("Failed to mark notification as read:", error);
+    }
   };
 
-  const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+  const markAllAsRead = async () => {
+    try {
+      await fetch("/api/admin/notifications", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ markAll: true })
+      })
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    } catch (error) {
+      console.error("Failed to mark all notifications as read:", error);
+    }
   };
 
-  const formatTime = (date: Date) => {
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
     const now = new Date();
     const diff = now.getTime() - date.getTime();
     const minutes = Math.floor(diff / 60000);
@@ -165,7 +167,12 @@ export default function NotificationBell() {
 
           {/* Notifications List */}
           <div className="overflow-y-auto flex-1">
-            {notifications.length === 0 ? (
+            {isLoading ? (
+              <div className="p-8 text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
+                <p className="text-slate-400 text-sm">Yükleniyor...</p>
+              </div>
+            ) : notifications.length === 0 ? (
               <div className="p-8 text-center">
                 <Bell className="w-12 h-12 text-slate-600 mx-auto mb-2" />
                 <p className="text-slate-400 text-sm">Bildirim bulunmuyor</p>
@@ -218,9 +225,9 @@ export default function NotificationBell() {
 
           {/* Footer */}
           <div className="p-3 border-t border-slate-800">
-            <button className="w-full py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
+            <Link href="/admin/notifications" className="w-full py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors block text-center">
               Tüm Bildirimleri Gör
-            </button>
+            </Link>
           </div>
         </div>
       )}
