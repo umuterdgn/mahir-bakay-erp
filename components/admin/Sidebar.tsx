@@ -64,7 +64,8 @@ import {
   File,
   Scan,
   GitCompare,
-  Route
+  Route,
+  PieChart
 } from "lucide-react"
 
 export default function AdminSidebar() {
@@ -105,6 +106,7 @@ export default function AdminSidebar() {
     { href: "/admin/contracts", label: "Sözleşmeler", requiredPermission: null, icon: FileSignature, category: "FİNANS & TEDARİK", adminOnly: true },
     { href: "/admin/progress-payments", label: "Hakediş ve Metraj", requiredPermission: null, icon: Calculator, category: "FİNANS & TEDARİK", subcontractorAllowed: true, adminOnly: true },
     { href: "/admin/procurement", label: "Satınalma & Talepler", requiredPermission: null, icon: ShoppingCart, category: "FİNANS & TEDARİK", adminOnly: true },
+    { href: "/admin/collection-risk", label: "Tahsilat Risk AI", requiredPermission: null, icon: PieChart, category: "FİNANS & TEDARİK", adminOnly: true },
     { href: "/admin/projects", label: "Projeler", requiredPermission: "PROJECTS", icon: FolderKanban, category: "PROJE YÖNETİMİ" },
     { href: "/admin/crm", label: "CRM / Firmalar", requiredPermission: null, icon: Building2, category: "PROJE YÖNETİMİ", adminOnly: true },
     { href: "/admin/bim", label: "BIM & 3D Modeller", requiredPermission: null, icon: Box, category: "PROJE YÖNETİMİ", adminOnly: true },
