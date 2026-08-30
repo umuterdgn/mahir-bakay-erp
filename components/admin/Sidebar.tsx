@@ -63,7 +63,8 @@ import {
   Pen,
   File,
   Scan,
-  GitCompare
+  GitCompare,
+  Route
 } from "lucide-react"
 
 export default function AdminSidebar() {
@@ -117,6 +118,7 @@ export default function AdminSidebar() {
     { href: "/admin/ai-assistant", label: "AI Asistan", requiredPermission: null, icon: Bot, category: "YAPI DENETİM & KONTROL" },
     { href: "/admin/ai-vision", label: "AI Görsel Analiz", requiredPermission: null, icon: Scan, category: "YAPI DENETİM & KONTROL" },
     { href: "/admin/revisions", label: "Proje Revizyonları", requiredPermission: null, icon: GitCompare, category: "YAPI DENETİM & KONTROL" },
+    { href: "/admin/routes", label: "Rota Optimizasyonu", requiredPermission: null, icon: Route, category: "YAPI DENETİM & KONTROL" },
     { href: "/admin/blueprints", label: "Dijital Projeler / Çizimler", requiredPermission: null, icon: FileText, category: "YAPI DENETİM & KONTROL" },
     { href: "/admin/blueprints/draw", label: "Serbest Çizim / Plan", requiredPermission: null, icon: Pen, category: "YAPI DENETİM & KONTROL" },
     { href: "/admin/qa-qc/materials", label: "Malzeme Onayları", requiredPermission: null, icon: CheckCircle, category: "YAPI DENETİM & KALİTE" },
