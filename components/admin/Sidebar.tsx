@@ -109,6 +109,7 @@ export default function AdminSidebar() {
     { href: "/admin/inspection/attachment", label: "Ataşman & Delil", requiredPermission: null, icon: FileCheck, category: "YAPI DENETİM & KONTROL" },
     { href: "/admin/inspection/documents", label: "Ruhsat & Evrak Arşivi", requiredPermission: null, icon: Archive, category: "YAPI DENETİM & KONTROL" },
     { href: "/admin/documents", label: "Dijital Evrak Arşivi", requiredPermission: null, icon: FileText, category: "YAPI DENETİM & KONTROL" },
+    { href: "/admin/reports", label: "Saha Raporları", requiredPermission: null, icon: ClipboardList, category: "YAPI DENETİM & KONTROL" },
     { href: "/admin/blueprints", label: "Dijital Projeler / Çizimler", requiredPermission: null, icon: FileText, category: "YAPI DENETİM & KONTROL" },
     { href: "/admin/blueprints/draw", label: "Serbest Çizim / Plan", requiredPermission: null, icon: Pen, category: "YAPI DENETİM & KONTROL" },
     { href: "/admin/qa-qc/materials", label: "Malzeme Onayları", requiredPermission: null, icon: CheckCircle, category: "YAPI DENETİM & KALİTE" },
