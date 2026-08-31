@@ -12,6 +12,7 @@ import { usePathname } from "next/navigation"
 import { signOut, useSession } from "next-auth/react"
 import { useTheme } from "next-themes"
 import NotificationBell from "@/components/NotificationBell"
+import StorageWidget from "@/components/StorageWidget"
 import { 
   LayoutDashboard, 
   FileText, 
@@ -318,7 +319,10 @@ export default function AdminSidebar() {
           </nav>
 
           {/* Footer */}
-          <div className="pt-6 pb-8 border-t border-slate-800 mt-4">
+          <div className="pt-6 pb-8 border-t border-slate-800 mt-4 space-y-4">
+            {/* Storage Widget */}
+            <StorageWidget usedSpace={246} />
+            
             <button
               onClick={() => signOut({ callbackUrl: '/login' })}
               className="w-full px-4 py-3 rounded-lg bg-red-600 hover:bg-red-500 transition-colors text-white text-left relative z-10"
