@@ -252,7 +252,7 @@ export default async function AdminDashboard() {
           <>
         {/* Weather Widget */}
         <div className="mb-6">
-          <WeatherWidget city="İstanbul" />
+          <WeatherWidget city="İskenderun" />
         </div>
 
         {/* AI Morning Report */}

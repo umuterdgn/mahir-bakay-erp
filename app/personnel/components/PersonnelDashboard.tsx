@@ -401,7 +401,7 @@ export function PersonnelDashboard({ personnel, summary, recentAttendance, equip
       {/* Quick Action Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {/* Weather Widget */}
-        <WeatherWidget city={personnel.currentSite || "İstanbul"} />
+        <WeatherWidget city={personnel.currentSite || "İskenderun"} />
 
         {/* QR Check-in - Large Action Button */}
         <button

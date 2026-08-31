@@ -320,11 +320,11 @@ export default function AdminSidebar() {
                       key={item.href}
                       href={item.href}
                       onClick={() => setIsOpen(false)}
-                      className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
+                      className={`flex items-center w-full py-2 rounded-lg transition-colors ${
                         isActive
                           ? "bg-slate-800 text-white"
                           : "text-slate-300 hover:bg-slate-800 hover:text-white"
-                      } ${isCollapsed ? "justify-center" : ""}`}
+                      } ${isCollapsed ? "justify-center px-0" : "justify-start px-4"}`}
                       title={isCollapsed ? item.label : undefined}
                     >
                       <Icon className={`w-5 h-5 flex-shrink-0 ${isCollapsed ? "" : ""}`} />

@@ -103,7 +103,7 @@ export default function SubcontractorDashboard() {
 
       {/* Weather Widget */}
       <div className="mb-6">
-        <WeatherWidget city="İstanbul" />
+        <WeatherWidget city="İskenderun" />
       </div>
 
       {/* Quick Action Cards */}
