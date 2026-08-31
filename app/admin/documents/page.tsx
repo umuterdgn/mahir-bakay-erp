@@ -24,6 +24,7 @@ import {
   AlertCircle,
   CheckCircle
 } from "lucide-react"
+import StorageWidget from "@/components/StorageWidget"
 
 interface Document {
   id: string
@@ -287,6 +288,11 @@ export default function DocumentsPage() {
           <Plus className="w-5 h-5" />
           Yeni Evrak Yükle
         </button>
+      </div>
+
+      {/* Storage Widget */}
+      <div className="mb-6">
+        <StorageWidget usedSpace={246} />
       </div>
 
       {/* Filters */}

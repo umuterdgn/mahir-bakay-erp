@@ -12,7 +12,6 @@ import { usePathname } from "next/navigation"
 import { signOut, useSession } from "next-auth/react"
 import { useTheme } from "next-themes"
 import NotificationBell from "@/components/NotificationBell"
-import StorageWidget from "@/components/StorageWidget"
 import { 
   LayoutDashboard, 
   FileText, 
@@ -70,11 +69,14 @@ import {
   ScanText,
   Plane,
   CalendarDays,
-  BarChart
+  BarChart,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react"
 
 export default function AdminSidebar() {
   const [isOpen, setIsOpen] = useState(false)
+  const [isCollapsed, setIsCollapsed] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const pathname = usePathname()
   const { data: session, status } = useSession()
@@ -249,20 +251,22 @@ export default function AdminSidebar() {
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full w-64 bg-slate-900 border-r border-slate-800 z-50 transition-transform duration-300 ${
+        className={`fixed top-0 left-0 h-full bg-slate-900 border-r border-slate-800 z-50 transition-all duration-300 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
-        } lg:translate-x-0`}
+        } lg:translate-x-0 ${isCollapsed ? "lg:w-20" : "lg:w-64"} w-64`}
       >
         <div className="flex flex-col h-full p-6">
           {/* Header */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
-              <div>
-                <h1 className="text-xl font-bold text-white mb-1">Şantiye Asistanı</h1>
-                <p className="text-slate-400 text-sm">Mahir Bakay Mühendislik</p>
-              </div>
+              {!isCollapsed && (
+                <div>
+                  <h1 className="text-xl font-bold text-white mb-1">Şantiye Asistanı</h1>
+                  <p className="text-slate-400 text-sm">Mahir Bakay Mühendislik</p>
+                </div>
+              )}
               <div className="flex items-center gap-2">
-                {mounted && (
+                {!isCollapsed && mounted && (
                   <button
                     onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
                     className="p-2 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
@@ -271,30 +275,41 @@ export default function AdminSidebar() {
                     {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
                   </button>
                 )}
-                <NotificationBell />
+                {!isCollapsed && <NotificationBell />}
+                <button
+                  onClick={() => setIsCollapsed(!isCollapsed)}
+                  className="hidden lg:flex text-slate-400 hover:text-white p-1 transition-colors"
+                  title={isCollapsed ? "Genişlet" : "Daralt"}
+                >
+                  {isCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
+                </button>
               </div>
             </div>
             
-            {/* Search Bar */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Menü ara..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all"
-              />
-            </div>
+            {/* Search Bar - Hide when collapsed */}
+            {!isCollapsed && (
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Menü ara..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all"
+                />
+              </div>
+            )}
           </div>
 
           {/* Navigation */}
           <nav className="flex-1 space-y-2 overflow-y-auto">
             {Object.entries(groupedNavItems).map(([category, items]) => (
               <div key={category}>
-                <h3 className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-2 mt-6">
-                  {category}
-                </h3>
+                {!isCollapsed && (
+                  <h3 className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-2 mt-6">
+                    {category}
+                  </h3>
+                )}
                 {items.map((item) => {
                   const isActive = pathname === item.href
                   const Icon = item.icon
@@ -307,10 +322,11 @@ export default function AdminSidebar() {
                         isActive
                           ? "bg-slate-800 text-white"
                           : "text-slate-300 hover:bg-slate-800 hover:text-white"
-                      }`}
+                      } ${isCollapsed ? "justify-center" : ""}`}
+                      title={isCollapsed ? item.label : undefined}
                     >
-                      <Icon className="w-5 h-5" />
-                      {item.label}
+                      <Icon className={`w-5 h-5 flex-shrink-0 ${isCollapsed ? "" : ""}`} />
+                      {!isCollapsed && <span>{item.label}</span>}
                     </Link>
                   )
                 })}
@@ -319,15 +335,18 @@ export default function AdminSidebar() {
           </nav>
 
           {/* Footer */}
-          <div className="pt-6 pb-8 border-t border-slate-800 mt-4 space-y-4">
-            {/* Storage Widget */}
-            <StorageWidget usedSpace={246} />
-            
+          <div className="pt-6 pb-8 border-t border-slate-800 mt-4">
             <button
               onClick={() => signOut({ callbackUrl: '/login' })}
-              className="w-full px-4 py-3 rounded-lg bg-red-600 hover:bg-red-500 transition-colors text-white text-left relative z-10"
+              className={`w-full px-4 py-3 rounded-lg bg-red-600 hover:bg-red-500 transition-colors text-white relative z-10 flex items-center gap-3 ${
+                isCollapsed ? "justify-center" : "text-left"
+              }`}
+              title={isCollapsed ? "Çıkış Yap" : undefined}
             >
-              Çıkış Yap
+              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              {!isCollapsed && <span>Çıkış Yap</span>}
             </button>
           </div>
 
