@@ -51,6 +51,14 @@ export default function MapPage() {
   const [loading, setLoading] = useState(true)
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
 
+  // Fallback mock projects with land-based coordinates
+  const mockProjects: Project[] = [
+    { id: "mock1", name: "İskenderun TOKİ", yibfNo: "2024-001", healthScore: 85, progress: 65, address: "TOKİ Mahallesi, İskenderun", latitude: 36.5871, longitude: 36.1735, _count: { deficiencies: 2 } },
+    { id: "mock2", name: "Arsuz Konutları", yibfNo: "2024-002", healthScore: 72, progress: 45, address: "Arsuz Merkez, Arsuz", latitude: 36.4172, longitude: 35.8827, _count: { deficiencies: 4 } },
+    { id: "mock3", name: "Dörtyol Sitesi", yibfNo: "2024-003", healthScore: 45, progress: 30, address: "Dörtyol, Hatay", latitude: 36.8439, longitude: 36.2219, _count: { deficiencies: 7 } },
+    { id: "mock4", name: "Erzin Proje", yibfNo: "2024-004", healthScore: 90, progress: 80, address: "Erzin, Hatay", latitude: 36.9532, longitude: 36.2023, _count: { deficiencies: 1 } },
+  ]
+
   useEffect(() => {
     fetchProjects()
   }, [])
@@ -61,9 +69,14 @@ export default function MapPage() {
       if (response.ok) {
         const data = await response.json()
         setProjects(data)
+      } else {
+        // Use fallback mock data if API fails
+        setProjects(mockProjects)
       }
     } catch (error) {
       console.error('Failed to fetch projects:', error)
+      // Use fallback mock data on error
+      setProjects(mockProjects)
     } finally {
       setLoading(false)
     }

@@ -61,18 +61,18 @@ export default function RoutesPage() {
 
   const initialStops: Stop[] = [
     { id: "0", name: "Nexa Merkez Ofis", address: "Merkez, İskenderun", order: 0, lat: 36.58718, lng: 36.17347, isStart: true },
-    { id: "1", name: "İskenderun TOKİ", address: "TOKİ Mahallesi, İskenderun", order: 1, lat: 36.58, lng: 36.17, isStart: false },
-    { id: "2", name: "Arsuz Konutları", address: "Arsuz Merkez, Arsuz", order: 2, lat: 36.40, lng: 35.88, isStart: false },
-    { id: "3", name: "Dörtyol Sitesi", address: "Dörtyol, Hatay", order: 3, lat: 36.85, lng: 36.22, isStart: false },
-    { id: "4", name: "Erzin Proje", address: "Erzin, Hatay", order: 4, lat: 36.95, lng: 36.20, isStart: false }
+    { id: "1", name: "İskenderun TOKİ", address: "TOKİ Mahallesi, İskenderun", order: 1, lat: 36.5871, lng: 36.1735, isStart: false },
+    { id: "2", name: "Arsuz Konutları", address: "Arsuz Merkez, Arsuz", order: 2, lat: 36.4172, lng: 35.8827, isStart: false },
+    { id: "3", name: "Dörtyol Sitesi", address: "Dörtyol, Hatay", order: 3, lat: 36.8439, lng: 36.2219, isStart: false },
+    { id: "4", name: "Erzin Proje", address: "Erzin, Hatay", order: 4, lat: 36.9532, lng: 36.2023, isStart: false }
   ]
 
   const optimizedStops: Stop[] = [
     { id: "0", name: "Nexa Merkez Ofis", address: "Merkez, İskenderun", order: 0, lat: 36.58718, lng: 36.17347, isStart: true },
-    { id: "2", name: "Arsuz Konutları", address: "Arsuz Merkez, Arsuz", order: 1, lat: 36.40, lng: 35.88, isStart: false },
-    { id: "3", name: "Dörtyol Sitesi", address: "Dörtyol, Hatay", order: 2, lat: 36.85, lng: 36.22, isStart: false },
-    { id: "4", name: "Erzin Proje", address: "Erzin, Hatay", order: 3, lat: 36.95, lng: 36.20, isStart: false },
-    { id: "1", name: "İskenderun TOKİ", address: "TOKİ Mahallesi, İskenderun", order: 4, lat: 36.58, lng: 36.17, isStart: false }
+    { id: "2", name: "Arsuz Konutları", address: "Arsuz Merkez, Arsuz", order: 1, lat: 36.4172, lng: 35.8827, isStart: false },
+    { id: "3", name: "Dörtyol Sitesi", address: "Dörtyol, Hatay", order: 2, lat: 36.8439, lng: 36.2219, isStart: false },
+    { id: "4", name: "Erzin Proje", address: "Erzin, Hatay", order: 3, lat: 36.9532, lng: 36.2023, isStart: false },
+    { id: "1", name: "İskenderun TOKİ", address: "TOKİ Mahallesi, İskenderun", order: 4, lat: 36.5871, lng: 36.1735, isStart: false }
   ]
 
   useEffect(() => {

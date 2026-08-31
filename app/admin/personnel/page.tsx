@@ -5,15 +5,16 @@
  * This code is the property of NXA Software.
  */
 
-import { Users, MapPin, Briefcase, Phone, Mail, CheckCircle, AlertCircle, Clock } from "lucide-react"
+import { Users, MapPin, Briefcase, Phone, Mail, CheckCircle, AlertCircle, Clock, Wallet, ArrowRight } from "lucide-react"
+import Link from "next/link"
 
 export default function PersonnelPage() {
   const personnelData = [
-    { id: "P001", name: "Ahmet Yılmaz", department: "İnşaat", position: "Kalıpçı", phone: "0555 123 4567", email: "ahmet@nexa.com", status: "Active", location: "İskenderun TOKİ" },
-    { id: "P002", name: "Mehmet Demir", department: "Elektrik", position: "Elektrikçi", phone: "0555 234 5678", email: "mehmet@nexa.com", status: "Active", location: "Arsuz Konutları" },
-    { id: "P003", name: "Ali Kaya", department: "İnşaat", position: "Demirci", phone: "0555 345 6789", email: "ali@nexa.com", status: "On Leave", location: "Dörtyol Sitesi" },
-    { id: "P004", name: "Hasan Öztürk", department: "Mekanik", position: "Tesisatçı", phone: "0555 456 7890", email: "hasan@nexa.com", status: "Active", location: "Erzin Proje" },
-    { id: "P005", name: "İbrahim Şahin", department: "İnşaat", position: "Mimar", phone: "0555 567 8901", email: "ibrahim@nexa.com", status: "Active", location: "İskenderun TOKİ" },
+    { id: "P001", name: "Ahmet Yılmaz", department: "İnşaat", position: "Kalıpçı", phone: "0555 123 4567", email: "ahmet@nexa.com", status: "Active", location: "İskenderun TOKİ", salaryStatus: "Paid" },
+    { id: "P002", name: "Mehmet Demir", department: "Elektrik", position: "Elektrikçi", phone: "0555 234 5678", email: "mehmet@nexa.com", status: "Active", location: "Arsuz Konutları", salaryStatus: "Pending" },
+    { id: "P003", name: "Ali Kaya", department: "İnşaat", position: "Demirci", phone: "0555 345 6789", email: "ali@nexa.com", status: "On Leave", location: "Dörtyol Sitesi", salaryStatus: "Paid" },
+    { id: "P004", name: "Hasan Öztürk", department: "Mekanik", position: "Tesisatçı", phone: "0555 456 7890", email: "hasan@nexa.com", status: "Active", location: "Erzin Proje", salaryStatus: "Pending" },
+    { id: "P005", name: "İbrahim Şahin", department: "İnşaat", position: "Mimar", phone: "0555 567 8901", email: "ibrahim@nexa.com", status: "Active", location: "İskenderun TOKİ", salaryStatus: "Paid" },
   ]
 
   return (
@@ -38,6 +39,8 @@ export default function PersonnelPage() {
               <th className="text-left p-4 text-slate-300 font-medium">E-posta</th>
               <th className="text-left p-4 text-slate-300 font-medium">Konum</th>
               <th className="text-left p-4 text-slate-300 font-medium">Durum</th>
+              <th className="text-left p-4 text-slate-300 font-medium">Maaş Durumu</th>
+              <th className="text-left p-4 text-slate-300 font-medium">İşlemler</th>
             </tr>
           </thead>
           <tbody>
@@ -69,6 +72,27 @@ export default function PersonnelPage() {
                     {person.status === "On Leave" && <Clock className="w-3 h-3" />}
                     {person.status}
                   </span>
+                </td>
+                <td className="p-4">
+                  <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${
+                    person.salaryStatus === "Paid" 
+                      ? "bg-green-500/20 text-green-400" 
+                      : "bg-orange-500/20 text-orange-400"
+                  }`}>
+                    {person.salaryStatus === "Paid" && <CheckCircle className="w-3 h-3" />}
+                    {person.salaryStatus === "Pending" && <Clock className="w-3 h-3" />}
+                    {person.salaryStatus === "Paid" ? "Ödendi" : "Ödeme Bekliyor"}
+                  </span>
+                </td>
+                <td className="p-4">
+                  <Link
+                    href={`/admin/personnel/${person.id}`}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-lg transition-colors text-sm font-medium"
+                  >
+                    <Wallet className="w-4 h-4" />
+                    Ödeme / Detay
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
                 </td>
               </tr>
             ))}
