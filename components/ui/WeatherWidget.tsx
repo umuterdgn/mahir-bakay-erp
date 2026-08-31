@@ -19,7 +19,7 @@ interface WeatherWidgetProps {
   city?: string
 }
 
-export default function WeatherWidget({ city = "İstanbul" }: WeatherWidgetProps) {
+export default function WeatherWidget({ city = "İskenderun" }: WeatherWidgetProps) {
   const [weather, setWeather] = useState<WeatherData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)

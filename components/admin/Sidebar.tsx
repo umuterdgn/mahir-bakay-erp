@@ -251,21 +251,21 @@ export default function AdminSidebar() {
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full bg-slate-900 border-r border-slate-800 z-50 transition-all duration-300 ${
+        className={`fixed top-0 left-0 h-full bg-slate-900 border-r border-slate-800 z-50 transition-all duration-300 overflow-x-hidden ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0 ${isCollapsed ? "lg:w-20" : "lg:w-64"} w-64`}
       >
         <div className="flex flex-col h-full p-6">
           {/* Header */}
           <div className="mb-6">
-            <div className="flex items-center justify-between mb-4">
+            <div className={`flex items-center ${isCollapsed ? "justify-center" : "justify-between"} mb-4`}>
               {!isCollapsed && (
                 <div>
                   <h1 className="text-xl font-bold text-white mb-1">Şantiye Asistanı</h1>
                   <p className="text-slate-400 text-sm">Mahir Bakay Mühendislik</p>
                 </div>
               )}
-              <div className="flex items-center gap-2">
+              <div className={`flex items-center gap-2 ${isCollapsed ? "" : ""}`}>
                 {!isCollapsed && mounted && (
                   <button
                     onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
@@ -278,7 +278,9 @@ export default function AdminSidebar() {
                 {!isCollapsed && <NotificationBell />}
                 <button
                   onClick={() => setIsCollapsed(!isCollapsed)}
-                  className="hidden lg:flex text-slate-400 hover:text-white p-1 transition-colors"
+                  className={`hidden lg:flex text-slate-400 hover:text-white p-1 transition-colors ${
+                    isCollapsed ? "" : ""
+                  }`}
                   title={isCollapsed ? "Genişlet" : "Daralt"}
                 >
                   {isCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
@@ -326,7 +328,7 @@ export default function AdminSidebar() {
                       title={isCollapsed ? item.label : undefined}
                     >
                       <Icon className={`w-5 h-5 flex-shrink-0 ${isCollapsed ? "" : ""}`} />
-                      {!isCollapsed && <span>{item.label}</span>}
+                      <span className={`${isCollapsed ? "hidden opacity-0 w-0" : ""} transition-all duration-300`}>{item.label}</span>
                     </Link>
                   )
                 })}
@@ -346,7 +348,7 @@ export default function AdminSidebar() {
               <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
-              {!isCollapsed && <span>Çıkış Yap</span>}
+              <span className={`${isCollapsed ? "hidden opacity-0 w-0" : ""} transition-all duration-300`}>Çıkış Yap</span>
             </button>
           </div>
 
