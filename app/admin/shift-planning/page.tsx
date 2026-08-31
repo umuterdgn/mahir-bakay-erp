@@ -47,7 +47,7 @@ export default function ShiftPlanningPage() {
                 </td>
                 <td className="p-4 text-slate-300 flex items-center gap-2">
                   <Users className="w-4 h-4" />
-                  {shift.personel}
+                  {shift.personnel}
                 </td>
                 <td className="p-4 text-slate-300">{shift.project}</td>
               </tr>

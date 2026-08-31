@@ -58,7 +58,7 @@ export default function PersonnelTrackingPage() {
                 </td>
                 <td className="p-4 text-slate-400">{person.lastSeen}</td>
               </tr>
-))]
+            ))}
           </tbody>
         </table>
       </div>
