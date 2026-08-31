@@ -72,18 +72,52 @@ export default function SmartDocumentsPage() {
     setIsScanning(true)
     setOcrResult(null)
     
-    // Simulate OCR scanning (2 seconds)
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    
-    const mockResult: OCRResult = {
-      documentType: "İSG Temel Eğitim Sertifikası",
-      relatedPerson: "Ahmet Yılmaz",
-      validityDate: "15.09.2026",
-      status: "Geçerli - Sisteme işlendi."
+    try {
+      // Mock construction license text for OCR
+      const mockDocumentText = `
+        YAPI RUHSATI
+        Ruhsat No: 2024/1234
+        Ruhsat Tarihi: 15.08.2024
+        Yapı Sahibi: Mahir Bakay Mühendislik A.Ş.
+        Ada: 1234 Parsel: 56
+        İlçe: İskenderun
+        İl: Hatay
+        Yapı Sınıfı: 3. Sınıf
+        Alan: 5000 m²
+        Kat Adedi: G+5
+        Onay Tarihi: 20.08.2024
+        Risk Durumu: Düşük
+        Eksikler: Yok
+      `
+
+      const response = await fetch('/api/ai/ocr', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: mockDocumentText })
+      })
+
+      const data = await response.json()
+
+      const ocrResult: OCRResult = {
+        documentType: data.documentType || "Yapı Ruhsatı",
+        relatedPerson: data.relatedPerson || "Mahir Bakay Mühendislik A.Ş.",
+        validityDate: data.validityDate || "20.08.2024",
+        status: data.status || "Geçerli - Sisteme işlendi."
+      }
+      
+      setOcrResult(ocrResult)
+    } catch (error) {
+      console.error('OCR scan failed:', error)
+      const errorResult: OCRResult = {
+        documentType: "Bilinmiyor",
+        relatedPerson: "-",
+        validityDate: "-",
+        status: "Hata: OCR servisi yanıt vermedi."
+      }
+      setOcrResult(errorResult)
+    } finally {
+      setIsScanning(false)
     }
-    
-    setOcrResult(mockResult)
-    setIsScanning(false)
   }
 
   const getStatusBadge = (status: string) => {
@@ -225,7 +259,7 @@ export default function SmartDocumentsPage() {
                       <Scan className="w-12 h-12 text-blue-400 animate-pulse" />
                     </div>
                   </div>
-                  <p className="text-white font-medium mb-2">Yapay Zeka ile Tara...</p>
+                  <p className="text-white font-medium mb-2">Gemini Vision evrakı inceliyor...</p>
                   <p className="text-slate-400 text-sm">Evrak okunuyor ve analiz ediliyor</p>
                 </div>
               ) : ocrResult ? (

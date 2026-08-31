@@ -147,7 +147,7 @@ export default function AIAssistantPage() {
             <div className="bg-slate-800 rounded-2xl px-4 py-3 border border-slate-700">
               <div className="flex items-center gap-2">
                 <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />
-                <span className="text-slate-400 text-sm">Yanıt yazılıyor...</span>
+                <span className="text-slate-400 text-sm">Asistan düşünüyor...</span>
               </div>
             </div>
           </div>
