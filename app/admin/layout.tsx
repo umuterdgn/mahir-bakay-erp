@@ -23,7 +23,7 @@ export default async function AdminLayout({
 
   return (
     <NextAuthSessionProvider>
-      <div className="min-h-screen bg-slate-950">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white">
         <AdminSidebar />
         <main className="lg:ml-64 pt-20 lg:pt-6 p-6 lg:p-8">
           {children}

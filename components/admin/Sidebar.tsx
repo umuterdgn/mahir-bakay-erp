@@ -251,25 +251,25 @@ export default function AdminSidebar() {
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full bg-slate-900 border-r border-slate-800 z-50 transition-all duration-300 overflow-x-hidden ${
+        className={`fixed top-0 left-0 h-full bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 z-50 transition-all duration-300 overflow-x-hidden ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0 ${isCollapsed ? "lg:w-20" : "lg:w-64"} w-64`}
       >
-        <div className="flex flex-col h-full p-6">
+        <div className={`flex flex-col h-full ${isCollapsed ? "p-3" : "p-6"}`}>
           {/* Header */}
           <div className="mb-6">
             <div className={`flex items-center ${isCollapsed ? "justify-center" : "justify-between"} mb-4`}>
               {!isCollapsed && (
                 <div>
-                  <h1 className="text-xl font-bold text-white mb-1">Şantiye Asistanı</h1>
-                  <p className="text-slate-400 text-sm">Mahir Bakay Mühendislik</p>
+                  <h1 className="text-xl font-bold text-slate-900 dark:text-white mb-1">Şantiye Asistanı</h1>
+                  <p className="text-slate-600 dark:text-slate-400 text-sm">Mahir Bakay Mühendislik</p>
                 </div>
               )}
               <div className={`flex items-center gap-2 ${isCollapsed ? "" : ""}`}>
                 {!isCollapsed && mounted && (
                   <button
                     onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                    className="p-2 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
+                    className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
                     title={theme === 'dark' ? 'Açık Tema' : 'Koyu Tema'}
                   >
                     {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
@@ -278,7 +278,7 @@ export default function AdminSidebar() {
                 {!isCollapsed && <NotificationBell />}
                 <button
                   onClick={() => setIsCollapsed(!isCollapsed)}
-                  className={`hidden lg:flex text-slate-400 hover:text-white p-1 transition-colors ${
+                  className={`hidden lg:flex text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white p-1 transition-colors ${
                     isCollapsed ? "" : ""
                   }`}
                   title={isCollapsed ? "Genişlet" : "Daralt"}
@@ -291,13 +291,13 @@ export default function AdminSidebar() {
             {/* Search Bar - Hide when collapsed */}
             {!isCollapsed && (
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-600 dark:text-slate-400" />
                 <input
                   type="text"
                   placeholder="Menü ara..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all"
+                  className="w-full pl-10 pr-4 py-2 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all"
                 />
               </div>
             )}
@@ -308,7 +308,7 @@ export default function AdminSidebar() {
             {Object.entries(groupedNavItems).map(([category, items]) => (
               <div key={category}>
                 {!isCollapsed && (
-                  <h3 className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-2 mt-6">
+                  <h3 className="text-xs text-slate-600 dark:text-slate-500 font-bold uppercase tracking-wider mb-2 mt-6">
                     {category}
                   </h3>
                 )}
@@ -322,13 +322,13 @@ export default function AdminSidebar() {
                       onClick={() => setIsOpen(false)}
                       className={`flex items-center w-full py-2 rounded-lg transition-colors ${
                         isActive
-                          ? "bg-slate-800 text-white"
-                          : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                          ? "bg-blue-50 dark:bg-slate-800 text-blue-600 dark:text-white font-medium"
+                          : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                       } ${isCollapsed ? "justify-center px-0" : "justify-start px-4"}`}
                       title={isCollapsed ? item.label : undefined}
                     >
                       <Icon className={`w-5 h-5 flex-shrink-0 ${isCollapsed ? "" : ""}`} />
-                      <span className={`${isCollapsed ? "hidden opacity-0 w-0" : ""} transition-all duration-300`}>{item.label}</span>
+                      <span className={`${isCollapsed ? "hidden" : "block"} transition-all duration-300`}>{item.label}</span>
                     </Link>
                   )
                 })}
@@ -337,7 +337,7 @@ export default function AdminSidebar() {
           </nav>
 
           {/* Footer */}
-          <div className="pt-6 pb-8 border-t border-slate-800 mt-4">
+          <div className="pt-6 pb-8 border-t border-slate-200 dark:border-slate-800 mt-4">
             <button
               onClick={() => signOut({ callbackUrl: '/login' })}
               className={`w-full px-4 py-3 rounded-lg bg-red-600 hover:bg-red-500 transition-colors text-white relative z-10 flex items-center gap-3 ${
@@ -348,7 +348,7 @@ export default function AdminSidebar() {
               <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
-              <span className={`${isCollapsed ? "hidden opacity-0 w-0" : ""} transition-all duration-300`}>Çıkış Yap</span>
+              <span className={`${isCollapsed ? "hidden" : "block"} transition-all duration-300`}>Çıkış Yap</span>
             </button>
           </div>
 

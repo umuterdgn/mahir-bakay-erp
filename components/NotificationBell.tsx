@@ -132,9 +132,9 @@ export default function NotificationBell() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 hover:bg-slate-800 rounded-lg transition-colors"
+        className="relative p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
       >
-        <Bell className="w-5 h-5 text-slate-400" />
+        <Bell className="w-5 h-5 text-slate-600 dark:text-slate-400" />
         {unreadCount > 0 && (
           <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
             {unreadCount}
@@ -143,24 +143,24 @@ export default function NotificationBell() {
       </button>
 
       {isOpen && (
-        <div className="absolute left-full top-0 ml-4 w-80 bg-slate-800 rounded-lg shadow-xl z-[100] max-h-[70vh] overflow-hidden flex flex-col">
+        <div className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 z-[100] max-h-[70vh] overflow-hidden flex flex-col">
           {/* Header */}
-          <div className="p-4 border-b border-slate-800 flex items-center justify-between">
-            <h3 className="font-semibold text-white">Bildirimler</h3>
+          <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+            <h3 className="font-semibold text-slate-900 dark:text-white">Bildirimler</h3>
             <div className="flex items-center gap-2">
               {unreadCount > 0 && (
                 <button
                   onClick={markAllAsRead}
-                  className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                  className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
                 >
                   Tümünü Okundu İşaretle
                 </button>
               )}
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-1 hover:bg-slate-800 rounded transition-colors"
+                className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"
               >
-                <X className="w-4 h-4 text-slate-400" />
+                <X className="w-4 h-4 text-slate-600 dark:text-slate-400" />
               </button>
             </div>
           </div>
@@ -170,20 +170,20 @@ export default function NotificationBell() {
             {isLoading ? (
               <div className="p-8 text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
-                <p className="text-slate-400 text-sm">Yükleniyor...</p>
+                <p className="text-slate-600 dark:text-slate-400 text-sm">Yükleniyor...</p>
               </div>
             ) : notifications.length === 0 ? (
               <div className="p-8 text-center">
-                <Bell className="w-12 h-12 text-slate-600 mx-auto mb-2" />
-                <p className="text-slate-400 text-sm">Bildirim bulunmuyor</p>
+                <Bell className="w-12 h-12 text-slate-400 dark:text-slate-600 mx-auto mb-2" />
+                <p className="text-slate-600 dark:text-slate-400 text-sm">Bildirim bulunmuyor</p>
               </div>
             ) : (
-              <div className="divide-y divide-slate-800">
+              <div className="divide-y divide-slate-200 dark:divide-slate-800">
                 {notifications.map((notification) => (
                   <div
                     key={notification.id}
-                    className={`p-4 hover:bg-slate-800/50 transition-colors cursor-pointer ${
-                      !notification.isRead ? "bg-slate-800/30" : ""
+                    className={`p-4 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors cursor-pointer ${
+                      !notification.isRead ? "bg-slate-100 dark:bg-slate-800/30" : ""
                     }`}
                   >
                     <div className="flex items-start gap-3">
@@ -192,24 +192,24 @@ export default function NotificationBell() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
-                          <h4 className="text-sm font-medium text-white">{notification.title}</h4>
+                          <h4 className="text-sm font-medium text-slate-900 dark:text-white">{notification.title}</h4>
                           {!notification.isRead && (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 markAsRead(notification.id);
                               }}
-                              className="p-1 hover:bg-slate-700 rounded transition-colors"
+                              className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"
                             >
-                              <Check className="w-3 h-3 text-slate-400" />
+                              <Check className="w-3 h-3 text-slate-600 dark:text-slate-400" />
                             </button>
                           )}
                         </div>
-                        <p className="text-xs text-slate-400 mt-1 line-clamp-2">{notification.message}</p>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 line-clamp-2">{notification.message}</p>
                         <div className="flex items-center justify-between mt-2">
-                          <span className="text-xs text-slate-500">{formatTime(notification.createdAt)}</span>
+                          <span className="text-xs text-slate-500 dark:text-slate-500">{formatTime(notification.createdAt)}</span>
                           {notification.link && (
-                            <div className="flex items-center gap-1 text-xs text-blue-400">
+                            <div className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400">
                               <ExternalLink className="w-3 h-3" />
                               <span>Görüntüle</span>
                             </div>
