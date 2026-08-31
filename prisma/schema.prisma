@@ -202,6 +202,7 @@ model Project {
   documents Document[]
   inspections Inspection[]
   deficiencies Deficiency[]
+  shifts Shift[]
 
   @@index([isActive, displayOrder])
   @@index([status])
@@ -658,6 +659,7 @@ model Personel {
   employmentType  EmploymentType?     // İşçi/Memur/Şirket Ortaklığı
   status          PersonelStatus      @default(ACTIVE)
   salary          Float               @default(0)
+  salaryStatus    String              @default("Pending") // Paid, Pending
   salaryPayDay    Int?
   sgkPeriod       String?
   sgkPayDay       Int?
@@ -963,6 +965,25 @@ model PurchaseOrder {
   @@index([approvedById])
   @@index([orderDate])
   @@index([createdAt])
+}
+
+// ============================================================================
+// SHIFT (Vardiya Planlaması)
+// ============================================================================
+
+model Shift {
+  id            String   @id @default(cuid())
+  name          String   // Örn: "Sabah Vardiyası", "Gece Vardiyası"
+  timeRange     String   // Örn: "08:00 - 17:00"
+  personnelCount Int      @default(0)
+  projectId     String?
+  project       Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  status        String   @default("Active") // Active, Inactive
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([status])
 }
 
 // ============================================================================

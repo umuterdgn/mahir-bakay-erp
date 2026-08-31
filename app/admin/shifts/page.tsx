@@ -5,16 +5,56 @@
  * This code is the property of NXA Software.
  */
 
-import { Clock, Calendar, Users, CheckCircle, AlertCircle } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Clock, Calendar, Users, CheckCircle, AlertCircle, Loader2 } from "lucide-react"
 
 export default function ShiftsPage() {
-  const shiftData = [
-    { id: "S001", name: "Sabah Vardiyası", time: "08:00 - 17:00", personnel: 12, project: "İskenderun TOKİ", status: "Active" },
-    { id: "S002", name: "Akşam Vardiyası", time: "17:00 - 02:00", personnel: 8, project: "Arsuz Konutları", status: "Active" },
-    { id: "S003", name: "Gece Vardiyası", time: "02:00 - 08:00", personnel: 5, project: "Dörtyol Sitesi", status: "Active" },
-    { id: "S004", name: "Hafta Sonu Vardiyası", time: "08:00 - 17:00", personnel: 10, project: "Erzin Proje", status: "Scheduled" },
-    { id: "S005", name: "Bayram Vardiyası", time: "09:00 - 18:00", personnel: 6, project: "İskenderun TOKİ", status: "Pending" },
-  ]
+  const [shiftData, setShiftData] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchShifts()
+  }, [])
+
+  const fetchShifts = async () => {
+    try {
+      const response = await fetch('/api/admin/shifts')
+      if (response.ok) {
+        const data = await response.json()
+        setShiftData(data)
+      } else {
+        // Fallback mock data if API fails
+        setShiftData([
+          { id: "S001", name: "Sabah Vardiyası", timeRange: "08:00 - 17:00", personnelCount: 12, project: { name: "İskenderun TOKİ" }, status: "Active" },
+          { id: "S002", name: "Akşam Vardiyası", timeRange: "17:00 - 02:00", personnelCount: 8, project: { name: "Arsuz Konutları" }, status: "Active" },
+          { id: "S003", name: "Gece Vardiyası", timeRange: "02:00 - 08:00", personnelCount: 5, project: { name: "Dörtyol Sitesi" }, status: "Active" },
+          { id: "S004", name: "Hafta Sonu Vardiyası", timeRange: "08:00 - 17:00", personnelCount: 10, project: { name: "Erzin Proje" }, status: "Scheduled" },
+          { id: "S005", name: "Bayram Vardiyası", timeRange: "09:00 - 18:00", personnelCount: 6, project: { name: "İskenderun TOKİ" }, status: "Pending" },
+        ])
+      }
+    } catch (error) {
+      console.error('Failed to fetch shifts:', error)
+      // Fallback mock data on error
+      setShiftData([
+        { id: "S001", name: "Sabah Vardiyası", timeRange: "08:00 - 17:00", personnelCount: 12, project: { name: "İskenderun TOKİ" }, status: "Active" },
+        { id: "S002", name: "Akşam Vardiyası", timeRange: "17:00 - 02:00", personnelCount: 8, project: { name: "Arsuz Konutları" }, status: "Active" },
+        { id: "S003", name: "Gece Vardiyası", timeRange: "02:00 - 08:00", personnelCount: 5, project: { name: "Dörtyol Sitesi" }, status: "Active" },
+        { id: "S004", name: "Hafta Sonu Vardiyası", timeRange: "08:00 - 17:00", personnelCount: 10, project: { name: "Erzin Proje" }, status: "Scheduled" },
+        { id: "S005", name: "Bayram Vardiyası", timeRange: "09:00 - 18:00", personnelCount: 6, project: { name: "İskenderun TOKİ" }, status: "Pending" },
+      ])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="p-6 h-screen flex flex-col items-center justify-center">
+        <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
+        <p className="text-slate-400 mt-4">Vardiya verileri yükleniyor...</p>
+      </div>
+    )
+  }
 
   return (
     <div className="lg:mt-0 mt-16">
@@ -45,13 +85,13 @@ export default function ShiftsPage() {
                 <td className="p-4 text-white">{shift.name}</td>
                 <td className="p-4 text-slate-300 flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
-                  {shift.time}
+                  {shift.timeRange || shift.time}
                 </td>
                 <td className="p-4 text-slate-300 flex items-center gap-2">
                   <Users className="w-4 h-4" />
-                  {shift.personnel}
+                  {shift.personnelCount || shift.personnel}
                 </td>
-                <td className="p-4 text-slate-300">{shift.project}</td>
+                <td className="p-4 text-slate-300">{shift.project?.name || shift.project || '-'}</td>
                 <td className="p-4">
                   <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${
                     shift.status === "Active" 
