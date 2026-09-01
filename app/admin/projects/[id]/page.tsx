@@ -212,14 +212,14 @@ export default async function ProjectDetailPage({
               <span className="flex items-center">
                 <span className="mr-2">Başlangıç:</span>
                 <span className="text-slate-900 dark:text-white">
-                  {new Date(project.startDate).toLocaleDateString("tr-TR")}
+                  {new Date(String(project.startDate || Date.now())).toLocaleDateString("tr-TR")}
                 </span>
               </span>
               {project.endDate && (
                 <span className="flex items-center">
                   <span className="mr-2">Bitiş:</span>
                   <span className="text-slate-900 dark:text-white">
-                    {new Date(project.endDate).toLocaleDateString("tr-TR")}
+                    {new Date(String(project.endDate || Date.now())).toLocaleDateString("tr-TR")}
                   </span>
                 </span>
               )}
