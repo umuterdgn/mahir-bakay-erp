@@ -19,10 +19,43 @@ export default async function ProjectDetailPage({
   params: Promise<{ id: string }>
 }) {
   const resolvedParams = await params
+
+  type ProjectTransaction = {
+    id: string
+    type: "GELIR" | "GIDER"
+    amount: number | string
+    description: string
+    date: string
+  }
+
+  type ProjectRecord = {
+    id: string
+    name?: string | null
+    title?: string | null
+    healthScore?: number | null
+    progress?: number | null
+    transactions?: ProjectTransaction[]
+    inspections?: Array<Record<string, unknown>>
+    deficiencies?: Array<Record<string, unknown>>
+    documents?: Array<Record<string, unknown>>
+    audits?: Array<Record<string, unknown>>
+    _count?: {
+      inspections?: number
+      deficiencies?: number
+      documents?: number
+      projectTasks?: number
+      droneMedia?: number
+      projectFiles?: number
+    }
+    company?: { name: string } | null
+    archives?: Array<Record<string, unknown>>
+    siteZones?: Array<Record<string, unknown>>
+    [key: string]: unknown
+  }
   
-  let project
+  let project: ProjectRecord | null = null
   try {
-    project = await prisma.project.findUnique({
+    project = (await prisma.project.findUnique({
       where: { id: resolvedParams.id },
       include: {
         company: true,
@@ -98,7 +131,7 @@ export default async function ProjectDetailPage({
           }
         }
       }
-    }) as any
+    })) as ProjectRecord | null
   } catch (error) {
     console.error("Failed to fetch project:", error)
     notFound()
@@ -109,13 +142,13 @@ export default async function ProjectDetailPage({
   }
 
   // Calculate project financial stats
-  const totalIncome = (project.transactions || [])
-    .filter((t: any) => t.type === "GELIR")
-    .reduce((sum: number, t: any) => sum + Number(t.amount || 0), 0)
+  const totalIncome = (project.transactions ?? [])
+    .filter((t: ProjectTransaction) => t.type === "GELIR")
+    .reduce((sum: number, t: ProjectTransaction) => sum + Number(t.amount || 0), 0)
   
-  const totalExpense = (project.transactions || [])
-    .filter((t: any) => t.type === "GIDER")
-    .reduce((sum: number, t: any) => sum + Number(t.amount || 0), 0)
+  const totalExpense = (project.transactions ?? [])
+    .filter((t: ProjectTransaction) => t.type === "GIDER")
+    .reduce((sum: number, t: ProjectTransaction) => sum + Number(t.amount || 0), 0)
   
   const netBalance = totalIncome - totalExpense
   const inspectionCount = Number(project?._count?.inspections ?? project?.inspections?.length ?? 0)
@@ -214,7 +247,7 @@ export default async function ProjectDetailPage({
         {/* Digital Twin Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-6 border-t border-slate-200 dark:border-slate-700">
           {/* Health Score */}
-          <div className="bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 rounded-lg p-4 border border-emerald-200 dark:border-emerald-800">
+          <div className="bg-linear-to-br from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 rounded-lg p-4 border border-emerald-200 dark:border-emerald-800">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">Sağlık Skoru</span>
               <span className={`text-2xl font-bold ${healthScore >= 80 ? 'text-emerald-600 dark:text-emerald-400' : healthScore >= 50 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'}`}>
@@ -230,7 +263,7 @@ export default async function ProjectDetailPage({
           </div>
 
           {/* Progress */}
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+          <div className="bg-linear-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-blue-700 dark:text-blue-400">İlerleme</span>
               <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
@@ -246,7 +279,7 @@ export default async function ProjectDetailPage({
           </div>
 
           {/* Quick Stats */}
-          <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
+          <div className="bg-linear-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
             <div className="grid grid-cols-3 gap-2">
               <div className="text-center">
                 <span className="block text-2xl font-bold text-purple-600 dark:text-purple-400">{inspectionCount}</span>
@@ -306,13 +339,13 @@ export default async function ProjectDetailPage({
             {/* Recent Transactions */}
             <div>
               <h4 className="text-md font-semibold text-white mb-3">Son İşlemler</h4>
-              {project.transactions.length === 0 ? (
+              {(project.transactions ?? []).length === 0 ? (
                 <div className="text-center text-slate-500 py-8">
                   Henüz işlem yok
                 </div>
               ) : (
                 <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {project.transactions.slice(0, 10).map((transaction: any) => (
+                  {(project.transactions ?? []).slice(0, 10).map((transaction: ProjectTransaction) => (
                     <div key={transaction.id} className="bg-slate-800 rounded-lg p-3 border border-slate-700">
                       <p className="text-white text-sm font-medium truncate">{transaction.description}</p>
                       <div className="flex justify-between items-center mt-1">

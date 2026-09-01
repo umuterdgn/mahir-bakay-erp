@@ -21,7 +21,6 @@ export default function NewProjectPage() {
   const [companies, setCompanies] = useState<{ id: string; name: string }[]>([])
   const [yibfNumber, setYibfNumber] = useState("")
   const [isFetchingData, setIsFetchingData] = useState(false)
-  const [dataFetched, setDataFetched] = useState(false)
 
   const [formData, setFormData] = useState({
     name: "",
@@ -119,33 +118,13 @@ export default function NewProjectPage() {
     }
 
     setIsFetchingData(true)
-    
-    // Simulate API call to YDS/Belediye (2.5 seconds)
-    await new Promise(resolve => setTimeout(resolve, 2500))
-    
-    // Mock data based on YİBF number
-    const mockData = {
-      name: `YİBF ${yibfNumber} - Merkez Konutları`,
-      ada: "1452",
-      parsel: "3",
-      pafta: "17",
-      yapiSinifi: "3B",
-      description: "Toplam inşaat alanı 4.250 m², yapı sınıfı 3B",
-      city: "Hatay",
-      district: "İskenderun",
-      mintika: "Merkez Mahallesi",
-      category: "Kentsel Dönüşüm"
+
+    try {
+      await new Promise(resolve => setTimeout(resolve, 500))
+      toast.error("YİBF verisi için harici servis henüz bağlanmadı; bilgileri manuel girin.")
+    } finally {
+      setIsFetchingData(false)
     }
-    
-    // Auto-fill form fields
-    setFormData(prev => ({
-      ...prev,
-      ...mockData
-    }))
-    
-    setDataFetched(true)
-    setIsFetchingData(false)
-    toast.success("Veriler Yapı Denetim Sistemi&apos;nden (YDS) başarıyla senkronize edildi")
   }
 
   return (
@@ -207,15 +186,6 @@ export default function NewProjectPage() {
                 </div>
               </div>
               
-              {dataFetched && (
-                <div className="mt-4 p-4 bg-green-500/10 border border-green-500/30 rounded-lg flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-green-400 font-medium mb-1">Veriler Başarıyla Senkronize Edildi</p>
-                    <p className="text-green-300/80 text-sm">Veriler Yapı Denetim Sistemi&apos;nden (YDS) başarıyla çekildi. Lütfen doğruluğunu kontrol edip kaydedin.</p>
-                  </div>
-                </div>
-              )}
             </div>
             
             {/* KART 1: Temel Bilgiler */}

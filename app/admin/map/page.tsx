@@ -46,13 +46,6 @@ interface Project {
   }
 }
 
-const mockProjects: Project[] = [
-  { id: "mock1", name: "İskenderun TOKİ", yibfNo: "2024-001", healthScore: 85, progress: 65, address: "TOKİ Mahallesi, İskenderun", latitude: 36.5871, longitude: 36.1735, _count: { deficiencies: 2 } },
-  { id: "mock2", name: "Arsuz Konutları", yibfNo: "2024-002", healthScore: 72, progress: 45, address: "Arsuz Merkez, Arsuz", latitude: 36.4172, longitude: 35.8827, _count: { deficiencies: 4 } },
-  { id: "mock3", name: "Dörtyol Sitesi", yibfNo: "2024-003", healthScore: 45, progress: 30, address: "Dörtyol, Hatay", latitude: 36.8439, longitude: 36.2219, _count: { deficiencies: 7 } },
-  { id: "mock4", name: "Erzin Proje", yibfNo: "2024-004", healthScore: 90, progress: 80, address: "Erzin, Hatay", latitude: 36.9532, longitude: 36.2023, _count: { deficiencies: 1 } },
-]
-
 export default function MapPage() {
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
@@ -69,12 +62,12 @@ export default function MapPage() {
           const data = await response.json()
           setProjects(data)
         } else {
-          setProjects(mockProjects)
+          setProjects([])
         }
       } catch (error) {
         if (!isActive) return
         console.error('Failed to fetch projects:', error)
-        setProjects(mockProjects)
+        setProjects([])
       } finally {
         if (isActive) {
           setLoading(false)
@@ -171,7 +164,11 @@ export default function MapPage() {
 
       {/* Map Container */}
       <div className="mobile-map-shell flex-1 border border-slate-700 bg-slate-800/50 md:flex-none">
-        {typeof window !== 'undefined' && (
+        {projects.length === 0 ? (
+          <div className="flex h-full min-h-[220px] items-center justify-center text-slate-400">
+            Harita için gösterilecek proje verisi bulunamadı.
+          </div>
+        ) : typeof window !== 'undefined' && (
           <MapContainer
             center={[36.58718, 36.17347]} // İskenderun center
             zoom={11}
@@ -182,7 +179,7 @@ export default function MapPage() {
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-            
+
             {projects
               .filter(p => p.latitude && p.longitude)
               .map((project) => {

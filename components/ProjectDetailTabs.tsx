@@ -6,14 +6,14 @@
  */
 
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
+import Image from "next/image"
 import { useRouter } from "next/navigation"
 import dynamic from 'next/dynamic'
 import ProjectFiles from "@/components/ProjectFiles"
 import ProjectReminders from "@/components/ProjectReminders"
 import ProjectDailyLogs from "@/components/ProjectDailyLogs"
 import GeofencedCheckIn from "@/components/GeofencedCheckIn"
-import ProjectTimeline from "@/components/ProjectTimeline"
 import StructureTree from "@/components/StructureTree"
 import { toast } from "react-hot-toast"
 import { jsPDF } from "jspdf"
@@ -55,6 +55,19 @@ interface Project {
   latitude: number | null
   longitude: number | null
   geofenceRadius: number | null
+  ifcModelUrl?: string | null
+}
+
+type InspectionReport = {
+  id: string
+  title?: string | null
+  description?: string | null
+  createdAt?: string | null
+  findings?: string | null
+  markedBlueprintUrl?: string | null
+  markedPhotoUrl?: string | null
+  imageUrl?: string | null
+  dxfUrl?: string | null
 }
 
 interface ProjectDetailTabsProps {
@@ -66,9 +79,9 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
   const [activeTab, setActiveTab] = useState("kunya")
   const [isEditing, setIsEditing] = useState(false)
   const [isTkgmModalOpen, setIsTkgmModalOpen] = useState(false)
-  const [selectedReport, setSelectedReport] = useState<any>(null)
+  const [selectedReport, setSelectedReport] = useState<InspectionReport | null>(null)
   const [isReportModalOpen, setIsReportModalOpen] = useState(false)
-  const [inspectionReports, setInspectionReports] = useState<any[]>([])
+  const [inspectionReports, setInspectionReports] = useState<InspectionReport[]>([])
   const [loadingReports, setLoadingReports] = useState(false)
   const [deleteReportId, setDeleteReportId] = useState<string | null>(null)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
@@ -120,19 +133,12 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
       } else {
         toast.error("Güncellenirken hata oluştu")
       }
-    } catch (error) {
+    } catch {
       toast.error("Güncellenirken hata oluştu")
     }
   }
 
-  // Fetch inspection reports when denetim tab is active
-  useEffect(() => {
-    if (activeTab === "denetim") {
-      fetchInspectionReports()
-    }
-  }, [activeTab])
-
-  const fetchInspectionReports = async () => {
+  const fetchInspectionReports = useCallback(async () => {
     setLoadingReports(true)
     try {
       const response = await fetch(`/api/admin/inspection-reports?projectId=${project.id}`)
@@ -145,6 +151,25 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
     } finally {
       setLoadingReports(false)
     }
+  }, [project.id])
+
+  useEffect(() => {
+    if (activeTab !== "denetim") return
+
+    const timeoutId = setTimeout(() => {
+      void fetchInspectionReports()
+    }, 0)
+
+    return () => clearTimeout(timeoutId)
+  }, [activeTab, fetchInspectionReports])
+
+  const formatReportDate = (value?: string | null) => {
+    if (!value) return "Tarih yok"
+
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) return "Tarih yok"
+
+    return date.toLocaleDateString('tr-TR')
   }
 
   const handleDeleteReport = async (reportId: string) => {
@@ -165,11 +190,13 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
       } else {
         toast.error("Rapor silinemedi.");
       }
-    } catch (error) {
-      console.error(error);
+    } catch (_error) {
+      console.error(_error);
       toast.error("Rapor silinirken hata oluştu.");
     }
   };
+
+  const reportDateLabel = formatReportDate(selectedReport?.createdAt)
 
   const handleDownloadPDF = async (reportId: string) => {
     const element = document.getElementById(`pdf-template-${reportId}`);
@@ -225,7 +252,7 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
       </div>
 
       {/* Tab Content */}
-      <div className="min-h-[400px]">
+      <div className="min-h-100">
         {activeTab === "kunya" && (
           <div className="space-y-6">
             <div className="flex justify-between items-center">
@@ -414,7 +441,7 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
             ) : (
               <div className="space-y-4">
                 {/* Location Card */}
-                <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-6 border border-slate-700">
+                <div className="bg-linear-to-br from-slate-800 to-slate-900 rounded-xl p-6 border border-slate-700">
                   <div className="flex items-center gap-2 mb-4">
                     <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -466,7 +493,7 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
-                        Google Maps'te Aç
+                        Google Maps Aç
                       </a>
                     )}
                     <button
@@ -592,9 +619,9 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
             </div>
 
             <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
-              {(project as any).ifcModelUrl ? (
-                <div className="h-[600px]">
-                  <BimViewer ifcUrl={(project as any).ifcModelUrl} />
+              {project.ifcModelUrl ? (
+                <div className="h-150">
+                  <BimViewer ifcUrl={project.ifcModelUrl} />
                 </div>
               ) : (
                 <div className="p-6">
@@ -638,7 +665,7 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
             </div>
 
             {/* Element Selection Info */}
-            <div className="bg-gradient-to-r from-purple-900/20 to-blue-900/20 rounded-xl p-4 border border-purple-500/30">
+            <div className="bg-linear-to-r from-purple-900/20 to-blue-900/20 rounded-xl p-4 border border-purple-500/30">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
                   <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -668,7 +695,7 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
 
             {/* Ortophoto Image */}
             <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
-              <div className="relative h-[400px] bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center">
+              <div className="relative h-100 bg-linear-to-br from-slate-700 to-slate-800 flex items-center justify-center">
                 <div className="text-center">
                   <svg className="w-16 h-16 text-slate-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
@@ -681,9 +708,9 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
             </div>
 
             {/* AI Analysis */}
-            <div className="bg-gradient-to-r from-green-900/20 to-emerald-900/20 rounded-xl p-6 border border-green-500/30">
+            <div className="bg-linear-to-r from-green-900/20 to-emerald-900/20 rounded-xl p-6 border border-green-500/30">
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center shrink-0">
                   <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                   </svg>
@@ -798,18 +825,24 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
                     </div>
 
                     {/* Resim Alanı - DİKKAT: object-cover YERİNE object-contain KULLANILIYOR */}
-                    <div className="relative w-full h-48 bg-[#0f172a] border-b border-slate-700 p-2">
+                    <div className="relative w-full h-48 bg-slate-950 border-b border-slate-700 p-2">
                       {report.markedBlueprintUrl || report.markedPhotoUrl ? (
-                        <img 
-                          src={report.markedBlueprintUrl || report.markedPhotoUrl} 
+                        <Image 
+                          src={report.markedBlueprintUrl || report.markedPhotoUrl || ""} 
                           alt={report.title || "Rapor"} 
                           className="w-full h-full object-contain object-center"
+                          unoptimized
+                          width={600}
+                          height={400}
                         />
                       ) : report.imageUrl ? (
-                        <img 
+                        <Image 
                           src={report.imageUrl} 
                           alt="Denetim Raporu" 
                           className="w-full h-full object-contain object-center"
+                          unoptimized
+                          width={600}
+                          height={400}
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-slate-500 text-sm">
@@ -822,7 +855,7 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
                     <div className="p-4 flex-1 flex flex-col justify-center bg-slate-800">
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-xs text-slate-400">
-                          {new Date(report.createdAt || Date.now()).toLocaleDateString('tr-TR')}
+                          {formatReportDate(report.createdAt)}
                         </span>
                         <span className="text-xs font-semibold px-2 py-1 rounded bg-blue-900/50 text-blue-300">
                           {report.markedBlueprintUrl ? 'Plan' : 'Fotoğraf'}
@@ -883,30 +916,39 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
                   <div className="grid grid-cols-2 gap-4">
                     {selectedReport.markedBlueprintUrl && (
                       <div>
-                        <img
+                        <Image
                           src={selectedReport.markedBlueprintUrl}
                           alt="İşaretlenmiş Plan"
                           className="w-full rounded-lg"
+                          unoptimized
+                          width={1200}
+                          height={800}
                         />
                         <p className="text-sm text-slate-400 mt-2 text-center">İşaretlenmiş Plan</p>
                       </div>
                     )}
                     {selectedReport.markedPhotoUrl && (
                       <div>
-                        <img
+                        <Image
                           src={selectedReport.markedPhotoUrl}
                           alt="İşaretlenmiş Fotoğraf"
                           className="w-full rounded-lg"
+                          unoptimized
+                          width={1200}
+                          height={800}
                         />
                         <p className="text-sm text-slate-400 mt-2 text-center">İşaretlenmiş Fotoğraf</p>
                       </div>
                     )}
                   </div>
                 ) : selectedReport.imageUrl ? (
-                  <img
+                  <Image
                     src={selectedReport.imageUrl}
                     alt="Denetim Raporu"
                     className="w-full rounded-lg"
+                    unoptimized
+                    width={1200}
+                    height={800}
                   />
                 ) : (
                   <div className="flex items-center justify-center h-64 bg-slate-800 rounded-lg text-slate-500">
@@ -995,7 +1037,7 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
               <div className="border-b-4 border-slate-800 pb-6 mb-8 flex justify-between items-end">
                 <div>
                   <h1 className="text-3xl font-black text-slate-900 uppercase mb-2">{selectedReport.title || "Yapı Denetim Raporu"}</h1>
-                  <p className="text-slate-600 font-medium">Tarih: {new Date(selectedReport.createdAt || Date.now()).toLocaleDateString('tr-TR')}</p>
+                  <p className="text-slate-600 font-medium">Tarih: {reportDateLabel}</p>
                 </div>
                 <div className="text-right">
                   <h2 className="text-xl font-bold text-blue-900">MAHİR BAKAY MÜHENDİSLİK</h2>
@@ -1004,11 +1046,14 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
 
               {/* Görsel Alanı */}
               <div className="w-full mb-8 border-2 border-slate-200 p-2 rounded bg-slate-50">
-                <img 
+                <Image 
                   src={selectedReport.markedBlueprintUrl || selectedReport.markedPhotoUrl || selectedReport.imageUrl || ""} 
                   alt="Denetim Görseli" 
-                  className="w-full object-contain max-h-[500px]"
+                  className="w-full object-contain max-h-125"
                   crossOrigin="anonymous"
+                  unoptimized
+                  width={1200}
+                  height={800}
                 />
               </div>
 

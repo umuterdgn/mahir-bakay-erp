@@ -6,14 +6,22 @@
 
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Gantt, Task, ViewMode } from "gantt-task-react";
 import "gantt-task-react/dist/index.css";
-import { Plus, Calendar, Percent } from "lucide-react";
+import { Plus, Calendar } from "lucide-react";
 
 interface GanttChartProps {
   projectId: string;
 }
+
+type GanttTaskRecord = {
+  id?: string;
+  name?: string;
+  startDate?: string | null;
+  endDate?: string | null;
+  progress?: number | string | null;
+};
 
 export default function GanttChart({ projectId }: GanttChartProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -26,11 +34,15 @@ export default function GanttChart({ projectId }: GanttChartProps) {
     progress: 0,
   });
 
-  useEffect(() => {
-    fetchTasks();
-  }, [projectId]);
+  const getProgressColor = useCallback((progress: number) => {
+    if (progress >= 100) return "#22c55e"; // green
+    if (progress >= 75) return "#3b82f6"; // blue
+    if (progress >= 50) return "#eab308"; // yellow
+    if (progress >= 25) return "#f97316"; // orange
+    return "#ef4444"; // red
+  }, []);
 
-  const fetchTasks = async () => {
+  const fetchTasks = useCallback(async () => {
     try {
       const response = await fetch(`/api/project-tasks?projectId=${projectId}`);
       if (!response.ok) {
@@ -44,8 +56,8 @@ export default function GanttChart({ projectId }: GanttChartProps) {
         return;
       }
 
-      const ganttTasks = data
-        .map((task: any) => {
+      const ganttTasks = (data as GanttTaskRecord[])
+        .map((task) => {
           const start = new Date(task?.startDate);
           const end = new Date(task?.endDate);
           const progressValue = Number(task?.progress ?? 0);
@@ -77,15 +89,15 @@ export default function GanttChart({ projectId }: GanttChartProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getProgressColor, projectId]);
 
-  const getProgressColor = (progress: number) => {
-    if (progress >= 100) return "#22c55e"; // green
-    if (progress >= 75) return "#3b82f6"; // blue
-    if (progress >= 50) return "#eab308"; // yellow
-    if (progress >= 25) return "#f97316"; // orange
-    return "#ef4444"; // red
-  };
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      void fetchTasks();
+    }, 0);
+
+    return () => clearTimeout(timeoutId);
+  }, [fetchTasks]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -203,7 +215,7 @@ export default function GanttChart({ projectId }: GanttChartProps) {
         <div className="text-center py-12 text-slate-400">
           <Calendar className="w-12 h-12 mx-auto mb-4 text-slate-600" />
           <p>Henüz iş planı oluşturulmadı.</p>
-          <p className="text-sm mt-2">İlk görevi eklemek için "Yeni Görev Ekle" butonuna tıklayın.</p>
+          <p className="text-sm mt-2">İlk görevi eklemek için Yeni Görev Ekle butonuna tıklayın.</p>
         </div>
       )}
 

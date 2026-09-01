@@ -20,36 +20,43 @@ interface StructureTreeProps {
   structure?: StructureItem[]
 }
 
+interface ProjectTaskRecord {
+  id: string
+  name: string
+  progress: number
+  dependencies?: string | null
+}
+
 export default function StructureTree({ projectId, structure }: StructureTreeProps) {
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set())
-  const [treeData, setTreeData] = useState<StructureItem[]>(structure || [])
+  const [fetchedTreeData, setFetchedTreeData] = useState<StructureItem[]>([])
   const [newName, setNewName] = useState("")
   const [selectedParentId, setSelectedParentId] = useState<string | null>(null)
   const [isAdding, setIsAdding] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
 
+  const treeData = projectId ? fetchedTreeData : (structure ?? [])
+
   useEffect(() => {
-    if (!projectId) {
-      setTreeData(structure || [])
-      return
-    }
+    if (!projectId) return
 
     const fetchTree = async () => {
       try {
         const response = await fetch(`/api/project-tasks?projectId=${projectId}`)
         if (!response.ok) {
-          setTreeData([])
+          setFetchedTreeData([])
           return
         }
 
         const data = await response.json()
         if (!Array.isArray(data)) {
-          setTreeData([])
+          setFetchedTreeData([])
           return
         }
 
-        const rootTasks = data.filter((task: any) => !task.dependencies || !data.some((item: any) => item.id === task.dependencies))
-        const byParent = data.reduce((acc: Record<string, any[]>, task: any) => {
+        const taskList = data as ProjectTaskRecord[]
+        const rootTasks = taskList.filter((task) => !task.dependencies || !taskList.some((item) => item.id === task.dependencies))
+        const byParent = taskList.reduce((acc: Record<string, ProjectTaskRecord[]>, task) => {
           const parentId = task.dependencies
           if (parentId) {
             acc[parentId] = acc[parentId] || []
@@ -58,17 +65,17 @@ export default function StructureTree({ projectId, structure }: StructureTreePro
           return acc
         }, {})
 
-        const mapTask = (task: any): StructureItem => ({
+        const mapTask = (task: ProjectTaskRecord): StructureItem => ({
           id: task.id,
           name: task.name,
           status: task.progress >= 100 ? "completed" : task.progress > 0 ? "in_progress" : "pending",
           children: (byParent[task.id] || []).map(mapTask)
         })
 
-        setTreeData(rootTasks.map(mapTask))
+        setFetchedTreeData(rootTasks.map(mapTask))
       } catch (error) {
         console.error("Error loading structure tree:", error)
-        setTreeData([])
+        setFetchedTreeData([])
       }
     }
 
@@ -198,8 +205,9 @@ export default function StructureTree({ projectId, structure }: StructureTreePro
         const updated = await fetch(`/api/project-tasks?projectId=${projectId}`)
         const data = await updated.json()
         if (Array.isArray(data)) {
-          const rootTasks = data.filter((task: any) => !task.dependencies || !data.some((item: any) => item.id === task.dependencies))
-          const byParent = data.reduce((acc: Record<string, any[]>, task: any) => {
+          const taskList = data as ProjectTaskRecord[]
+          const rootTasks = taskList.filter((task) => !task.dependencies || !taskList.some((item) => item.id === task.dependencies))
+          const byParent = taskList.reduce((acc: Record<string, ProjectTaskRecord[]>, task) => {
             if (task.dependencies) {
               acc[task.dependencies] = acc[task.dependencies] || []
               acc[task.dependencies].push(task)
@@ -207,15 +215,15 @@ export default function StructureTree({ projectId, structure }: StructureTreePro
             return acc
           }, {})
 
-          setTreeData(rootTasks.map((task: any) => ({
+          setFetchedTreeData(rootTasks.map((task) => ({
             id: task.id,
             name: task.name,
             status: task.progress >= 100 ? 'completed' : task.progress > 0 ? 'in_progress' : 'pending',
-            children: (byParent[task.id] || []).map((child: any) => ({
+            children: (byParent[task.id] || []).map((child) => ({
               id: child.id,
               name: child.name,
               status: child.progress >= 100 ? 'completed' : child.progress > 0 ? 'in_progress' : 'pending',
-              children: (byParent[child.id] || []).map((nested: any) => ({
+              children: (byParent[child.id] || []).map((nested) => ({
                 id: nested.id,
                 name: nested.name,
                 status: nested.progress >= 100 ? 'completed' : nested.progress > 0 ? 'in_progress' : 'pending'
@@ -302,7 +310,7 @@ export default function StructureTree({ projectId, structure }: StructureTreePro
       )}
 
       <div className="space-y-1">
-        {(treeData.length ? treeData : (structure || [])).map((item) => renderTreeItem(item))}
+        {treeData.map((item) => renderTreeItem(item))}
       </div>
     </div>
   )
