@@ -68,10 +68,7 @@ export async function GET(request: Request) {
     return NextResponse.json(projects || [])
   } catch (error) {
     console.error("❌ Error fetching projects:", error)
-    return NextResponse.json(
-      { error: "Projeler getirilirken hata oluştu", details: error instanceof Error ? error.message : String(error) },
-      { status: 500 }
-    )
+    return NextResponse.json([], { status: 200 })
   }
 }
 

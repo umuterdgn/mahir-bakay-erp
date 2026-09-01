@@ -71,13 +71,21 @@ export default function PPEFormsPage() {
         const deliveriesData = await deliveriesRes.json()
         const normalizedDeliveries = Array.isArray(deliveriesData)
           ? deliveriesData.map((delivery: any) => {
-              const equipments = Array.isArray(delivery.equipment)
-                ? delivery.equipment
-                : (typeof delivery.equipment === 'string' ? JSON.parse(delivery.equipment) : [])
+              let parsedEquipment = []
+              if (Array.isArray(delivery.equipment)) {
+                parsedEquipment = delivery.equipment
+              } else if (typeof delivery.equipment === 'string') {
+                try {
+                  parsedEquipment = JSON.parse(delivery.equipment)
+                  if (!Array.isArray(parsedEquipment)) parsedEquipment = [parsedEquipment]
+                } catch (e) {
+                  parsedEquipment = delivery.equipment.split(',').map((s: string) => s.trim())
+                }
+              }
 
               return {
                 ...delivery,
-                equipment: Array.isArray(equipments) ? equipments : []
+                equipment: Array.isArray(parsedEquipment) ? parsedEquipment : []
               }
             })
           : []
@@ -245,9 +253,17 @@ export default function PPEFormsPage() {
           ) : (
             <div className="space-y-3">
               {deliveries.map((delivery) => {
-                const equipments = Array.isArray(delivery.equipment)
-                  ? delivery.equipment
-                  : (typeof delivery.equipment === 'string' ? JSON.parse(delivery.equipment) : [])
+                let parsedEquipment = []
+                if (Array.isArray(delivery.equipment)) {
+                  parsedEquipment = delivery.equipment
+                } else if (typeof delivery.equipment === 'string') {
+                  try {
+                    parsedEquipment = JSON.parse(delivery.equipment)
+                    if (!Array.isArray(parsedEquipment)) parsedEquipment = [parsedEquipment]
+                  } catch (e) {
+                    parsedEquipment = delivery.equipment.split(',').map((s: string) => s.trim())
+                  }
+                }
 
                 return (
                   <div key={delivery.id} className="p-4 bg-slate-900/50 rounded-lg border border-slate-700">
@@ -265,7 +281,7 @@ export default function PPEFormsPage() {
                     <div className="mb-3">
                       <div className="text-xs text-slate-400 mb-1">Teslim Edilen Ekipmanlar:</div>
                       <div className="flex flex-wrap gap-1">
-                        {Array.isArray(equipments) && equipments.map((item: string, idx: number) => (
+                        {Array.isArray(parsedEquipment) && parsedEquipment.map((item: string, idx: number) => (
                           <span
                             key={idx}
                             className="text-xs px-2 py-1 bg-blue-500/20 text-blue-400 rounded-full"

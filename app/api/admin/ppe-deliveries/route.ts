@@ -56,10 +56,15 @@ export async function POST(request: Request) {
   try {
     const body = await request.json()
     const { equipment, signature, personelId } = body
+    const normalizedEquipment = Array.isArray(equipment)
+      ? equipment
+      : typeof equipment === 'string'
+        ? equipment.split(',').map((item: string) => item.trim()).filter(Boolean)
+        : []
 
     const delivery = await prisma.pPEDelivery.create({
       data: {
-        equipment: JSON.stringify(equipment),
+        equipment: JSON.stringify(normalizedEquipment),
         signature,
         personelId
       },
