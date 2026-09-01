@@ -58,8 +58,8 @@ export default function GanttChart({ projectId }: GanttChartProps) {
 
       const ganttTasks = (data as GanttTaskRecord[])
         .map((task) => {
-          const start = new Date(task?.startDate);
-          const end = new Date(task?.endDate);
+          const start = new Date(task?.startDate || Date.now());
+          const end = new Date(task?.endDate || Date.now());
           const progressValue = Number(task?.progress ?? 0);
 
           if (!task?.id || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {

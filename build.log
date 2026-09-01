@@ -1,0 +1,20 @@
+
+> mahir-bakay-muhendislik@0.1.0 prebuild
+> node -e "const fs=require('fs'); try { fs.rmSync('.next', { recursive: true, force: true }); } catch(e) { }"
+
+
+> mahir-bakay-muhendislik@0.1.0 build
+> next build --webpack
+
+▲ Next.js 16.2.12 (webpack)
+- Environments: .env
+
+  Creating an optimized production build ...
+> [PWA] Compile server
+> [PWA] Compile server
+> [PWA] Compile client (static)
+> [PWA] Auto register service worker with: C:\Users\Umut\OneDrive\Masaüstü\mahir-bakay-erp\mahir-bakay-erp\mahir-bakay-erp\node_modules\next-pwa\register.js
+> [PWA] Service worker: C:\Users\Umut\OneDrive\Masaüstü\mahir-bakay-erp\mahir-bakay-erp\mahir-bakay-erp\public\sw.js
+> [PWA]   url: /sw.js
+> [PWA]   scope: /
+⚠ Production code optimization has been disabled in your project. Read more: https://nextjs.org/docs/messages/minification-disabled
