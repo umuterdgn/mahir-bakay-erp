@@ -5,6 +5,7 @@
  */
 
 import { NextResponse } from "next/server"
+import { revalidatePath } from 'next/cache'
 import { prisma } from "@/lib/prisma"
 import { deleteFromCloudinary, deleteMultipleFromCloudinary } from "@/lib/cloudinary"
 import { auth } from "@/lib/auth"
@@ -131,6 +132,7 @@ export async function POST(request: Request) {
 
     // Log the action
     await logAction("PROJE_EKLENDI", `${newProject.title || newProject.name} adlı proje oluşturuldu.`, "Admin")
+    revalidatePath('/admin/projects')
 
     return NextResponse.json(newProject, { status: 201 })
 

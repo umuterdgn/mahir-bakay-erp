@@ -100,6 +100,7 @@ export default function NewProjectPage() {
       if (response.ok) {
         toast.success("Proje başarıyla oluşturuldu")
         router.push("/admin/projects")
+        router.refresh()
       } else {
         const errorData = await response.json()
         toast.error(`Proje oluşturulurken hata: ${errorData.details || errorData.error || "Bilinmeyen hata"}`)
