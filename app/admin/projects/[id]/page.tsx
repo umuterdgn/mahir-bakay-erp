@@ -215,7 +215,7 @@ export default async function ProjectDetailPage({
                   {new Date(String(project.startDate || Date.now())).toLocaleDateString("tr-TR")}
                 </span>
               </span>
-              {project.endDate && (
+              {Boolean(project.endDate) && (
                 <span className="flex items-center">
                   <span className="mr-2">Bitiş:</span>
                   <span className="text-slate-900 dark:text-white">
