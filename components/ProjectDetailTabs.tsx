@@ -841,7 +841,7 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
 
         {activeTab === "yapi-agaci" && (
           <div className="space-y-4">
-            <StructureTree />
+            <StructureTree projectId={project.id} />
           </div>
         )}
 

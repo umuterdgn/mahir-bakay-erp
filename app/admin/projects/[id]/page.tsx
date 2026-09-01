@@ -86,6 +86,16 @@ export default async function ProjectDetailPage({
           orderBy: {
             createdAt: 'desc'
           }
+        },
+        _count: {
+          select: {
+            inspections: true,
+            deficiencies: true,
+            documents: true,
+            projectTasks: true,
+            droneMedia: true,
+            projectFiles: true
+          }
         }
       }
     }) as any
@@ -99,15 +109,20 @@ export default async function ProjectDetailPage({
   }
 
   // Calculate project financial stats
-  const totalIncome = project.transactions
+  const totalIncome = (project.transactions || [])
     .filter((t: any) => t.type === "GELIR")
-    .reduce((sum: number, t: any) => sum + t.amount, 0)
+    .reduce((sum: number, t: any) => sum + Number(t.amount || 0), 0)
   
-  const totalExpense = project.transactions
+  const totalExpense = (project.transactions || [])
     .filter((t: any) => t.type === "GIDER")
-    .reduce((sum: number, t: any) => sum + t.amount, 0)
+    .reduce((sum: number, t: any) => sum + Number(t.amount || 0), 0)
   
   const netBalance = totalIncome - totalExpense
+  const inspectionCount = Number(project?._count?.inspections ?? project?.inspections?.length ?? 0)
+  const deficiencyCount = Number(project?._count?.deficiencies ?? project?.deficiencies?.length ?? 0)
+  const documentCount = Number(project?._count?.documents ?? project?.documents?.length ?? 0)
+  const healthScore = Number(project?.healthScore ?? 0)
+  const progressValue = Number(project?.progress ?? 0)
 
   const getStatusLabel = (status: string) => {
     switch (status) {
@@ -202,14 +217,14 @@ export default async function ProjectDetailPage({
           <div className="bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 rounded-lg p-4 border border-emerald-200 dark:border-emerald-800">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">Sağlık Skoru</span>
-              <span className={`text-2xl font-bold ${project.healthScore >= 80 ? 'text-emerald-600 dark:text-emerald-400' : project.healthScore >= 50 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'}`}>
-                {project.healthScore}
+              <span className={`text-2xl font-bold ${healthScore >= 80 ? 'text-emerald-600 dark:text-emerald-400' : healthScore >= 50 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'}`}>
+                {healthScore}
               </span>
             </div>
             <div className="w-full bg-emerald-200 dark:bg-emerald-800 rounded-full h-2">
               <div 
-                className={`h-2 rounded-full transition-all ${project.healthScore >= 80 ? 'bg-emerald-500' : project.healthScore >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
-                style={{ width: `${project.healthScore}%` }}
+                className={`h-2 rounded-full transition-all ${healthScore >= 80 ? 'bg-emerald-500' : healthScore >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                style={{ width: `${Math.min(100, Math.max(0, healthScore))}%` }}
               />
             </div>
           </div>
@@ -219,13 +234,13 @@ export default async function ProjectDetailPage({
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-blue-700 dark:text-blue-400">İlerleme</span>
               <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                {project.progress}%
+                {progressValue}%
               </span>
             </div>
             <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2">
               <div 
                 className="h-2 rounded-full bg-blue-500 transition-all"
-                style={{ width: `${project.progress}%` }}
+                style={{ width: `${Math.min(100, Math.max(0, progressValue))}%` }}
               />
             </div>
           </div>
@@ -234,15 +249,15 @@ export default async function ProjectDetailPage({
           <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
             <div className="grid grid-cols-3 gap-2">
               <div className="text-center">
-                <span className="block text-2xl font-bold text-purple-600 dark:text-purple-400">{project.inspections?.length || 0}</span>
+                <span className="block text-2xl font-bold text-purple-600 dark:text-purple-400">{inspectionCount}</span>
                 <span className="text-xs text-purple-700 dark:text-purple-400">Denetim</span>
               </div>
               <div className="text-center">
-                <span className="block text-2xl font-bold text-pink-600 dark:text-pink-400">{project.deficiencies?.length || 0}</span>
+                <span className="block text-2xl font-bold text-pink-600 dark:text-pink-400">{deficiencyCount}</span>
                 <span className="text-xs text-pink-700 dark:text-pink-400">Eksiklik</span>
               </div>
               <div className="text-center">
-                <span className="block text-2xl font-bold text-indigo-600 dark:text-indigo-400">{project.documents?.length || 0}</span>
+                <span className="block text-2xl font-bold text-indigo-600 dark:text-indigo-400">{documentCount}</span>
                 <span className="text-xs text-indigo-700 dark:text-indigo-400">Belge</span>
               </div>
             </div>

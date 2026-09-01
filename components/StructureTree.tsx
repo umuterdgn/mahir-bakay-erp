@@ -5,8 +5,8 @@
  * This code is the property of NXA Software.
  */
 
-import { useState } from "react"
-import { ChevronDown, ChevronRight, Building2, Layers } from "lucide-react"
+import { useEffect, useState } from "react"
+import { ChevronDown, ChevronRight, Building2, Layers, Plus, Save } from "lucide-react"
 
 interface StructureItem {
   id: string
@@ -16,73 +16,64 @@ interface StructureItem {
 }
 
 interface StructureTreeProps {
+  projectId?: string
   structure?: StructureItem[]
 }
 
-export default function StructureTree({ structure }: StructureTreeProps) {
+export default function StructureTree({ projectId, structure }: StructureTreeProps) {
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set())
+  const [treeData, setTreeData] = useState<StructureItem[]>(structure || [])
+  const [newName, setNewName] = useState("")
+  const [selectedParentId, setSelectedParentId] = useState<string | null>(null)
+  const [isAdding, setIsAdding] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
 
-  const defaultStructure: StructureItem[] = structure || [
-    {
-      id: "temel",
-      name: "Temel",
-      status: "completed",
-      children: [
-        { id: "temel-kazi", name: "Kazı", status: "completed" },
-        { id: "temel-donati", name: "Donatı", status: "completed" },
-        { id: "temel-beton", name: "Beton", status: "completed" },
-      ]
-    },
-    {
-      id: "bodrum",
-      name: "Bodrum",
-      status: "completed",
-      children: [
-        { id: "bodrum-kolon", name: "Kolon", status: "completed" },
-        { id: "bodrum-perde", name: "Perde Duvar", status: "completed" },
-        { id: "bodrum-doseme", name: "Döşeme", status: "completed" },
-      ]
-    },
-    {
-      id: "zemin",
-      name: "Zemin Kat",
-      status: "in_progress",
-      children: [
-        { id: "zemin-kolon", name: "Kolon", status: "completed" },
-        { id: "zemin-kiris", name: "Kiriş", status: "in_progress" },
-        { id: "zemin-doseme", name: "Döşeme", status: "pending" },
-      ]
-    },
-    {
-      id: "1kat",
-      name: "1. Kat",
-      status: "pending",
-      children: [
-        { id: "1kat-kolon", name: "Kolon", status: "pending" },
-        { id: "1kat-kiris", name: "Kiriş", status: "pending" },
-        { id: "1kat-doseme", name: "Döşeme", status: "pending" },
-      ]
-    },
-    {
-      id: "2kat",
-      name: "2. Kat",
-      status: "pending",
-      children: [
-        { id: "2kat-kolon", name: "Kolon", status: "pending" },
-        { id: "2kat-kiris", name: "Kiriş", status: "pending" },
-        { id: "2kat-doseme", name: "Döşeme", status: "pending" },
-      ]
-    },
-    {
-      id: "cati",
-      name: "Çatı",
-      status: "pending",
-      children: [
-        { id: "cati-kiremit", name: "Kiremit/Çatı Kaplama", status: "pending" },
-        { id: "cati-izolasyon", name: "İzolasyon", status: "pending" },
-      ]
-    },
-  ]
+  useEffect(() => {
+    if (!projectId) {
+      setTreeData(structure || [])
+      return
+    }
+
+    const fetchTree = async () => {
+      try {
+        const response = await fetch(`/api/project-tasks?projectId=${projectId}`)
+        if (!response.ok) {
+          setTreeData([])
+          return
+        }
+
+        const data = await response.json()
+        if (!Array.isArray(data)) {
+          setTreeData([])
+          return
+        }
+
+        const rootTasks = data.filter((task: any) => !task.dependencies || !data.some((item: any) => item.id === task.dependencies))
+        const byParent = data.reduce((acc: Record<string, any[]>, task: any) => {
+          const parentId = task.dependencies
+          if (parentId) {
+            acc[parentId] = acc[parentId] || []
+            acc[parentId].push(task)
+          }
+          return acc
+        }, {})
+
+        const mapTask = (task: any): StructureItem => ({
+          id: task.id,
+          name: task.name,
+          status: task.progress >= 100 ? "completed" : task.progress > 0 ? "in_progress" : "pending",
+          children: (byParent[task.id] || []).map(mapTask)
+        })
+
+        setTreeData(rootTasks.map(mapTask))
+      } catch (error) {
+        console.error("Error loading structure tree:", error)
+        setTreeData([])
+      }
+    }
+
+    fetchTree()
+  }, [projectId, structure])
 
   const toggleExpand = (id: string) => {
     const newExpanded = new Set(expandedItems)
@@ -181,6 +172,68 @@ export default function StructureTree({ structure }: StructureTreeProps) {
     )
   }
 
+  const handleCreateNode = async (parentId?: string | null) => {
+    if (!projectId || !newName.trim()) return
+
+    setIsSaving(true)
+    const today = new Date().toISOString()
+    const nextDay = new Date(Date.now() + 86400000).toISOString()
+
+    try {
+      const response = await fetch('/api/project-tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectId,
+          name: newName.trim(),
+          startDate: today,
+          endDate: nextDay,
+          progress: 0,
+          dependencies: parentId || null,
+          notes: parentId ? 'Aşama alt iş kalemi' : 'Kök aşama'
+        })
+      })
+
+      if (response.ok) {
+        const updated = await fetch(`/api/project-tasks?projectId=${projectId}`)
+        const data = await updated.json()
+        if (Array.isArray(data)) {
+          const rootTasks = data.filter((task: any) => !task.dependencies || !data.some((item: any) => item.id === task.dependencies))
+          const byParent = data.reduce((acc: Record<string, any[]>, task: any) => {
+            if (task.dependencies) {
+              acc[task.dependencies] = acc[task.dependencies] || []
+              acc[task.dependencies].push(task)
+            }
+            return acc
+          }, {})
+
+          setTreeData(rootTasks.map((task: any) => ({
+            id: task.id,
+            name: task.name,
+            status: task.progress >= 100 ? 'completed' : task.progress > 0 ? 'in_progress' : 'pending',
+            children: (byParent[task.id] || []).map((child: any) => ({
+              id: child.id,
+              name: child.name,
+              status: child.progress >= 100 ? 'completed' : child.progress > 0 ? 'in_progress' : 'pending',
+              children: (byParent[child.id] || []).map((nested: any) => ({
+                id: nested.id,
+                name: nested.name,
+                status: nested.progress >= 100 ? 'completed' : nested.progress > 0 ? 'in_progress' : 'pending'
+              }))
+            }))
+          })))
+        }
+        setNewName("")
+        setIsAdding(false)
+        setSelectedParentId(null)
+      }
+    } catch (error) {
+      console.error('Failed to create tree node:', error)
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   return (
     <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
       <div className="flex items-center justify-between mb-6">
@@ -203,8 +256,53 @@ export default function StructureTree({ structure }: StructureTreeProps) {
         </div>
       </div>
 
+      {projectId && (
+        <div className="mb-4 space-y-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 p-4">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsAdding(true)}
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-500"
+            >
+              <Plus className="h-4 w-4" />
+              Aşama Ekle
+            </button>
+            {selectedParentId && (
+              <button
+                type="button"
+                onClick={() => setSelectedParentId(null)}
+                className="text-xs text-slate-500 hover:text-slate-300"
+              >
+                Seçimi Kaldır
+              </button>
+            )}
+          </div>
+
+          {isAdding && (
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <input
+                type="text"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="Aşama / alt iş kalemi adı"
+                className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none ring-0 focus:border-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-white"
+              />
+              <button
+                type="button"
+                onClick={() => handleCreateNode(selectedParentId)}
+                disabled={!newName.trim() || isSaving}
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Save className="h-4 w-4" />
+                {isSaving ? 'Kaydediliyor...' : 'Kaydet'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="space-y-1">
-        {defaultStructure.map((item) => renderTreeItem(item))}
+        {(treeData.length ? treeData : (structure || [])).map((item) => renderTreeItem(item))}
       </div>
     </div>
   )

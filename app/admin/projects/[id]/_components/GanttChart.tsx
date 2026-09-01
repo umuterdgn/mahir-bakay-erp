@@ -33,25 +33,47 @@ export default function GanttChart({ projectId }: GanttChartProps) {
   const fetchTasks = async () => {
     try {
       const response = await fetch(`/api/project-tasks?projectId=${projectId}`);
-      if (response.ok) {
-        const data = await response.json();
-        const ganttTasks = data.map((task: any) => ({
-          id: task.id,
-          name: task.name,
-          start: new Date(task.startDate),
-          end: new Date(task.endDate),
-          progress: task.progress,
-          type: "task" as const,
-          isDisabled: false,
-          styles: {
-            progressColor: getProgressColor(task.progress),
-            progressSelectedColor: getProgressColor(task.progress),
-          },
-        }));
-        setTasks(ganttTasks);
+      if (!response.ok) {
+        setTasks([]);
+        return;
       }
+
+      const data = await response.json();
+      if (!Array.isArray(data)) {
+        setTasks([]);
+        return;
+      }
+
+      const ganttTasks = data
+        .map((task: any) => {
+          const start = new Date(task?.startDate);
+          const end = new Date(task?.endDate);
+          const progressValue = Number(task?.progress ?? 0);
+
+          if (!task?.id || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+            return null;
+          }
+
+          return {
+            id: task.id,
+            name: String(task.name || "İş Planı Görevi"),
+            start,
+            end,
+            progress: Math.min(100, Math.max(0, progressValue)),
+            type: "task" as const,
+            isDisabled: false,
+            styles: {
+              progressColor: getProgressColor(progressValue),
+              progressSelectedColor: getProgressColor(progressValue),
+            },
+          };
+        })
+        .filter(Boolean) as Task[];
+
+      setTasks(ganttTasks);
     } catch (error) {
       console.error("Error fetching tasks:", error);
+      setTasks([]);
     } finally {
       setLoading(false);
     }
@@ -180,7 +202,7 @@ export default function GanttChart({ projectId }: GanttChartProps) {
       {tasks.length === 0 && (
         <div className="text-center py-12 text-slate-400">
           <Calendar className="w-12 h-12 mx-auto mb-4 text-slate-600" />
-          <p>Henüz görev eklenmemiş.</p>
+          <p>Henüz iş planı oluşturulmadı.</p>
           <p className="text-sm mt-2">İlk görevi eklemek için "Yeni Görev Ekle" butonuna tıklayın.</p>
         </div>
       )}
