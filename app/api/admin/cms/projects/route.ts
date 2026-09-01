@@ -17,10 +17,7 @@ export async function GET() {
     }
 
     const projects = await prisma.portfolioProject.findMany({
-      orderBy: { displayOrder: "asc" },
-      include: {
-        // no extra relations for this CMS model
-      }
+      orderBy: { displayOrder: "asc" }
     })
 
     return NextResponse.json(projects)
