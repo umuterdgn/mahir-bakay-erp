@@ -28,7 +28,9 @@ export default function SubcontractorSidebar({
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
-  const { data: session } = useSession()
+  const sessionContext = useSession()
+  const session = sessionContext?.data
+  const status = sessionContext?.status
   const { isInstallable, promptInstall } = usePwaInstall()
 
   const navItems = [

@@ -6,6 +6,8 @@
 
 import SuperAdminLayoutShell from "@/components/super-admin/SuperAdminLayoutShell"
 
+export const dynamic = 'force-dynamic'
+
 export default function SuperAdminLayout({
   children,
 }: {

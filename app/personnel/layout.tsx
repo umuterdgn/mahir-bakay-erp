@@ -9,6 +9,8 @@ import { redirect } from "next/navigation"
 import PersonnelLayoutShell from "@/components/personnel/PersonnelLayoutShell"
 import NextAuthSessionProvider from "@/components/providers/SessionProvider"
 
+export const dynamic = 'force-dynamic'
+
 export default async function PersonnelLayout({
   children,
 }: {

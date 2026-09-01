@@ -84,7 +84,9 @@ export default function AdminSidebar({
   const [searchQuery, setSearchQuery] = useState("")
   const [mounted, setMounted] = useState(false)
   const pathname = usePathname()
-  const { data: session } = useSession()
+  const sessionContext = useSession()
+  const session = sessionContext?.data
+  const status = sessionContext?.status
   const { theme, setTheme } = useTheme()
   const { isInstallable, promptInstall } = usePwaInstall()
 

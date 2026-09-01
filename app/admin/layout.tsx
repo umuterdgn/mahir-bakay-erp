@@ -10,6 +10,8 @@ import AdminLayoutShell from "@/components/admin/AdminLayoutShell"
 import { Toaster } from "react-hot-toast"
 import NextAuthSessionProvider from "@/components/providers/SessionProvider"
 
+export const dynamic = 'force-dynamic'
+
 export default async function AdminLayout({
   children,
 }: {

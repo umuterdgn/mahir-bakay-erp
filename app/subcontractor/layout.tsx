@@ -1,5 +1,7 @@
 import SubcontractorLayoutShell from "@/components/subcontractor/SubcontractorLayoutShell"
 
+export const dynamic = 'force-dynamic'
+
 export default function SubcontractorLayout({
   children,
 }: {
