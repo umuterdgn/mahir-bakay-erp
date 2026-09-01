@@ -12,7 +12,6 @@ import { toast } from "react-hot-toast"
 import Link from "next/link"
 
 export const dynamic = 'force-dynamic'
-export const revalidate = 0
 
 type ViewMode = "list" | "kanban"
 
