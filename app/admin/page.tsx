@@ -32,7 +32,7 @@ type SystemLogRecord = {
 
 type ContractorProject = {
   id: string
-  name: string
+  name: string | null
   progress: number | null
   status: string | null
 }
@@ -262,11 +262,11 @@ export default async function AdminDashboard() {
                     >
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="font-medium text-slate-900 dark:text-white">{project.name}</p>
+                          <p className="font-medium text-slate-900 dark:text-white">{project.name || 'İsimsiz Proje'}</p>
                           <p className="text-sm text-slate-600 dark:text-slate-400">{project.status || 'Durum Yok'}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-lg font-semibold text-blue-600 dark:text-blue-400">%{project.progress}</p>
+                          <p className="text-lg font-semibold text-blue-600 dark:text-blue-400">%{project.progress ?? 0}</p>
                           <p className="text-xs text-slate-500 dark:text-slate-400">İlerleme</p>
                         </div>
                       </div>
