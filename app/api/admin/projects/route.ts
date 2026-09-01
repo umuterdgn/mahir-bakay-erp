@@ -23,14 +23,10 @@ export async function GET(request: Request) {
 
     console.log("📋 Projects API - Session:", { userRole, userId })
 
-    // SITE_MANAGER veya SUBCONTRACTOR ise sadece kendi projelerini görebilir
     const isAdmin = userRole === "ADMIN" || userRole === "SUPER_ADMIN"
-    const roleWhereClause = !isAdmin && userId 
-      ? { managerId: userId }
-      : {}
+    const roleWhereClause = !isAdmin && userId ? { managerId: userId } : {}
 
-    // Advanced search across multiple fields
-    const searchWhereClause = search 
+    const searchWhereClause = search
       ? {
           OR: [
             { name: { contains: search, mode: 'insensitive' as const } },
@@ -64,7 +60,7 @@ export async function GET(request: Request) {
 
     console.log("📋 DB'den çekilen projeler:", projects)
     console.log("📋 Projects API - Fetched projects count:", projects.length)
-    
+
     return NextResponse.json(projects || [])
   } catch (error) {
     console.error("❌ Error fetching projects:", error)

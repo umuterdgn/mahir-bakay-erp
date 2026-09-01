@@ -33,12 +33,16 @@ export default function ProjectsPage() {
   const fetchProjects = async () => {
     try {
       const response = await fetch("/api/admin/projects", { cache: 'no-store' })
-      if (response.ok) {
-        const data = await response.json()
-        setProjects(Array.isArray(data) ? data : (data.projects || []))
+      if (!response.ok) {
+        setProjects([])
+        return
       }
+
+      const data = await response.json().catch(() => [])
+      setProjects(Array.isArray(data) ? data : (data.projects || []))
     } catch (error) {
       console.error("Failed to fetch projects:", error)
+      setProjects([])
       toast.error("Projeler yüklenirken hata oluştu")
     } finally {
       setIsLoading(false)
