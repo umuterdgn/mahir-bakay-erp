@@ -6,7 +6,7 @@
 
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
-import PersonnelSidebar from "@/components/PersonnelSidebar"
+import PersonnelLayoutShell from "@/components/personnel/PersonnelLayoutShell"
 import NextAuthSessionProvider from "@/components/providers/SessionProvider"
 
 export default async function PersonnelLayout({
@@ -30,10 +30,7 @@ export default async function PersonnelLayout({
   return (
     <NextAuthSessionProvider>
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white">
-        <PersonnelSidebar />
-        <main className="lg:ml-72 p-6 lg:p-8 pt-20 lg:pt-8">
-          {children}
-        </main>
+        <PersonnelLayoutShell>{children}</PersonnelLayoutShell>
       </div>
     </NextAuthSessionProvider>
   )

@@ -31,24 +31,24 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { personelId, projectId, date, checkIn, checkOut, dayMultiplier } = body
+    const { personelId, projectId, date, checkIn, checkOut, dayMultiplier, overtimeHours } = body
 
-    console.log("Attendance POST: Creating record with data:", { personelId, projectId, date, checkIn, checkOut, dayMultiplier })
+    console.log("Attendance POST: Creating record with data:", { personelId, projectId, date, checkIn, checkOut, dayMultiplier, overtimeHours })
 
-    // Calculate dayMultiplier based on hours worked if not provided
-    let calculatedDayMultiplier = dayMultiplier !== undefined ? dayMultiplier : 1
+    let calculatedDayMultiplier = Number(dayMultiplier ?? 1)
+    let calculatedOvertimeHours = Number(overtimeHours ?? 0)
 
-    if (calculatedDayMultiplier === undefined && checkIn && checkOut) {
+    if (checkIn && checkOut) {
       const checkInDate = new Date(checkIn)
       const checkOutDate = new Date(checkOut)
       const hoursWorked = (checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60)
 
-      if (hoursWorked >= 8) {
-        calculatedDayMultiplier = 1 // Tam Gün
-      } else if (hoursWorked >= 4) {
-        calculatedDayMultiplier = 0.5 // Yarım Gün
-      } else {
-        calculatedDayMultiplier = 0 // 4 saatten az
+      if (!dayMultiplier && Number.isFinite(hoursWorked)) {
+        calculatedDayMultiplier = hoursWorked >= 8 ? 1 : hoursWorked >= 4 ? 0.5 : 0
+      }
+
+      if (!overtimeHours && Number.isFinite(hoursWorked)) {
+        calculatedOvertimeHours = Math.max(0, hoursWorked - 8)
       }
     }
 
@@ -59,7 +59,8 @@ export async function POST(request: Request) {
         date: new Date(date),
         checkIn: checkIn ? new Date(checkIn) : null,
         checkOut: checkOut ? new Date(checkOut) : null,
-        dayMultiplier: calculatedDayMultiplier
+        dayMultiplier: calculatedDayMultiplier,
+        overtimeHours: calculatedOvertimeHours
       }
     })
 

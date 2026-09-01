@@ -16,10 +16,10 @@ export default function DigitalizationScore() {
       {/* Badge */}
       <button
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-lg transition-colors font-medium"
+        className="flex w-full items-center justify-center gap-2 whitespace-normal text-center h-auto py-2 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-lg transition-colors font-medium sm:w-auto"
       >
-        <TrendingUp className="w-5 h-5" />
-        <span>Dijitalleşme Skoru: 68/100</span>
+        <TrendingUp className="w-5 h-5 shrink-0" />
+        <span className="leading-snug">Dijitalleşme Skoru: 68/100</span>
       </button>
 
       {/* Modal */}

@@ -12,12 +12,113 @@ import { useRouter } from "next/navigation"
 import toast from "react-hot-toast"
 import ConfirmModal from "@/components/ConfirmModal"
 
+type PersonnelRecord = {
+  id: string
+  personnelNo?: string
+  name: string
+  age?: number | string
+  tcNo?: string
+  department?: string
+  currentSite?: string
+}
+
+type InspectorStat = {
+  id: string
+  name: string
+  inspectionCount: number
+  averageDuration: number
+  deficiencyCount: number
+}
+
+type Profession = {
+  id: string
+  name: string
+}
+
 export default function AdminPersonelPage() {
   const router = useRouter()
-  
+
   // Basit yetki kontrolü (İleride auth modülüne bağlanacak)
   const userPermissions: string[] = [] // Boş ise admin olarak kabul edilir
   const isAdmin = userPermissions.length === 0
+
+  const [personnel, setPersonnel] = useState<PersonnelRecord[]>([])
+  const [inspectorStats, setInspectorStats] = useState<InspectorStat[]>([])
+  const [isAdding, setIsAdding] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null })
+
+  const fetchPersonnel = async () => {
+    try {
+      const response = await fetch("/api/admin/personnel")
+      if (response.ok) {
+        const data = await response.json()
+        setPersonnel(data)
+      }
+    } catch (error) {
+      console.error("Failed to fetch personnel:", error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    let isActive = true
+
+    const loadData = async () => {
+      try {
+        const [personnelResponse, statsResponse] = await Promise.all([
+          fetch('/api/admin/personnel'),
+          fetch('/api/admin/personnel/stats')
+        ])
+
+        if (!isActive) return
+
+        if (personnelResponse.ok) {
+          setPersonnel(await personnelResponse.json())
+        }
+
+        if (statsResponse.ok) {
+          setInspectorStats(await statsResponse.json())
+        }
+      } catch (error) {
+        if (!isActive) return
+        console.error('Failed to fetch personnel dashboard data:', error)
+      } finally {
+        if (isActive) {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    void loadData()
+
+    return () => {
+      isActive = false
+    }
+  }, [])
+
+  const handleDelete = async (id: string) => {
+    setDeleteConfirm({ isOpen: true, id })
+  }
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm.id) return
+
+    try {
+      const response = await fetch(`/api/admin/personnel/${deleteConfirm.id}`, {
+        method: "DELETE"
+      })
+      if (response.ok) {
+        toast.success("Personel başarıyla silindi")
+        fetchPersonnel()
+      } else {
+        toast.error("Personel silinirken hata oluştu")
+      }
+    } catch {
+      toast.error("Hata oluştu")
+    }
+  }
 
   if (!isAdmin && !userPermissions.includes("PERSONNEL")) {
     return (
@@ -34,65 +135,6 @@ export default function AdminPersonelPage() {
         </div>
       </div>
     )
-  }
-
-  const [personnel, setPersonnel] = useState<any[]>([])
-  const [inspectorStats, setInspectorStats] = useState<any[]>([])
-  const [isAdding, setIsAdding] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null })
-
-  useEffect(() => {
-    fetchPersonnel()
-    fetchInspectorStats()
-  }, [])
-
-  const fetchPersonnel = async () => {
-    try {
-      const response = await fetch("/api/admin/personnel")
-      if (response.ok) {
-        const data = await response.json()
-        setPersonnel(data)
-      }
-    } catch (error) {
-      console.error("Failed to fetch personnel:", error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const fetchInspectorStats = async () => {
-    try {
-      const response = await fetch("/api/admin/personnel/stats")
-      if (response.ok) {
-        const data = await response.json()
-        setInspectorStats(data)
-      }
-    } catch (error) {
-      console.error("Failed to fetch inspector stats:", error)
-    }
-  }
-
-  const handleDelete = async (id: string) => {
-    setDeleteConfirm({ isOpen: true, id })
-  }
-
-  const confirmDelete = async () => {
-    if (!deleteConfirm.id) return
-    
-    try {
-      const response = await fetch(`/api/admin/personnel/${deleteConfirm.id}`, {
-        method: "DELETE"
-      })
-      if (response.ok) {
-        toast.success("Personel başarıyla silindi")
-        fetchPersonnel()
-      } else {
-        toast.error("Personel silinirken hata oluştu")
-      }
-    } catch (error) {
-      toast.error("Hata oluştu")
-    }
   }
 
   return (
@@ -181,12 +223,12 @@ export default function AdminPersonelPage() {
           onCancel={() => setIsAdding(false)}
         />
       ) : (
-        <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
+        <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
           {isLoading ? (
             <div className="p-8 text-center text-slate-400">Yükleniyor...</div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
+            <div className="mobile-table-shell">
+              <table className="min-w-[880px] w-full">
               <thead className="bg-slate-800">
                 <tr>
                   <th className="px-6 py-3 text-left text-sm font-medium text-slate-300">Personel No</th>
@@ -274,24 +316,32 @@ function PersonelForm({ onSave, onCancel }: { onSave: () => void; onCancel: () =
     gunlukYevmiye: "",
     professionId: ""
   })
-  const [professions, setProfessions] = useState<any[]>([])
+  const [professions, setProfessions] = useState<Profession[]>([])
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
-    fetchProfessions()
-  }, [])
+    let isActive = true
 
-  const fetchProfessions = async () => {
-    try {
-      const response = await fetch("/api/admin/professions")
-      if (response.ok) {
-        const data = await response.json()
-        setProfessions(data)
+    const loadProfessions = async () => {
+      try {
+        const response = await fetch('/api/admin/professions')
+        if (!isActive) return
+
+        if (response.ok) {
+          setProfessions(await response.json())
+        }
+      } catch (error) {
+        if (!isActive) return
+        console.error('Failed to fetch professions:', error)
       }
-    } catch (error) {
-      console.error("Failed to fetch professions:", error)
     }
-  }
+
+    void loadProfessions()
+
+    return () => {
+      isActive = false
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -322,7 +372,7 @@ function PersonelForm({ onSave, onCancel }: { onSave: () => void; onCancel: () =
       } else {
         toast.error("Personel eklenirken hata oluştu")
       }
-    } catch (error) {
+    } catch {
       toast.error("Hata oluştu")
     } finally {
       setIsSaving(false)

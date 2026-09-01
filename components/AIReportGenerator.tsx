@@ -37,10 +37,10 @@ export default function AIReportGenerator() {
     <>
       <button 
         onClick={handleGenerateReport}
-        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-lg transition-colors font-medium"
+        className="flex w-full items-center justify-center gap-2 whitespace-normal text-center h-auto py-2 px-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-lg transition-colors font-medium sm:w-auto"
       >
-        <Sparkles className="w-5 h-5" />
-        Tek Tıkla Rapor Oluştur (AI)
+        <Sparkles className="w-5 h-5 shrink-0" />
+        <span className="leading-snug">Tek Tıkla Rapor Oluştur (AI)</span>
       </button>
 
       {/* Loading Modal */}

@@ -6,7 +6,7 @@
 
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
-import AdminSidebar from "@/components/admin/Sidebar"
+import AdminLayoutShell from "@/components/admin/AdminLayoutShell"
 import { Toaster } from "react-hot-toast"
 import NextAuthSessionProvider from "@/components/providers/SessionProvider"
 
@@ -24,10 +24,7 @@ export default async function AdminLayout({
   return (
     <NextAuthSessionProvider>
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white">
-        <AdminSidebar />
-        <main className="lg:ml-64 pt-20 lg:pt-6 p-6 lg:p-8">
-          {children}
-        </main>
+        <AdminLayoutShell>{children}</AdminLayoutShell>
         <Toaster position="bottom-right" />
       </div>
     </NextAuthSessionProvider>

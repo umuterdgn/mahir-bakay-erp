@@ -133,10 +133,17 @@ export async function POST(request: NextRequest) {
 
     // Case 2: Record exists but checkOut is null - Check-out
     if (existingRecord && !existingRecord.checkOut) {
+      const checkInTime = existingRecord.checkIn ? new Date(existingRecord.checkIn) : now
+      const hoursWorked = (now.getTime() - checkInTime.getTime()) / (1000 * 60 * 60)
+      const dayMultiplier = hoursWorked >= 8 ? 1 : hoursWorked >= 4 ? 0.5 : 0
+      const overtimeHours = Math.max(0, hoursWorked - 8)
+
       const updatedRecord = await (prisma as any).attendanceRecord.update({
         where: { id: existingRecord.id },
         data: {
           checkOut: now,
+          dayMultiplier,
+          overtimeHours,
           latitude: latitude || existingRecord.latitude,
           longitude: longitude || existingRecord.longitude
         }

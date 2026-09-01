@@ -4,7 +4,7 @@
  * This code is the property of NXA Software.
  */
 
-import SuperAdminSidebar from "./_components/SuperAdminSidebar"
+import SuperAdminLayoutShell from "@/components/super-admin/SuperAdminLayoutShell"
 
 export default function SuperAdminLayout({
   children,
@@ -12,11 +12,8 @@ export default function SuperAdminLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="min-h-screen bg-slate-950 flex">
-      <SuperAdminSidebar />
-      <main className="flex-1 overflow-auto">
-        {children}
-      </main>
+    <div className="min-h-screen bg-slate-950 text-white">
+      <SuperAdminLayoutShell>{children}</SuperAdminLayoutShell>
     </div>
   )
 }

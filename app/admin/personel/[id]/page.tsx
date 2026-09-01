@@ -4,9 +4,9 @@
  * Developer: Umut Erdoğan
  * This code is the property of NXA Software.
  */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
-
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -29,18 +29,6 @@ export default function PersonelDetailPage({
   const [inspectionRecords, setInspectionRecords] = useState<any[]>([])
   const [deficiencies, setDeficiencies] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [calculatedValues, setCalculatedValues] = useState({
-    toplamKazanilan: 0,
-    kesintilerToplami: 0,
-    netOdenecek: 0,
-    tamGunSayisi: 0,
-    yarimGunSayisi: 0,
-    totalDayMultiplier: 0,
-    grossEntitlement: 0,
-    toplamPrim: 0,
-    toplamMesai: 0,
-    toplamMesaiSaati: 0
-  })
   const [resolvedParams, setResolvedParams] = useState<{ id: string } | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
@@ -107,67 +95,73 @@ export default function PersonelDetailPage({
     }
   }, [resolvedParams])
 
-  // Calculate financial values when person or payments change
-  useEffect(() => {
-    if (person && payments) {
-      // Use dailyWage (Günlük Yevmiye) from Personel model
-      const dailyWage = person.gunlukYevmiye || 0
-      const bonuses = person.bonuses || 0
+  const calculatedValues = useMemo(() => {
+    if (!person || !payments) {
+      return {
+        toplamKazanilan: 0,
+        kesintilerToplami: 0,
+        netOdenecek: 0,
+        tamGunSayisi: 0,
+        yarimGunSayisi: 0,
+        totalDayMultiplier: 0,
+        grossEntitlement: 0,
+        toplamPrim: 0,
+        toplamMesai: 0,
+        toplamMesaiSaati: 0,
+        paymentProgress: 0,
+        totalOvertimeHours: 0
+      }
+    }
 
-      // Calculate attendance from attendanceRecords
-      const totalDayMultiplier = attendanceRecords.reduce((sum: number, record: any) => {
-        return sum + (record.dayMultiplier || 0)
-      }, 0)
+    const dailyWage = person.gunlukYevmiye || 0
 
-      const tamGunSayisi = attendanceRecords.filter((record: any) => record.dayMultiplier === 1).length
-      const yarimGunSayisi = attendanceRecords.filter((record: any) => record.dayMultiplier === 0.5).length
+    const totalDayMultiplier = attendanceRecords.reduce((sum: number, record: any) => {
+      return sum + (record.dayMultiplier || 0)
+    }, 0)
 
-      // Calculate overtime
-      const toplamMesaiSaati = attendanceRecords.reduce((sum: number, record: any) => {
-        return sum + (record.overtimeHours || 0)
-      }, 0)
+    const tamGunSayisi = attendanceRecords.filter((record: any) => record.dayMultiplier === 1).length
+    const yarimGunSayisi = attendanceRecords.filter((record: any) => record.dayMultiplier === 0.5).length
 
-      // Calculate hourly rate: Saatlik Ücret = (Günlük Yevmiye / 8)
-      const hourlyRate = dailyWage / 8
+    const totalOvertimeHours = attendanceRecords.reduce((sum: number, record: any) => {
+      return sum + (record.overtimeHours || 0)
+    }, 0)
+    const toplamMesaiSaati = totalOvertimeHours
 
-      // Calculate overtime earnings: Mesai Kazancı = (Mesai Saati * Saatlik Ücret * 1.5)
-      const toplamMesai = toplamMesaiSaati * hourlyRate * 1.5
+    const hourlyRate = dailyWage / 8
+    const toplamMesai = toplamMesaiSaati * hourlyRate * 1.5
+    const grossEntitlement = totalDayMultiplier * dailyWage
 
-      // Calculate gross entitlement (Hakediş)
-      const grossEntitlement = totalDayMultiplier * dailyWage
+    const toplamPrim = payments.reduce((sum: number, p: any) => {
+      if (p.type === 'PRIM') {
+        return sum + p.amount
+      }
+      return sum
+    }, 0)
 
-      // Calculate total bonus from payments
-      const toplamPrim = payments.reduce((sum: number, p: any) => {
-        if (p.type === 'PRIM') {
-          return sum + p.amount
-        }
-        return sum
-      }, 0)
+    const kesintilerToplami = payments.reduce((sum: number, p: any) => {
+      if (p.type === 'MAAS' || p.type === 'AVANS' || p.type === 'ELDEN') {
+        return sum + p.amount
+      }
+      return sum
+    }, 0)
 
-      // Calculate total deductions (MAAS, AVANS, ELDEN)
-      const kesintilerToplami = payments.reduce((sum: number, p: any) => {
-        if (p.type === 'MAAS' || p.type === 'AVANS' || p.type === 'ELDEN') {
-          return sum + p.amount
-        }
-        return sum
-      }, 0)
+    const toplamKazanilan = grossEntitlement + toplamPrim + toplamMesai
+    const netOdenecek = toplamKazanilan - kesintilerToplami
+    const paymentProgress = Math.min(100, Math.max(0, (netOdenecek / Math.max(toplamKazanilan, 1)) * 100))
 
-      // Calculate net payable (include overtime)
-      const toplamKazanilan = grossEntitlement + toplamPrim + toplamMesai
-      const netOdenecek = toplamKazanilan - kesintilerToplami
-
-      setCalculatedValues({
-        toplamKazanilan,
-        kesintilerToplami,
-        netOdenecek,
-        tamGunSayisi,
-        yarimGunSayisi,
-        totalDayMultiplier,
-        grossEntitlement,
-        toplamPrim,
-        toplamMesai,
-        toplamMesaiSaati
-      })
+    return {
+      toplamKazanilan,
+      kesintilerToplami,
+      netOdenecek,
+      tamGunSayisi,
+      yarimGunSayisi,
+      totalDayMultiplier,
+      grossEntitlement,
+      toplamPrim,
+      toplamMesai,
+      toplamMesaiSaati,
+      paymentProgress,
+      totalOvertimeHours
     }
   }, [person, payments, attendanceRecords])
 
@@ -849,10 +843,19 @@ export default function PersonelDetailPage({
               </p>
               <p className="text-xs text-slate-500 mt-1">Kalan Bakiye</p>
             </div>
-            <div className="bg-slate-800 rounded-lg p-3 md:p-4 border border-slate-700">
-              <label className="block text-sm font-medium text-slate-400 mb-1">Hakediş Formülü</label>
-              <p className="text-xs text-slate-300 mt-1 break-words">
-                (Gün Çarpanı × Yevmiye + Prim) - Kesintiler
+            <div className="bg-slate-800 rounded-lg p-3 md:p-4 border border-slate-700 md:col-span-2">
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-slate-400">Ödeme Durumu</label>
+                <span className="text-xs text-slate-300">{calculatedValues.paymentProgress.toFixed(0)}%</span>
+              </div>
+              <div className="w-full bg-slate-700 rounded-full h-2.5 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-blue-500 to-violet-500 transition-all duration-300"
+                  style={{ width: `${calculatedValues.paymentProgress}%` }}
+                />
+              </div>
+              <p className="mt-2 text-xs text-slate-300 break-words">
+                Formül: (Gün çarpanı × yevmiye + prim + mesai) − kesintiler
               </p>
             </div>
           </div>

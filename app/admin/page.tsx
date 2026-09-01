@@ -14,6 +14,29 @@ import DigitalizationScore from "@/components/DigitalizationScore"
 
 export const dynamic = 'force-dynamic'
 
+type ReminderRecord = {
+  id: string
+  date: Date
+  title: string
+  project?: { name?: string }
+  [key: string]: unknown
+}
+
+type SystemLogRecord = {
+  id: string
+  user?: string
+  action?: string
+  details?: string
+  createdAt: Date
+}
+
+type ContractorProject = {
+  id: string
+  name: string
+  progress: number | null
+  status: string | null
+}
+
 export default async function AdminDashboard() {
   const session = await auth()
   const userRole = session?.user?.role
@@ -24,16 +47,15 @@ export default async function AdminDashboard() {
 
   // Fetch dashboard statistics (only for admin users)
   let totalProjects = 0
-  let totalPersonnel = 0
   let todayCheckins = 0
-  let upcomingReminders: any[] = []
-  let recentLogs: any[] = []
+  let upcomingReminders: ReminderRecord[] = []
+  let recentLogs: SystemLogRecord[] = []
   let totalRevenue = { _sum: { amount: 0 as number | null } }
   let totalExpenses = { _sum: { amount: 0 as number | null } }
   let lowStockCount = 0
 
   // Contractor-specific data
-  let contractorProjects: any[] = []
+  let contractorProjects: ContractorProject[] = []
   let contractorAverageProgress = 0
   let contractorOpenDeficiencies = 0
 
@@ -73,9 +95,11 @@ export default async function AdminDashboard() {
 
   if (!isClientPortal) {
     try {
+      const reminderWindowEnd = new Date()
+      reminderWindowEnd.setDate(reminderWindowEnd.getDate() + 7)
+
       const [
         totalProjectsCount,
-        totalPersonnelCount,
         todayCheckinsCount,
         reminders,
         logs,
@@ -84,7 +108,6 @@ export default async function AdminDashboard() {
         stockCount
       ] = await Promise.all([
         prisma.project.count().catch(() => 0),
-        prisma.personel.count().catch(() => 0),
         prisma.attendanceRecord.count({
           where: {
             date: {
@@ -96,7 +119,7 @@ export default async function AdminDashboard() {
           where: {
             date: {
               gte: new Date(),
-              lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // Next 7 days
+              lte: reminderWindowEnd
             },
             isCompleted: false
           },
@@ -133,7 +156,6 @@ export default async function AdminDashboard() {
         }).catch(() => 0)
       ])
       totalProjects = totalProjectsCount
-      totalPersonnel = totalPersonnelCount
       todayCheckins = todayCheckinsCount
       upcomingReminders = reminders
       recentLogs = logs
@@ -144,7 +166,6 @@ export default async function AdminDashboard() {
       console.error('Database connection error, using fallback values:', error)
       // Fallback values when database is unreachable
       totalProjects = 0
-      totalPersonnel = 0
       todayCheckins = 0
       upcomingReminders = []
       recentLogs = []
@@ -158,18 +179,26 @@ export default async function AdminDashboard() {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       {/* Header */}
       <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 py-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+        <div className="max-w-7xl mx-auto px-4 py-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
               {isClientPortal ? "Müteahhit Portalı" : "Ana Gösterge Paneli"}
             </h1>
             <p className="text-slate-600 dark:text-slate-400 mt-1">
               Hoş geldiniz, {session?.user?.name || 'Admin'}
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            {!isClientPortal && <DigitalizationScore />}
-            {!isClientPortal && <AIReportGenerator />}
+          <div className="flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:items-center">
+            {!isClientPortal && (
+              <div className="w-full sm:w-auto">
+                <DigitalizationScore />
+              </div>
+            )}
+            {!isClientPortal && (
+              <div className="w-full sm:w-auto">
+                <AIReportGenerator />
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -251,12 +280,12 @@ export default async function AdminDashboard() {
           // Admin Dashboard View
           <>
         {/* Weather Widget */}
-        <div className="mb-6">
+        <div className="mb-6 w-full overflow-hidden">
           <WeatherWidget city="İskenderun" />
         </div>
 
         {/* AI Morning Report */}
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-6 border border-blue-200 dark:border-blue-800 mb-6 shadow-sm">
+        <div className="w-full overflow-hidden bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-6 border border-blue-200 dark:border-blue-800 mb-6 shadow-sm">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 bg-blue-600 dark:bg-blue-500 rounded-xl flex items-center justify-center flex-shrink-0">
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -266,14 +295,14 @@ export default async function AdminDashboard() {
             <div className="flex-1">
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">AI Asistan Sabah Raporu</h3>
               <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
-                Günaydın. Bugün şirketinizde 23 kontrol planlandı. 3 kritik eksiklik bulunuyor. 2 hakediş onay bekliyor. YİBF #14585'te kontrol gecikme riski var.
+                Günaydın. Bugün şirketinizde 23 kontrol planlandı. 3 kritik eksiklik bulunuyor. 2 hakediş onay bekliyor. YİBF #14585 için kontrol gecikme riski var.
               </p>
             </div>
           </div>
         </div>
 
         {/* YDS Stat Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6 mb-6">
           {/* Aktif Yapılar */}
           <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
             <div className="flex items-center justify-between mb-4">
@@ -565,10 +594,10 @@ export default async function AdminDashboard() {
         {/* Quick Actions */}
         <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 mb-6">
           <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-4">Hızlı İşlemler</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="mobile-stats-grid gap-4">
             <Link
               href="/admin/projects"
-              className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors group"
+              className="flex min-h-[44px] items-center gap-3 rounded-lg bg-slate-50 p-4 transition-colors group hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700"
             >
               <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex items-center justify-center group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30 transition-colors">
                 <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -634,8 +663,8 @@ export default async function AdminDashboard() {
             </Link>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
+          <div className="mobile-table-shell">
+            <table className="min-w-[720px] w-full">
               <thead>
                 <tr className="border-b border-slate-200 dark:border-slate-700">
                   <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700 dark:text-slate-300">YİBF No</th>

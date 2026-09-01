@@ -144,6 +144,8 @@ model Project {
   mintika      String?
   ada          String?
   parsel       String?
+  pafta        String?   // Pafta bilgisi (YİBF/Tapu)
+  yapiSinifi   String?   // Yapı sınıfı (YİBF/Tapu)
   clientName   String?   // Firma / Müşteri Adı
   mapUrl       String?   // Google Maps Linki
   shiftStart   String    @default("08:00") // Mesai Başlangıç Saati
@@ -156,7 +158,8 @@ model Project {
   gpsRequired    Boolean  @default(false) // Girişlerde GPS doğrulaması zorunlu mu?
   latitude       Float?   // Proje merkezi enlem
   longitude      Float?   // Proje merkezi boylam
-  gpsRadius      Int?     @default(100) // Metre cinsinden izin verilen çap
+  gpsRadius      Float?   @default(100) // Metre cinsinden izin verilen çap
+  geofenceRadius Float?   @default(100) // Güvenlik/çit alanı metre cinsinden çap (uyumluluk)
   ifcModelUrl    String?  // 3D BIM modelinin dosya yolu (.ifc)
   locationCity   String?  // Proje lokasyon şehri (hava durumu için)
   contractValue  Float?   // Sözleşme bedeli (hakediş hesaplamaları için)
@@ -1593,20 +1596,21 @@ model SiteTask {
 // ============================================================================
 
 model AttendanceRecord {
-  id          String   @id @default(cuid())
-  personelId  String?
-  personel    Personel? @relation(fields: [personelId], references: [id], onDelete: Cascade)
-  projectId   String
-  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  date        DateTime // Sadece gün bazlı tarih
-  checkIn     DateTime? // Giriş saati
-  checkOut    DateTime? // Çıkış saati
-  status      String   @default("PRESENT") // PRESENT, LATE, ABSENT
-  dayMultiplier Float   @default(1) // Tam gün için 1, yarım gün için 0.5
-  workerName  String?   // GPS bazlı check-in için isim
-  latitude    Float?    // GPS check-in koordinatı
-  longitude   Float?    // GPS check-in koordinatı
-  createdAt   DateTime @default(now())
+  id            String   @id @default(cuid())
+  personelId    String?
+  personel      Personel? @relation(fields: [personelId], references: [id], onDelete: Cascade)
+  projectId     String
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  date          DateTime // Sadece gün bazlı tarih
+  checkIn       DateTime? // Giriş saati
+  checkOut      DateTime? // Çıkış saati
+  status        String   @default("PRESENT") // PRESENT, LATE, ABSENT
+  dayMultiplier Float    @default(1) // Tam gün için 1, yarım gün için 0.5
+  overtimeHours Float    @default(0) // Fazla mesai saati
+  workerName    String?  // GPS bazlı check-in için isim
+  latitude      Float?   // GPS check-in koordinatı
+  longitude     Float?   // GPS check-in koordinatı
+  createdAt     DateTime @default(now())
 
   @@index([personelId])
   @@index([projectId])

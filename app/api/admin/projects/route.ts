@@ -80,11 +80,12 @@ export async function POST(request: Request) {
     console.log("📥 Gelen Proje Verisi:", body)
 
     // id'yi ve varsa hatalı gelebilecek diğer alanları ayıklıyoruz
-    const { id, images, companyId, managerId, engineers, architects, ...restData } = body
+    const { images, companyId, managerId, engineers, architects, ...restData } = body
 
     // Prisma schema'nda olabilecek zorunlu alanlar için güvenlik ağı kuruyoruz.
     // Eğer veritabanın (örneğin SQLite) string array desteklemiyorsa images'ı JSON string yapman gerekebilir. 
     // Mevcut şemana göre images: images veya images: JSON.stringify(images) olarak ayarla.
+    const geofenceRadiusValue = restData.geofenceRadius ?? restData.gpsRadius ?? 100
     const dataToSave = {
       ...restData,
       images: (images || []).filter((img: string) => img && img.trim() !== ''),
@@ -107,6 +108,8 @@ export async function POST(request: Request) {
       mintika: restData.mintika || null,
       ada: restData.ada || null,
       parsel: restData.parsel || null,
+      pafta: restData.pafta || null,
+      yapiSinifi: restData.yapiSinifi || null,
       clientName: restData.clientName || null,
       // Shift hours
       shiftStart: restData.shiftStart || "08:00",
@@ -114,7 +117,8 @@ export async function POST(request: Request) {
       // Geofencing (GPS) fields - optional
       latitude: restData.latitude ? parseFloat(restData.latitude) : null,
       longitude: restData.longitude ? parseFloat(restData.longitude) : null,
-      gpsRadius: restData.geofenceRadius ? parseInt(restData.geofenceRadius) : null,
+      gpsRadius: geofenceRadiusValue !== null && geofenceRadiusValue !== undefined ? Number(geofenceRadiusValue) : 100,
+      geofenceRadius: geofenceRadiusValue !== null && geofenceRadiusValue !== undefined ? Number(geofenceRadiusValue) : 100,
     }
 
     const newProject = await prisma.project.create({
@@ -130,15 +134,15 @@ export async function POST(request: Request) {
 
     return NextResponse.json(newProject, { status: 201 })
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     // KRİTİK: Hatayı gizleme, tam olarak neyin eksik olduğunu terminale KIPKIRMIZI bas!
     console.error("❌ PRISMA KAYIT HATASI (DETAYLI):", error)
-    
+
     return NextResponse.json(
-      { 
-        error: "Kayıt hatası", 
-        details: error.message || String(error) 
-      }, 
+      {
+        error: "Kayıt hatası",
+        details: error instanceof Error ? error.message : String(error)
+      },
       { status: 400 }
     )
   }

@@ -18,11 +18,11 @@ const MapLocationPicker = dynamic(() => import('@/components/MapLocationPicker')
 export default function NewProjectPage() {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [companies, setCompanies] = useState<any[]>([])
+  const [companies, setCompanies] = useState<{ id: string; name: string }[]>([])
   const [yibfNumber, setYibfNumber] = useState("")
   const [isFetchingData, setIsFetchingData] = useState(false)
   const [dataFetched, setDataFetched] = useState(false)
-  
+
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -36,6 +36,8 @@ export default function NewProjectPage() {
     mintika: "",
     ada: "",
     parsel: "",
+    pafta: "",
+    yapiSinifi: "",
     clientName: "",
     siteManager: "",
     engineer: "",
@@ -49,20 +51,30 @@ export default function NewProjectPage() {
   })
 
   useEffect(() => {
-    fetchCompanies()
-  }, [])
+    let isActive = true
 
-  const fetchCompanies = async () => {
-    try {
-      const response = await fetch("/api/admin/crm")
-      if (response.ok) {
+    const loadCompanies = async () => {
+      try {
+        const response = await fetch("/api/admin/crm")
+        if (!response.ok || !isActive) return
+
         const data = await response.json()
-        setCompanies(data)
+        if (isActive) {
+          setCompanies(data)
+        }
+      } catch {
+        if (isActive) {
+          console.error("Failed to fetch companies")
+        }
       }
-    } catch (error) {
-      console.error("Failed to fetch companies:", error)
     }
-  }
+
+    void loadCompanies()
+
+    return () => {
+      isActive = false
+    }
+  }, [])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -92,7 +104,7 @@ export default function NewProjectPage() {
         const errorData = await response.json()
         toast.error(`Proje oluşturulurken hata: ${errorData.details || errorData.error || "Bilinmeyen hata"}`)
       }
-    } catch (error) {
+    } catch {
       toast.error("Proje oluşturulurken hata oluştu")
     } finally {
       setIsSubmitting(false)
@@ -115,6 +127,8 @@ export default function NewProjectPage() {
       name: `YİBF ${yibfNumber} - Merkez Konutları`,
       ada: "1452",
       parsel: "3",
+      pafta: "17",
+      yapiSinifi: "3B",
       description: "Toplam inşaat alanı 4.250 m², yapı sınıfı 3B",
       city: "Hatay",
       district: "İskenderun",
@@ -130,7 +144,7 @@ export default function NewProjectPage() {
     
     setDataFetched(true)
     setIsFetchingData(false)
-    toast.success("Veriler Yapı Denetim Sistemi'nden (YDS) başarıyla senkronize edildi")
+    toast.success("Veriler Yapı Denetim Sistemi&apos;nden (YDS) başarıyla senkronize edildi")
   }
 
   return (
@@ -180,7 +194,7 @@ export default function NewProjectPage() {
                     {isFetchingData ? (
                       <>
                         <Loader2 className="w-5 h-5 animate-spin" />
-                        <span>YDS'den Çekiliyor...</span>
+                        <span>YDS&apos;ten Çekiliyor...</span>
                       </>
                     ) : (
                       <>
@@ -197,7 +211,7 @@ export default function NewProjectPage() {
                   <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="text-green-400 font-medium mb-1">Veriler Başarıyla Senkronize Edildi</p>
-                    <p className="text-green-300/80 text-sm">Veriler Yapı Denetim Sistemi'nden (YDS) başarıyla çekildi. Lütfen doğruluğunu kontrol edip kaydedin.</p>
+                    <p className="text-green-300/80 text-sm">Veriler Yapı Denetim Sistemi&apos;nden (YDS) başarıyla çekildi. Lütfen doğruluğunu kontrol edip kaydedin.</p>
                   </div>
                 </div>
               )}
@@ -426,7 +440,7 @@ export default function NewProjectPage() {
                     placeholder="Ada"
                   />
                 </div>
-                <div className="col-span-2">
+                <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">Parsel</label>
                   <input
                     type="text"
@@ -435,6 +449,28 @@ export default function NewProjectPage() {
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
                     placeholder="Parsel"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Pafta</label>
+                  <input
+                    type="text"
+                    name="pafta"
+                    value={formData.pafta}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                    placeholder="Pafta"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Yapı Sınıfı</label>
+                  <input
+                    type="text"
+                    name="yapiSinifi"
+                    value={formData.yapiSinifi}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                    placeholder="Örn: 3B"
                   />
                 </div>
               </div>

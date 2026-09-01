@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
     title: "Şantiye",
   },
   icons: {
@@ -35,6 +35,10 @@ export const metadata: Metadata = {
     apple: [
       { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
     ],
+  },
+  other: {
+    "apple-mobile-web-app-capable": "yes",
+    "theme-color": "#0f172a",
   },
 };
 

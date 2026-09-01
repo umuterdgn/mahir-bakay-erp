@@ -6,7 +6,7 @@
  */
 
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "react-hot-toast"
 import dynamic from 'next/dynamic'
@@ -23,8 +23,8 @@ export default function EditProjectPage({
   const [projectId, setProjectId] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
-  const [companies, setCompanies] = useState<any[]>([])
-  
+  const [companies, setCompanies] = useState<{ id: string; name: string }[]>([])
+
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -38,6 +38,8 @@ export default function EditProjectPage({
     mintika: "",
     ada: "",
     parsel: "",
+    pafta: "",
+    yapiSinifi: "",
     clientName: "",
     siteManager: "",
     engineer: "",
@@ -50,17 +52,7 @@ export default function EditProjectPage({
     mapUrl: ""
   })
 
-  useEffect(() => {
-    const init = async () => {
-      const resolvedParams = await params
-      setProjectId(resolvedParams.id)
-      fetchProject(resolvedParams.id)
-      fetchCompanies()
-    }
-    init()
-  }, [params])
-
-  const fetchProject = async (id: string) => {
+  const fetchProject = useCallback(async (id: string) => {
     try {
       setIsLoading(true)
       const response = await fetch(`/api/admin/projects/${id}`)
@@ -79,6 +71,8 @@ export default function EditProjectPage({
           mintika: project.mintika || "",
           ada: project.ada || "",
           parsel: project.parsel || "",
+          pafta: project.pafta || "",
+          yapiSinifi: project.yapiSinifi || "",
           clientName: project.clientName || "",
           siteManager: project.siteManager || "",
           engineer: project.engineer || "",
@@ -94,25 +88,36 @@ export default function EditProjectPage({
         toast.error("Proje bulunamadı")
         router.push("/admin/projects")
       }
-    } catch (error) {
-      console.error("Failed to fetch project:", error)
+    } catch {
+      console.error("Failed to fetch project")
       toast.error("Proje yüklenirken hata oluştu")
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [router])
 
-  const fetchCompanies = async () => {
+  const fetchCompanies = useCallback(async () => {
     try {
       const response = await fetch("/api/admin/crm")
       if (response.ok) {
         const data = await response.json()
         setCompanies(data)
       }
-    } catch (error) {
-      console.error("Failed to fetch companies:", error)
+    } catch {
+      console.error("Failed to fetch companies")
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    const init = async () => {
+      const resolvedParams = await params
+      setProjectId(resolvedParams.id)
+      await fetchProject(resolvedParams.id)
+      await fetchCompanies()
+    }
+
+    void init()
+  }, [fetchCompanies, fetchProject, params])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -147,7 +152,7 @@ export default function EditProjectPage({
         const errorData = await response.json()
         toast.error(`Proje güncellenirken hata: ${errorData.details || errorData.error || "Bilinmeyen hata"}`)
       }
-    } catch (error) {
+    } catch {
       toast.error("Proje güncellenirken hata oluştu")
     } finally {
       setIsSubmitting(false)

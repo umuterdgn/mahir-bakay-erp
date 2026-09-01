@@ -6,12 +6,13 @@
  */
 
 
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { signOut, useSession } from "next-auth/react"
 import { useTheme } from "next-themes"
 import NotificationBell from "@/components/NotificationBell"
+import { usePwaInstall } from "@/hooks/use-pwa-install"
 import { 
   LayoutDashboard, 
   FileText, 
@@ -19,7 +20,6 @@ import {
   DollarSign, 
   Building2, 
   FolderKanban, 
-  Package, 
   Users, 
   ClipboardList, 
   Settings,
@@ -47,7 +47,6 @@ import {
   Wallet,
   Clock,
   Bot,
-  Sparkles,
   Sun,
   Moon,
   Search,
@@ -61,7 +60,6 @@ import {
   Wrench,
   FileSignature,
   Pen,
-  File,
   Scan,
   GitCompare,
   Route,
@@ -71,20 +69,28 @@ import {
   CalendarDays,
   BarChart,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Download
 } from "lucide-react"
 
-export default function AdminSidebar() {
+export default function AdminSidebar({
+  isCollapsed,
+  setIsCollapsed,
+}: {
+  isCollapsed: boolean
+  setIsCollapsed: React.Dispatch<React.SetStateAction<boolean>>
+}) {
   const [isOpen, setIsOpen] = useState(false)
-  const [isCollapsed, setIsCollapsed] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
-  const pathname = usePathname()
-  const { data: session, status } = useSession()
-  const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
+  const pathname = usePathname()
+  const { data: session } = useSession()
+  const { theme, setTheme } = useTheme()
+  const { isInstallable, promptInstall } = usePwaInstall()
 
   useEffect(() => {
-    setMounted(true)
+    const frame = window.requestAnimationFrame(() => setMounted(true))
+    return () => window.cancelAnimationFrame(frame)
   }, [])
 
   const isAdmin = session?.user?.role === "SUPER_ADMIN" || session?.user?.role === "ADMIN"
@@ -226,92 +232,94 @@ export default function AdminSidebar() {
   return (
     <>
       {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 bg-slate-900 border-b border-slate-800 z-40 p-4">
+      <div className="fixed left-0 right-0 top-0 z-40 border-b border-slate-800 bg-slate-900 px-4 pb-safe pt-safe lg:hidden">
         <div className="flex items-center justify-between">
           <button
+            type="button"
             onClick={() => setIsOpen(true)}
-            className="text-white p-2 hover:bg-slate-800 rounded-lg"
+            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2 text-white transition-colors hover:bg-slate-800"
+            aria-label="Menüyü aç"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <h1 className="text-white font-semibold">Şantiye Asistanı</h1>
-          <div className="w-10"></div>
+          <h1 className="font-semibold text-white">Şantiye Asistanı</h1>
+          <div className="w-11" aria-hidden="true" />
         </div>
       </div>
 
       {/* Mobile Overlay */}
       {isOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/50 z-40"
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
           onClick={() => setIsOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 z-50 transition-all duration-300 ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        } lg:translate-x-0 ${isCollapsed ? "lg:w-20" : "lg:w-64"} w-64`}
+        className={`fixed left-0 top-0 z-50 h-full transition-all duration-300 ${
+          isOpen ? "translate-x-0 w-64" : "-translate-x-full lg:translate-x-0"
+        } ${isCollapsed ? "lg:w-20" : "lg:w-64"} w-[85vw] max-w-[320px] border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900`}
       >
-        <div className={`flex flex-col h-full ${isCollapsed ? "p-3" : "p-6"}`}>
+        <div className={`flex h-full flex-col ${isCollapsed ? "p-3" : "p-4 sm:p-6"}`}>
           {/* Header */}
           <div className="mb-6">
-            <div className={`flex items-center ${isCollapsed ? "justify-center" : "justify-between"} mb-4`}>
+            <div className={`mb-4 flex items-center ${isCollapsed ? "justify-center" : "justify-between"}`}>
               {!isCollapsed && (
                 <div>
-                  <h1 className="text-xl font-bold text-slate-900 dark:text-white mb-1">Şantiye Asistanı</h1>
-                  <p className="text-slate-600 dark:text-slate-400 text-sm">Mahir Bakay Mühendislik</p>
+                  <h1 className="mb-1 text-xl font-bold text-slate-900 dark:text-white">Şantiye Asistanı</h1>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Mahir Bakay Mühendislik</p>
                 </div>
               )}
-              <div className={`flex items-center gap-2 ${isCollapsed ? "" : ""}`}>
+              <div className="flex items-center gap-3">
                 {!isCollapsed && mounted && (
                   <button
+                    type="button"
                     onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                    className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                    className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg bg-slate-100 p-2 text-slate-600 transition-colors hover:bg-slate-200 hover:text-slate-900 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-white"
                     title={theme === 'dark' ? 'Açık Tema' : 'Koyu Tema'}
                   >
-                    {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                    {mounted ? (theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />) : <div className="h-5 w-5" />}
                   </button>
                 )}
                 {!isCollapsed && <NotificationBell />}
                 <button
+                  type="button"
                   onClick={() => setIsCollapsed(!isCollapsed)}
-                  className={`hidden lg:flex text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white p-1 transition-colors ${
-                    isCollapsed ? "" : ""
-                  }`}
+                  className="hidden h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white lg:flex"
                   title={isCollapsed ? "Genişlet" : "Daralt"}
                 >
-                  {isCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
+                  {isCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
                 </button>
               </div>
             </div>
-            
-            {/* Search Bar - Hide when collapsed */}
+
             {!isCollapsed && (
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-600 dark:text-slate-400" />
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600 dark:text-slate-400" />
                 <input
                   type="text"
                   placeholder="Menü ara..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all"
+                  className="min-h-[44px] w-full rounded-lg border border-slate-200 bg-slate-100 pl-10 pr-4 text-slate-900 transition-all placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/50 dark:border-slate-700 dark:bg-slate-800/50 dark:text-white dark:placeholder:text-slate-400"
                 />
               </div>
             )}
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 space-y-2 overflow-y-auto">
+          <nav className="flex-1 space-y-2 overflow-y-auto overflow-x-hidden">
             {Object.entries(groupedNavItems).map(([category, items]) => (
               <div key={category}>
                 {!isCollapsed && (
-                  <h3 className="text-xs text-slate-600 dark:text-slate-500 font-bold uppercase tracking-wider mb-2 mt-6">
+                  <h3 className="mb-2 mt-6 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-500">
                     {category}
                   </h3>
                 )}
+                {isCollapsed && <div className="mb-2 h-4" aria-hidden="true" />}
                 {items.map((item) => {
                   const isActive = pathname === item.href
                   const Icon = item.icon
@@ -320,15 +328,15 @@ export default function AdminSidebar() {
                       key={item.href}
                       href={item.href}
                       onClick={() => setIsOpen(false)}
-                      className={`flex items-center py-2 rounded-lg transition-colors ${
+                      className={`flex min-h-[44px] items-center rounded-lg transition-colors ${
                         isActive
-                          ? "bg-blue-50 dark:bg-slate-800 text-blue-600 dark:text-white font-medium"
-                          : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-                      } ${isCollapsed ? "justify-center px-0" : "justify-start px-4 gap-3"}`}
+                          ? "bg-blue-50 font-medium text-blue-600 dark:bg-slate-800 dark:text-white"
+                          : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                      } ${isCollapsed ? "justify-center px-0" : "justify-start gap-3 px-4"}`}
                       title={isCollapsed ? item.label : undefined}
                     >
-                      <Icon className="w-5 h-5 flex-shrink-0" />
-                      {!isCollapsed && <span className="truncate">{item.label}</span>}
+                      <Icon className="h-5 w-5 shrink-0" />
+                      <span className={`${isCollapsed ? "hidden" : "truncate"}`}>{item.label}</span>
                     </Link>
                   )
                 })}
@@ -337,15 +345,29 @@ export default function AdminSidebar() {
           </nav>
 
           {/* Footer */}
-          <div className="pt-6 pb-8 border-t border-slate-200 dark:border-slate-800 mt-4">
+          <div className="mt-4 border-t border-slate-200 pt-6 pb-safe dark:border-slate-800">
+            {isInstallable && (
+              <button
+                type="button"
+                onClick={() => void promptInstall()}
+                className={`mb-3 flex min-h-[44px] w-full items-center justify-center gap-3 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 text-white shadow-lg shadow-blue-600/20 transition-colors hover:from-blue-500 hover:to-indigo-500 ${
+                  isCollapsed ? "px-2" : "text-left"
+                }`}
+                title={isCollapsed ? "Uygulamayı Yükle" : undefined}
+              >
+                <Download className="h-5 w-5 shrink-0" />
+                {!isCollapsed && <span>Uygulamayı Yükle</span>}
+              </button>
+            )}
             <button
+              type="button"
               onClick={() => signOut({ callbackUrl: '/login' })}
-              className={`w-full px-4 py-3 rounded-lg bg-red-600 hover:bg-red-500 transition-colors text-white relative z-10 flex items-center gap-3 ${
+              className={`flex min-h-[44px] w-full items-center gap-3 rounded-lg bg-red-600 px-4 py-3 text-white transition-colors hover:bg-red-500 ${
                 isCollapsed ? "justify-center" : "text-left"
               }`}
               title={isCollapsed ? "Çıkış Yap" : undefined}
             >
-              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
               {!isCollapsed && <span>Çıkış Yap</span>}
@@ -354,10 +376,12 @@ export default function AdminSidebar() {
 
           {/* Close Button (Mobile Only) */}
           <button
+            type="button"
             onClick={() => setIsOpen(false)}
-            className="lg:hidden absolute top-4 right-4 text-white p-2 hover:bg-slate-800 rounded-lg"
+            className="absolute right-4 top-4 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2 text-white transition-colors hover:bg-slate-800 lg:hidden"
+            aria-label="Menüyü kapat"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>

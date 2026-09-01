@@ -5,7 +5,7 @@
  * This code is the property of NXA Software.
  */
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Home, MessageCircle, Bell, User, Map, Bot, ClipboardList, Users, DollarSign, FileText, ChevronRight, Sun, Moon } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useSession } from "next-auth/react"
@@ -16,9 +16,9 @@ export default function MobileDashboardPage() {
   const { data: session } = useSession()
   const [mounted, setMounted] = useState(false)
 
-  useState(() => {
+  useEffect(() => {
     setMounted(true)
-  })
+  }, [])
 
   const quickActions = [
     { id: "map", label: "Şantiye Haritası", icon: Map, color: "bg-blue-500", href: "/admin/map" },

@@ -129,107 +129,122 @@ export default function NotificationBell() {
   };
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative z-[60]" ref={dropdownRef}>
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+        aria-label="Bildirimler"
+        className="relative flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
       >
-        <Bell className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+        <Bell className="h-5 w-5 text-slate-600 dark:text-slate-400" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
+          <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-medium text-white">
             {unreadCount}
           </span>
         )}
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 top-full mt-2 w-72 sm:w-80 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 z-[100] max-h-[70vh] overflow-y-auto flex flex-col">
-          {/* Header */}
-          <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-            <h3 className="font-semibold text-slate-900 dark:text-white">Bildirimler</h3>
-            <div className="flex items-center gap-2">
-              {unreadCount > 0 && (
-                <button
-                  onClick={markAllAsRead}
-                  className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
-                >
-                  Tümünü Okundu İşaretle
-                </button>
-              )}
-              <button
-                onClick={() => setIsOpen(false)}
-                className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"
-              >
-                <X className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-              </button>
-            </div>
-          </div>
+        <>
+          <div
+            className="fixed inset-0 z-[90] bg-slate-950/30 backdrop-blur-[1px] sm:hidden"
+            onClick={() => setIsOpen(false)}
+          />
 
-          {/* Notifications List */}
-          <div className="overflow-y-auto flex-1">
-            {isLoading ? (
-              <div className="p-8 text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
-                <p className="text-slate-600 dark:text-slate-400 text-sm">Yükleniyor...</p>
-              </div>
-            ) : notifications.length === 0 ? (
-              <div className="p-8 text-center">
-                <Bell className="w-12 h-12 text-slate-400 dark:text-slate-600 mx-auto mb-2" />
-                <p className="text-slate-600 dark:text-slate-400 text-sm">Bildirim bulunmuyor</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-slate-200 dark:divide-slate-800">
-                {notifications.map((notification) => (
-                  <div
-                    key={notification.id}
-                    className={`p-4 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors cursor-pointer ${
-                      !notification.isRead ? "bg-slate-100 dark:bg-slate-800/30" : ""
-                    }`}
+          <div className="fixed inset-x-2 top-20 z-[100] mx-auto max-h-[calc(100vh-6rem)] w-[calc(100%-1rem)] max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900 sm:absolute sm:inset-auto sm:left-0 sm:top-full sm:mt-2 sm:max-h-[70vh] sm:w-72 sm:max-w-none sm:rounded-lg">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-200 p-4 dark:border-slate-800">
+              <h3 className="font-semibold text-slate-900 dark:text-white">Bildirimler</h3>
+              <div className="flex items-center gap-2">
+                {unreadCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={markAllAsRead}
+                    className="min-h-[32px] text-xs text-blue-600 transition-colors hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
                   >
-                    <div className="flex items-start gap-3">
-                      <div className={`p-2 rounded-lg border ${getNotificationColor(notification.type)}`}>
-                        {getNotificationIcon(notification.type)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2">
-                          <h4 className="text-sm font-medium text-slate-900 dark:text-white">{notification.title}</h4>
-                          {!notification.isRead && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                markAsRead(notification.id);
-                              }}
-                              className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"
-                            >
-                              <Check className="w-3 h-3 text-slate-600 dark:text-slate-400" />
-                            </button>
-                          )}
+                    Tümünü Okundu İşaretle
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setIsOpen(false)}
+                  className="flex min-h-[32px] min-w-[32px] items-center justify-center rounded transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
+                >
+                  <X className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                </button>
+              </div>
+            </div>
+
+            {/* Notifications List */}
+            <div className="max-h-[calc(100vh-15rem)] overflow-y-auto sm:max-h-[65vh]">
+              {isLoading ? (
+                <div className="p-8 text-center">
+                  <div className="mx-auto mb-2 h-8 w-8 animate-spin rounded-full border-b-2 border-blue-500"></div>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Yükleniyor...</p>
+                </div>
+              ) : notifications.length === 0 ? (
+                <div className="p-8 text-center">
+                  <Bell className="mx-auto mb-2 h-12 w-12 text-slate-400 dark:text-slate-600" />
+                  <p className="text-sm text-slate-600 dark:text-slate-400">Bildirim bulunmuyor</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-200 dark:divide-slate-800">
+                  {notifications.map((notification) => (
+                    <div
+                      key={notification.id}
+                      className={`cursor-pointer p-4 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800/50 ${
+                        !notification.isRead ? "bg-slate-100 dark:bg-slate-800/30" : ""
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className={`rounded-lg border p-2 ${getNotificationColor(notification.type)}`}>
+                          {getNotificationIcon(notification.type)}
                         </div>
-                        <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 line-clamp-2">{notification.message}</p>
-                        <div className="flex items-center justify-between mt-2">
-                          <span className="text-xs text-slate-500 dark:text-slate-500">{formatTime(notification.createdAt)}</span>
-                          {notification.link && (
-                            <div className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400">
-                              <ExternalLink className="w-3 h-3" />
-                              <span>Görüntüle</span>
-                            </div>
-                          )}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <h4 className="text-sm font-medium text-slate-900 dark:text-white">{notification.title}</h4>
+                            {!notification.isRead && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  markAsRead(notification.id);
+                                }}
+                                className="flex min-h-[28px] min-w-[28px] items-center justify-center rounded transition-colors hover:bg-slate-200 dark:hover:bg-slate-700"
+                              >
+                                <Check className="h-3 w-3 text-slate-600 dark:text-slate-400" />
+                              </button>
+                            )}
+                          </div>
+                          <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 line-clamp-2">{notification.message}</p>
+                          <div className="mt-2 flex items-center justify-between gap-2">
+                            <span className="text-xs text-slate-500 dark:text-slate-500">{formatTime(notification.createdAt)}</span>
+                            {notification.link && (
+                              <div className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400">
+                                <ExternalLink className="h-3 w-3" />
+                                <span>Görüntüle</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
-          {/* Footer */}
-          <div className="p-3 border-t border-slate-800">
-            <Link href="/admin/notifications" className="w-full py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors block text-center">
-              Tüm Bildirimleri Gör
-            </Link>
+            {/* Footer */}
+            <div className="border-t border-slate-200 p-3 dark:border-slate-800">
+              <Link
+                href="/admin/notifications"
+                className="flex min-h-[44px] w-full items-center justify-center rounded-lg px-3 py-2 text-center text-sm text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
+              >
+                Tüm Bildirimleri Gör
+              </Link>
+            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );

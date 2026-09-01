@@ -6,7 +6,7 @@
  */
 
 import { useState } from "react"
-import { CalendarDays, Calculator, FileText, X, CheckCircle, AlertCircle } from "lucide-react"
+import { CalendarDays, Calculator, FileText, X, CheckCircle } from "lucide-react"
 import { toast } from "react-hot-toast"
 
 interface Personnel {
@@ -16,15 +16,6 @@ interface Personnel {
   dailyRate: number
   attendance: Record<number, "X" | "İ" | "R" | "">
   advancePayment: number
-}
-
-interface PayrollCalculation {
-  totalDays: number
-  dailyRate: number
-  grossSalary: number
-  advancePayment: number
-  deductions: number
-  netPayable: number
 }
 
 export default function PayrollPage() {
@@ -102,8 +93,7 @@ export default function PayrollPage() {
   const handlePayrollCalculation = (person: Personnel) => {
     const totalDays = Object.values(person.attendance).filter(status => status === "X").length
     const grossSalary = totalDays * person.dailyRate
-    const deductions = Math.round(grossSalary * 0.09375) // SGK %9.375
-    const netPayable = grossSalary - person.advancePayment - deductions
+    void grossSalary
 
     setSelectedPersonnel(person)
     setShowPayrollModal(true)
@@ -147,13 +137,13 @@ export default function PayrollPage() {
 
       {/* Filters */}
       <div className="bg-slate-900 rounded-xl border border-slate-800 p-6 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="mobile-form-row md:grid md:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Ay ve Yıl</label>
+            <label className="mb-2 block text-sm font-medium text-slate-300">Ay ve Yıl</label>
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(e.target.value)}
-              className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+              className="w-full rounded-lg border border-slate-700 bg-slate-800 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="2026-08">Ağustos 2026</option>
               <option value="2026-09">Eylül 2026</option>
@@ -179,8 +169,8 @@ export default function PayrollPage() {
       </div>
 
       {/* Timesheet Table */}
-      <div className="bg-slate-900 rounded-xl border border-slate-800 p-6">
-        <div className="overflow-x-auto">
+      <div className="rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <div className="mobile-table-shell">
           <table className="w-full min-w-[2000px]">
             <thead>
               <tr className="border-b border-slate-700">
