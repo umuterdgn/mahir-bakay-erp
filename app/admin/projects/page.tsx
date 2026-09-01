@@ -11,6 +11,9 @@ import { useRouter } from "next/navigation"
 import { toast } from "react-hot-toast"
 import Link from "next/link"
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 type ViewMode = "list" | "kanban"
 
 export default function ProjectsPage() {
@@ -29,10 +32,10 @@ export default function ProjectsPage() {
 
   const fetchProjects = async () => {
     try {
-      const response = await fetch("/api/admin/projects")
+      const response = await fetch("/api/admin/projects", { cache: 'no-store' })
       if (response.ok) {
         const data = await response.json()
-        setProjects(data.projects || [])
+        setProjects(Array.isArray(data) ? data : (data.projects || []))
       }
     } catch (error) {
       console.error("Failed to fetch projects:", error)

@@ -69,7 +69,19 @@ export default function PPEFormsPage() {
       
       if (deliveriesRes.ok) {
         const deliveriesData = await deliveriesRes.json()
-        setDeliveries(deliveriesData)
+        const normalizedDeliveries = Array.isArray(deliveriesData)
+          ? deliveriesData.map((delivery: any) => {
+              const equipments = Array.isArray(delivery.equipment)
+                ? delivery.equipment
+                : (typeof delivery.equipment === 'string' ? JSON.parse(delivery.equipment) : [])
+
+              return {
+                ...delivery,
+                equipment: Array.isArray(equipments) ? equipments : []
+              }
+            })
+          : []
+        setDeliveries(normalizedDeliveries)
       }
     } catch (error) {
       console.error('Failed to fetch data:', error)
@@ -232,46 +244,52 @@ export default function PPEFormsPage() {
             <div className="text-center text-slate-400 py-8">Yükleniyor...</div>
           ) : (
             <div className="space-y-3">
-              {deliveries.map((delivery) => (
-                <div key={delivery.id} className="p-4 bg-slate-900/50 rounded-lg border border-slate-700">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <User className="w-4 h-4 text-slate-400" />
-                      <span className="font-medium text-white">{delivery.personel.name}</span>
-                    </div>
-                    <span className="text-xs text-slate-400 flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      {new Date(delivery.date).toLocaleDateString('tr-TR')}
-                    </span>
-                  </div>
+              {deliveries.map((delivery) => {
+                const equipments = Array.isArray(delivery.equipment)
+                  ? delivery.equipment
+                  : (typeof delivery.equipment === 'string' ? JSON.parse(delivery.equipment) : [])
 
-                  <div className="mb-3">
-                    <div className="text-xs text-slate-400 mb-1">Teslim Edilen Ekipmanlar:</div>
-                    <div className="flex flex-wrap gap-1">
-                      {delivery.equipment.map((item: string, idx: number) => (
-                        <span
-                          key={idx}
-                          className="text-xs px-2 py-1 bg-blue-500/20 text-blue-400 rounded-full"
-                        >
-                          {item}
-                        </span>
-                      ))}
+                return (
+                  <div key={delivery.id} className="p-4 bg-slate-900/50 rounded-lg border border-slate-700">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <User className="w-4 h-4 text-slate-400" />
+                        <span className="font-medium text-white">{delivery.personel.name}</span>
+                      </div>
+                      <span className="text-xs text-slate-400 flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        {new Date(delivery.date).toLocaleDateString('tr-TR')}
+                      </span>
                     </div>
-                  </div>
 
-                  <div className="flex items-center justify-between pt-3 border-t border-slate-700">
-                    <div className="flex items-center gap-2">
-                      <PenTool className="w-3 h-3 text-slate-400" />
-                      <span className="text-xs text-slate-400">İmza:</span>
-                      <span className="text-xs font-medium text-white">{delivery.signature}</span>
+                    <div className="mb-3">
+                      <div className="text-xs text-slate-400 mb-1">Teslim Edilen Ekipmanlar:</div>
+                      <div className="flex flex-wrap gap-1">
+                        {Array.isArray(equipments) && equipments.map((item: string, idx: number) => (
+                          <span
+                            key={idx}
+                            className="text-xs px-2 py-1 bg-blue-500/20 text-blue-400 rounded-full"
+                          >
+                            {item}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                    <span className="text-xs px-2 py-1 bg-green-500/20 text-green-400 rounded-full flex items-center gap-1">
-                      <CheckCircle className="w-3 h-3" />
-                      {delivery.status}
-                    </span>
+
+                    <div className="flex items-center justify-between pt-3 border-t border-slate-700">
+                      <div className="flex items-center gap-2">
+                        <PenTool className="w-3 h-3 text-slate-400" />
+                        <span className="text-xs text-slate-400">İmza:</span>
+                        <span className="text-xs font-medium text-white">{delivery.signature}</span>
+                      </div>
+                      <span className="text-xs px-2 py-1 bg-green-500/20 text-green-400 rounded-full flex items-center gap-1">
+                        <CheckCircle className="w-3 h-3" />
+                        {delivery.status}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
               {deliveries.length === 0 && (
                 <div className="text-center text-slate-400 py-8">Henüz teslimat yok</div>
               )}
