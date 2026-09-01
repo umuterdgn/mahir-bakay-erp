@@ -11,20 +11,25 @@ export const dynamic = 'force-dynamic'
 
 async function getProjects() {
   try {
-    const projects = await prisma.project.findMany({
-      where: { isActive: true },
+    const projects = await prisma.portfolioProject.findMany({
+      where: { isPublished: true },
       orderBy: { displayOrder: 'asc' },
       select: {
         id: true,
         title: true,
         description: true,
         images: true,
+        imageUrl: true,
         year: true,
-        location: true,
-        threeDModelUrl: true
+        location: true
       }
     })
-    return projects
+
+    return projects.map(project => ({
+      ...project,
+      images: project.images.length > 0 ? project.images : (project.imageUrl ? [project.imageUrl] : []),
+      threeDModelUrl: undefined
+    }))
   } catch (error) {
     console.error("Error fetching projects:", error)
     return []

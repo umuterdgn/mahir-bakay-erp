@@ -513,13 +513,13 @@ function ProjectsSection() {
 
   const fetchProjects = async () => {
     try {
-      const response = await fetch("/api/admin/projects")
+      const response = await fetch("/api/admin/cms/projects")
       if (response.ok) {
         const data = await response.json()
-        setProjects(data)
+        setProjects(Array.isArray(data) ? data : [])
       }
     } catch (error) {
-      console.error("Failed to fetch projects:", error)
+      console.error("Failed to fetch cms projects:", error)
     } finally {
       setIsLoading(false)
     }
@@ -550,7 +550,7 @@ function ProjectsSection() {
     if (!confirm("Bu projeyi silmek istediğinize emin misiniz?")) return
     
     try {
-      const response = await fetch(`/api/admin/projects/${id}`, {
+      const response = await fetch(`/api/admin/cms/projects/${id}`, {
         method: "DELETE"
       })
       if (response.ok) {
@@ -688,7 +688,7 @@ function ProjectForm({ project, onSave, onCancel }: any) {
       
       console.log("Gönderilecek Temizlenmiş Veri:", cleanedData)
       
-      const response = await fetch("/api/admin/projects", {
+      const response = await fetch("/api/admin/cms/projects", {
         method: formData.id ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(cleanedData)
