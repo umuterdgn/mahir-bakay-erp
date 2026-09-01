@@ -196,9 +196,9 @@ export default async function ProjectDetailPage({
               <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white">
                 {project.name || project.title}
               </h1>
-              {project.yibfNo && (
+              {Boolean(project.yibfNo) && (
                 <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full text-sm font-medium border border-blue-200 dark:border-blue-800">
-                  YİBF: {project.yibfNo}
+                  YİBF: {String(project.yibfNo)}
                 </span>
               )}
             </div>
