@@ -1606,7 +1606,7 @@ model AttendanceRecord {
   checkOut      DateTime? // Çıkış saati
   status        String   @default("PRESENT") // PRESENT, LATE, ABSENT
   dayMultiplier Float    @default(1) // Tam gün için 1, yarım gün için 0.5
-  overtimeHours Float    @default(0) // Fazla mesai saati
+  overtimeHours Float?   @default(0) // Fazla mesai saati
   workerName    String?  // GPS bazlı check-in için isim
   latitude      Float?   // GPS check-in koordinatı
   longitude     Float?   // GPS check-in koordinatı

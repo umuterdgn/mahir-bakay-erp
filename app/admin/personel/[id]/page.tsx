@@ -29,6 +29,17 @@ export default function PersonelDetailPage({
   const [inspectionRecords, setInspectionRecords] = useState<any[]>([])
   const [deficiencies, setDeficiencies] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [financialSummary, setFinancialSummary] = useState<any>({
+    dailyWage: 0,
+    totalDayMultiplier: 0,
+    totalOvertimeHours: 0,
+    totalBaseEarned: 0,
+    totalOvertimeEarned: 0,
+    totalBonuses: 0,
+    totalPaid: 0,
+    totalEarned: 0,
+    currentBalance: 0
+  })
   const [resolvedParams, setResolvedParams] = useState<{ id: string } | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
@@ -96,58 +107,39 @@ export default function PersonelDetailPage({
   }, [resolvedParams])
 
   const calculatedValues = useMemo(() => {
-    if (!person || !payments) {
-      return {
-        toplamKazanilan: 0,
-        kesintilerToplami: 0,
-        netOdenecek: 0,
-        tamGunSayisi: 0,
-        yarimGunSayisi: 0,
-        totalDayMultiplier: 0,
-        grossEntitlement: 0,
-        toplamPrim: 0,
-        toplamMesai: 0,
-        toplamMesaiSaati: 0,
-        paymentProgress: 0,
-        totalOvertimeHours: 0
-      }
-    }
+    const summary = financialSummary || {}
 
-    const dailyWage = person.gunlukYevmiye || 0
+    const totalDayMultiplier = Number(summary.totalDayMultiplier ?? attendanceRecords.reduce((sum: number, record: any) => {
+      return sum + Number(record.dayMultiplier ?? 0)
+    }, 0))
 
-    const totalDayMultiplier = attendanceRecords.reduce((sum: number, record: any) => {
-      return sum + (record.dayMultiplier || 0)
-    }, 0)
+    const totalOvertimeHours = Number(summary.totalOvertimeHours ?? attendanceRecords.reduce((sum: number, record: any) => {
+      return sum + Number(record.overtimeHours ?? 0)
+    }, 0))
 
-    const tamGunSayisi = attendanceRecords.filter((record: any) => record.dayMultiplier === 1).length
-    const yarimGunSayisi = attendanceRecords.filter((record: any) => record.dayMultiplier === 0.5).length
-
-    const totalOvertimeHours = attendanceRecords.reduce((sum: number, record: any) => {
-      return sum + (record.overtimeHours || 0)
-    }, 0)
-    const toplamMesaiSaati = totalOvertimeHours
-
-    const hourlyRate = dailyWage / 8
-    const toplamMesai = toplamMesaiSaati * hourlyRate * 1.5
-    const grossEntitlement = totalDayMultiplier * dailyWage
-
-    const toplamPrim = payments.reduce((sum: number, p: any) => {
+    const dailyWage = Number(summary.dailyWage ?? person?.gunlukYevmiye ?? 0)
+    const totalBaseEarned = Number(summary.totalBaseEarned ?? (totalDayMultiplier * dailyWage))
+    const totalOvertimeEarned = Number(summary.totalOvertimeEarned ?? (totalOvertimeHours * ((dailyWage / 8) * 1.5)))
+    const toplamPrim = Number(summary.totalBonuses ?? payments.reduce((sum: number, p: any) => {
       if (p.type === 'PRIM') {
-        return sum + p.amount
+        return sum + Number(p.amount ?? 0)
       }
       return sum
-    }, 0)
-
-    const kesintilerToplami = payments.reduce((sum: number, p: any) => {
+    }, 0))
+    const kesintilerToplami = Number(summary.totalPaid ?? payments.reduce((sum: number, p: any) => {
       if (p.type === 'MAAS' || p.type === 'AVANS' || p.type === 'ELDEN') {
-        return sum + p.amount
+        return sum + Number(p.amount ?? 0)
       }
       return sum
-    }, 0)
-
-    const toplamKazanilan = grossEntitlement + toplamPrim + toplamMesai
-    const netOdenecek = toplamKazanilan - kesintilerToplami
-    const paymentProgress = Math.min(100, Math.max(0, (netOdenecek / Math.max(toplamKazanilan, 1)) * 100))
+    }, 0))
+    const toplamKazanilan = Number(summary.totalEarned ?? (totalBaseEarned + totalOvertimeEarned + toplamPrim))
+    const netOdenecek = Number(summary.currentBalance ?? (toplamKazanilan - kesintilerToplami))
+    const tamGunSayisi = attendanceRecords.filter((record: any) => Number(record.dayMultiplier ?? 0) === 1).length
+    const yarimGunSayisi = attendanceRecords.filter((record: any) => Number(record.dayMultiplier ?? 0) === 0.5).length
+    const toplamMesaiSaati = totalOvertimeHours
+    const toplamMesai = totalOvertimeEarned
+    const grossEntitlement = totalBaseEarned
+    const paymentProgress = Math.min(100, Math.max(0, (kesintilerToplami / Math.max(toplamKazanilan, 1)) * 100))
 
     return {
       toplamKazanilan,
@@ -161,9 +153,12 @@ export default function PersonelDetailPage({
       toplamMesai,
       toplamMesaiSaati,
       paymentProgress,
-      totalOvertimeHours
+      totalOvertimeHours,
+      totalBaseEarned,
+      totalOvertimeEarned,
+      currentBalance: netOdenecek
     }
-  }, [person, payments, attendanceRecords])
+  }, [person, payments, attendanceRecords, financialSummary])
 
   const fetchPerson = async () => {
     try {
@@ -171,6 +166,9 @@ export default function PersonelDetailPage({
       if (response.ok) {
         const data = await response.json()
         setPerson(data)
+        if (data.financialSummary) {
+          setFinancialSummary(data.financialSummary)
+        }
         if (data.payments) {
           setPayments(data.payments)
         }

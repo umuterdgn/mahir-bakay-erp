@@ -18,7 +18,13 @@ type ReminderRecord = {
   id: string
   date: Date
   title: string
-  project?: { name?: string }
+  projectId?: string
+  project?: {
+    id?: string
+    name?: string | null
+    title?: string | null
+    status?: string | null
+  } | null
   [key: string]: unknown
 }
 
@@ -159,6 +165,19 @@ export default async function AdminDashboard() {
       todayCheckins = todayCheckinsCount
       upcomingReminders = reminders
       recentLogs = logs
+      const normalizedReminders = reminders.map((reminder) => ({
+        ...reminder,
+        project: reminder.project
+          ? {
+              ...reminder.project,
+              name: reminder.project.name ?? 'İsimsiz Proje',
+              title: reminder.project.title ?? reminder.project.name ?? 'İsimsiz Proje',
+              status: reminder.project.status ?? 'Durum Yok'
+            }
+          : null
+      }))
+
+      upcomingReminders = normalizedReminders as ReminderRecord[]
       totalRevenue = revenue
       totalExpenses = expenses
       lowStockCount = stockCount

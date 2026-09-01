@@ -62,8 +62,41 @@ export async function GET(
     if (!person) {
       return NextResponse.json({ error: "Personel bulunamadı" }, { status: 404 })
     }
-    
-    return NextResponse.json(person)
+
+    const totalDayMultiplier = person.attendanceRecords.reduce((sum, record) => sum + Number(record.dayMultiplier ?? 0), 0)
+    const totalOvertimeHours = person.attendanceRecords.reduce((sum, record) => sum + Number(record.overtimeHours ?? 0), 0)
+    const dailyWage = Number(person.gunlukYevmiye ?? 0)
+    const totalBaseEarned = totalDayMultiplier * dailyWage
+    const overtimeHourlyRate = dailyWage > 0 ? (dailyWage / 8) * 1.5 : 0
+    const totalOvertimeEarned = totalOvertimeHours * overtimeHourlyRate
+    const totalBonuses = Number(person.bonuses ?? 0)
+    const totalPaid = person.payments.reduce((sum, payment) => sum + Number(payment.amount ?? 0), 0)
+    const totalEarned = totalBaseEarned + totalOvertimeEarned + totalBonuses
+    const currentBalance = totalEarned - totalPaid
+
+    const financialSummary = {
+      dailyWage,
+      totalDayMultiplier,
+      totalOvertimeHours,
+      totalBaseEarned,
+      totalOvertimeEarned,
+      totalBonuses,
+      totalPaid,
+      totalEarned,
+      currentBalance
+    }
+
+    return NextResponse.json({
+      ...person,
+      financialSummary,
+      totalBaseEarned,
+      totalOvertimeEarned,
+      totalEarned,
+      totalPaid,
+      currentBalance,
+      totalOvertimeHours,
+      totalDayMultiplier
+    })
   } catch (error) {
     console.error("Error fetching personnel:", error)
     return NextResponse.json({ error: "Failed to fetch personnel" }, { status: 500 })
