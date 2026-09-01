@@ -251,7 +251,7 @@ export default function AdminSidebar() {
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 z-50 transition-all duration-300 overflow-x-hidden ${
+        className={`fixed top-0 left-0 h-full bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 z-50 transition-all duration-300 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0 ${isCollapsed ? "lg:w-20" : "lg:w-64"} w-64`}
       >
@@ -320,15 +320,15 @@ export default function AdminSidebar() {
                       key={item.href}
                       href={item.href}
                       onClick={() => setIsOpen(false)}
-                      className={`flex items-center w-full py-2 rounded-lg transition-colors ${
+                      className={`flex items-center py-2 rounded-lg transition-colors ${
                         isActive
                           ? "bg-blue-50 dark:bg-slate-800 text-blue-600 dark:text-white font-medium"
                           : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-                      } ${isCollapsed ? "justify-center px-0" : "justify-start px-4"}`}
+                      } ${isCollapsed ? "justify-center px-0" : "justify-start px-4 gap-3"}`}
                       title={isCollapsed ? item.label : undefined}
                     >
-                      <Icon className={`w-5 h-5 flex-shrink-0 ${isCollapsed ? "" : ""}`} />
-                      <span className={`${isCollapsed ? "hidden" : "block"} transition-all duration-300`}>{item.label}</span>
+                      <Icon className="w-5 h-5 flex-shrink-0" />
+                      {!isCollapsed && <span className="truncate">{item.label}</span>}
                     </Link>
                   )
                 })}
@@ -348,7 +348,7 @@ export default function AdminSidebar() {
               <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
-              <span className={`${isCollapsed ? "hidden" : "block"} transition-all duration-300`}>Çıkış Yap</span>
+              {!isCollapsed && <span>Çıkış Yap</span>}
             </button>
           </div>
 
