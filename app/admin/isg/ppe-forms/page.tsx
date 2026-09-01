@@ -79,7 +79,7 @@ export default function PPEFormsPage() {
                   parsedEquipment = JSON.parse(delivery.equipment)
                   if (!Array.isArray(parsedEquipment)) parsedEquipment = [parsedEquipment]
                 } catch (e) {
-                  parsedEquipment = delivery.equipment.split(',').map((s: string) => s.trim())
+                  parsedEquipment = String(delivery.equipment).split(',').map((s: string) => s.trim())
                 }
               }
 
@@ -261,7 +261,7 @@ export default function PPEFormsPage() {
                     parsedEquipment = JSON.parse(delivery.equipment)
                     if (!Array.isArray(parsedEquipment)) parsedEquipment = [parsedEquipment]
                   } catch (e) {
-                    parsedEquipment = delivery.equipment.split(',').map((s: string) => s.trim())
+                    parsedEquipment = String(delivery.equipment).split(',').map((s: string) => s.trim())
                   }
                 }
 
