@@ -373,7 +373,7 @@ export default async function ProjectDetailPage({
 
         {/* Right Column - Tabbed Content (Wide, col-span-2) */}
         <div className="lg:col-span-2 space-y-6">
-          <ProjectDetailTabs project={project} />
+          <ProjectDetailTabs project={project as any} />
         </div>
       </div>
     </div>
