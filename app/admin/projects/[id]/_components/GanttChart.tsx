@@ -82,7 +82,7 @@ export default function GanttChart({ projectId }: GanttChartProps) {
             },
           };
         })
-        .filter((task): task is Task => Boolean(task) && Boolean(task.start) && Boolean(task.end));
+        .filter((task: any): task is Task => Boolean(task) && Boolean(task.start) && Boolean(task.end));
 
       setTasks(ganttTasks);
     } catch (error) {
