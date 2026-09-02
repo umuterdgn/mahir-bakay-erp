@@ -9,7 +9,7 @@ import { motion } from "framer-motion"
 import { useState } from "react"
 import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { Building, ShieldCheck, ArrowLeft, Crown, HardHat, Wrench } from "lucide-react"
+import { Building, ShieldCheck, ArrowLeft } from "lucide-react"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -82,18 +82,6 @@ export default function LoginPage() {
 
   const handleWorkerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setWorkerFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))
-  }
-
-  const handleDemoLogin = (role: "admin" | "site-manager" | "contractor") => {
-    const demoCredentials = {
-      admin: { email: "admin@nexa.com", password: "admin123" },
-      "site-manager": { email: "site@nexa.com", password: "site123" },
-      contractor: { email: "contractor@nexa.com", password: "contractor123" }
-    }
-
-    const creds = demoCredentials[role]
-    setAdminFormData(creds)
-    setActiveTab("admin")
   }
 
   if (!selectedType) {
@@ -366,40 +354,6 @@ export default function LoginPage() {
                 {isLoading ? "Giriş Yapılıyor..." : "Görevlerime Git"}
               </button>
             </form>
-          )}
-
-          {/* Demo Fast-Pass Buttons */}
-          {activeTab === "admin" && (
-            <div className="mt-8">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="flex-1 h-px bg-slate-200" />
-                <span className="text-sm text-slate-400">Demo Girişleri</span>
-                <div className="flex-1 h-px bg-slate-200" />
-              </div>
-              <div className="grid grid-cols-1 gap-3">
-                <button
-                  onClick={() => handleDemoLogin("admin")}
-                  className="flex items-center gap-3 px-4 py-3 border-2 border-slate-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all group"
-                >
-                  <Crown className="w-5 h-5 text-amber-500 group-hover:text-amber-600" />
-                  <span className="text-slate-700 group-hover:text-slate-900 font-medium">Patron (Yönetici) Girişi</span>
-                </button>
-                <button
-                  onClick={() => handleDemoLogin("site-manager")}
-                  className="flex items-center gap-3 px-4 py-3 border-2 border-slate-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all group"
-                >
-                  <HardHat className="w-5 h-5 text-blue-500 group-hover:text-blue-600" />
-                  <span className="text-slate-700 group-hover:text-slate-900 font-medium">Şantiye Şefi Girişi</span>
-                </button>
-                <button
-                  onClick={() => handleDemoLogin("contractor")}
-                  className="flex items-center gap-3 px-4 py-3 border-2 border-slate-200 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-all group"
-                >
-                  <Wrench className="w-5 h-5 text-purple-500 group-hover:text-purple-600" />
-                  <span className="text-slate-700 group-hover:text-slate-900 font-medium">Müteahhit/Taşeron Girişi</span>
-                </button>
-              </div>
-            </div>
           )}
 
           <div className="mt-6 text-center">

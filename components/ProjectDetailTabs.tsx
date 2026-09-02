@@ -87,6 +87,7 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isUploadingBim, setIsUploadingBim] = useState(false)
   const [isUploadingFile, setIsUploadingFile] = useState(false)
+  const [droneMedia, setDroneMedia] = useState<any[]>([])
   const [editForm, setEditForm] = useState({
     city: project.city || "",
     district: project.district || "",
@@ -199,6 +200,24 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
 
   const reportDateLabel = formatReportDate(selectedReport?.createdAt)
 
+  const fetchDroneMedia = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/admin/drone-media?projectId=${project.id}`)
+      if (response.ok) {
+        const data = await response.json()
+        setDroneMedia(data)
+      }
+    } catch (error) {
+      console.error("Failed to fetch drone media:", error)
+    }
+  }, [project.id])
+
+  useEffect(() => {
+    if (activeTab === "drone") {
+      fetchDroneMedia()
+    }
+  }, [activeTab, fetchDroneMedia])
+
   const handleFileUpload = async (file: File) => {
     setIsUploadingFile(true)
     try {
@@ -213,7 +232,27 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
       if (response.ok) {
         const data = await response.json()
         console.log('File uploaded successfully:', data.url)
-        toast.success('Dosya başarıyla yüklendi!')
+
+        // Save to database
+        const mediaResponse = await fetch('/api/admin/drone-media', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: data.filename || file.name,
+            url: data.url,
+            mediaType: file.type.startsWith('image/') ? 'IMAGE' : 'VIDEO',
+            date: new Date().toISOString(),
+            projectId: project.id,
+            description: ''
+          })
+        })
+
+        if (mediaResponse.ok) {
+          toast.success('Dosya başarıyla yüklendi ve kaydedildi!')
+          await fetchDroneMedia()
+        } else {
+          toast.error('Dosya yüklendi ancak veritabanına kaydedilemedi')
+        }
       } else {
         toast.error('Dosya yüklenirken hata oluştu')
       }
@@ -732,8 +771,39 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
             <div className="bg-slate-800 rounded-xl border border-slate-700 p-6">
               <h4 className="text-white font-medium mb-4">Tarama Geçmişi</h4>
               <div className="space-y-3">
-                {Array.isArray([]) && [].length > 0 ? (
-                  []
+                {droneMedia.length > 0 ? (
+                  droneMedia.map((media) => (
+                    <div key={media.id} className="flex items-center justify-between p-4 bg-slate-700/50 rounded-lg border border-slate-600">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                          {media.mediaType === 'IMAGE' ? (
+                            <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                          ) : (
+                            <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-white font-medium">{media.title}</p>
+                          <p className="text-slate-400 text-sm">{new Date(media.date).toLocaleDateString('tr-TR')}</p>
+                        </div>
+                      </div>
+                      <a
+                        href={media.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors text-sm flex items-center gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                        İndir
+                      </a>
+                    </div>
+                  ))
                 ) : (
                   <p className="text-slate-400 text-sm">Henüz tarama kaydı bulunmuyor.</p>
                 )}
