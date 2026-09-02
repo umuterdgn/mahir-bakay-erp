@@ -908,7 +908,7 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
             <div id={`pdf-report-${selectedReport.id}`} className="p-4 overflow-y-auto flex-1">
               <div className="mb-4">
                 <span className="text-sm text-slate-400">
-                  {new Date(selectedReport.createdAt).toLocaleDateString("tr-TR")}
+                  {new Date(String(selectedReport.createdAt || Date.now())).toLocaleDateString("tr-TR")}
                 </span>
               </div>
               <div className="mb-6">
