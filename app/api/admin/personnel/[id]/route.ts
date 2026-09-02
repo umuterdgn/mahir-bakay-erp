@@ -67,7 +67,7 @@ export async function GET(
     const totalOvertimeHours = person.attendanceRecords.reduce((sum, record) => sum + Number(record.overtimeHours ?? 0), 0)
     const dailyWage = Number(person.gunlukYevmiye ?? 0)
     const totalBaseEarned = totalDayMultiplier * dailyWage
-    const overtimeHourlyRate = dailyWage > 0 ? (dailyWage / 8) * 1.5 : 0
+    const overtimeHourlyRate = dailyWage > 0 ? (dailyWage / 9) * 1.5 : 0
     const totalOvertimeEarned = totalOvertimeHours * overtimeHourlyRate
     const totalBonuses = Number(person.bonuses ?? 0)
     const totalPaid = person.payments.reduce((sum, payment) => sum + Number(payment.amount ?? 0), 0)

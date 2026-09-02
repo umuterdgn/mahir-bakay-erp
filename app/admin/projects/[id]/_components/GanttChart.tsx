@@ -58,19 +58,21 @@ export default function GanttChart({ projectId }: GanttChartProps) {
 
       const ganttTasks = (data as GanttTaskRecord[])
         .map((task) => {
-          const start = new Date(task?.startDate || Date.now());
-          const end = new Date(task?.endDate || Date.now());
+          if (!task || !task.id) return null;
+
+          const startValue = task?.startDate ? new Date(String(task.startDate)) : new Date(Date.now());
+          const endValue = task?.endDate ? new Date(String(task.endDate)) : new Date(Date.now());
           const progressValue = Number(task?.progress ?? 0);
 
-          if (!task?.id || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+          if (Number.isNaN(startValue.getTime()) || Number.isNaN(endValue.getTime())) {
             return null;
           }
 
           return {
-            id: task.id,
+            id: String(task.id),
             name: String(task.name || "İş Planı Görevi"),
-            start,
-            end,
+            start: startValue,
+            end: endValue,
             progress: Math.min(100, Math.max(0, progressValue)),
             type: "task" as const,
             isDisabled: false,
@@ -80,7 +82,7 @@ export default function GanttChart({ projectId }: GanttChartProps) {
             },
           };
         })
-        .filter(Boolean) as Task[];
+        .filter((task): task is Task => Boolean(task) && Boolean(task.start) && Boolean(task.end));
 
       setTasks(ganttTasks);
     } catch (error) {
@@ -128,6 +130,10 @@ export default function GanttChart({ projectId }: GanttChartProps) {
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
       </div>
     );
+  }
+
+  if (!tasks || tasks.length === 0) {
+    return <div className="p-4 text-slate-500">Henüz iş planı oluşturulmadı.</div>;
   }
 
   return (

@@ -685,61 +685,23 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-semibold text-white">Drone Analizi</h3>
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors flex items-center gap-2">
+              <label className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors flex items-center gap-2 cursor-pointer">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                 </svg>
                 Yeni Tarama
-              </button>
+                <input type="file" className="hidden" />
+              </label>
             </div>
 
-            {/* Ortophoto Image */}
-            <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
-              <div className="relative h-100 bg-linear-to-br from-slate-700 to-slate-800 flex items-center justify-center">
-                <div className="text-center">
-                  <svg className="w-16 h-16 text-slate-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  <p className="text-slate-400 text-lg mb-2">Ortofoto Görüntüsü</p>
-                  <p className="text-slate-500 text-sm">Son tarama: 15 Ağustos 2024</p>
-                </div>
-              </div>
-            </div>
-
-            {/* AI Analysis */}
-            <div className="bg-linear-to-r from-green-900/20 to-emerald-900/20 rounded-xl p-6 border border-green-500/30">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center shrink-0">
-                  <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <h4 className="text-lg font-semibold text-white mb-2">AI Analizi</h4>
-                  <p className="text-slate-300 leading-relaxed">
-                    Önceki taramaya göre yapı ilerlemesi <span className="text-green-400 font-bold">%18</span> artış gösterdi. Beton dökümü ve donatı işlerinde planlanan hedeflere ulaşıldı.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Scan History */}
             <div className="bg-slate-800 rounded-xl border border-slate-700 p-6">
               <h4 className="text-white font-medium mb-4">Tarama Geçmişi</h4>
               <div className="space-y-3">
-                <div className="flex items-center justify-between py-2 border-b border-slate-700">
-                  <span className="text-slate-400">15 Ağustos 2024</span>
-                  <span className="text-green-400 text-sm">Tamamlandı</span>
-                </div>
-                <div className="flex items-center justify-between py-2 border-b border-slate-700">
-                  <span className="text-slate-400">1 Ağustos 2024</span>
-                  <span className="text-green-400 text-sm">Tamamlandı</span>
-                </div>
-                <div className="flex items-center justify-between py-2">
-                  <span className="text-slate-400">18 Temmuz 2024</span>
-                  <span className="text-green-400 text-sm">Tamamlandı</span>
-                </div>
+                {Array.isArray([]) && [].length > 0 ? (
+                  []
+                ) : (
+                  <p className="text-slate-400 text-sm">Henüz tarama kaydı bulunmuyor.</p>
+                )}
               </div>
             </div>
           </div>

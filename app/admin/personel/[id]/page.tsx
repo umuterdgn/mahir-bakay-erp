@@ -119,7 +119,7 @@ export default function PersonelDetailPage({
 
     const dailyWage = Number(summary.dailyWage ?? person?.gunlukYevmiye ?? 0)
     const totalBaseEarned = Number(summary.totalBaseEarned ?? (totalDayMultiplier * dailyWage))
-    const totalOvertimeEarned = Number(summary.totalOvertimeEarned ?? (totalOvertimeHours * ((dailyWage / 8) * 1.5)))
+    const totalOvertimeEarned = Number(summary.totalOvertimeEarned ?? (totalOvertimeHours * ((dailyWage / 9) * 1.5)))
     const toplamPrim = Number(summary.totalBonuses ?? payments.reduce((sum: number, p: any) => {
       if (p.type === 'PRIM') {
         return sum + Number(p.amount ?? 0)
