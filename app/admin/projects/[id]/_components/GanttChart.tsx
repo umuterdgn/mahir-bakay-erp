@@ -84,7 +84,7 @@ export default function GanttChart({ projectId }: GanttChartProps) {
         })
         .filter((task: any): task is Task => Boolean(task) && Boolean(task.start) && Boolean(task.end));
 
-      setTasks(ganttTasks);
+      setTasks(ganttTasks as any);
     } catch (error) {
       console.error("Error fetching tasks:", error);
       setTasks([]);
