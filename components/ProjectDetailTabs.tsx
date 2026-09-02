@@ -86,6 +86,7 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
   const [deleteReportId, setDeleteReportId] = useState<string | null>(null)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isUploadingBim, setIsUploadingBim] = useState(false)
+  const [isUploadingFile, setIsUploadingFile] = useState(false)
   const [editForm, setEditForm] = useState({
     city: project.city || "",
     district: project.district || "",
@@ -197,6 +198,32 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
   };
 
   const reportDateLabel = formatReportDate(selectedReport?.createdAt)
+
+  const handleFileUpload = async (file: File) => {
+    setIsUploadingFile(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        console.log('File uploaded successfully:', data.url)
+        toast.success('Dosya başarıyla yüklendi!')
+      } else {
+        toast.error('Dosya yüklenirken hata oluştu')
+      }
+    } catch (error) {
+      console.error('Upload error:', error)
+      toast.error('Dosya yüklenirken hata oluştu')
+    } finally {
+      setIsUploadingFile(false)
+    }
+  }
 
   const handleDownloadPDF = async (reportId: string) => {
     const element = document.getElementById(`pdf-template-${reportId}`);
@@ -689,8 +716,16 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                 </svg>
-                Yeni Tarama
-                <input type="file" className="hidden" />
+                {isUploadingFile ? 'Yükleniyor...' : 'Yeni Tarama'}
+                <input 
+                  type="file" 
+                  className="hidden" 
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) handleFileUpload(file)
+                  }}
+                  disabled={isUploadingFile}
+                />
               </label>
             </div>
 

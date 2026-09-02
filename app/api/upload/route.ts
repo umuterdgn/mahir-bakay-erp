@@ -1,5 +1,5 @@
 /**
- * © 2026 NXA Software. All rights reserved.
+ * 2026 NXA Software. All rights reserved.
  * Developer: Umut Erdoğan
  * This code is the property of NXA Software.
  */
@@ -9,6 +9,8 @@ import { writeFile, mkdir } from "fs/promises"
 import { existsSync } from "fs"
 import path from "path"
 import { google } from "googleapis"
+import { PutObjectCommand } from "@aws-sdk/client-s3"
+import { s3Client } from "@/lib/s3"
 
 export async function POST(request: Request) {
   try {
@@ -112,6 +114,40 @@ export async function POST(request: Request) {
       } catch (driveError) {
         console.error("Google Drive upload failed, falling back to local:", driveError)
         // Fall back to local upload if Drive fails
+      }
+    }
+
+    // Check if Storj S3 credentials are available
+    const storjBucket = process.env.STORJ_BUCKET_NAME
+    const storjEndpoint = process.env.STORJ_ENDPOINT
+
+    if (storjBucket && storjEndpoint) {
+      try {
+        const timestamp = Date.now()
+        const fileExtension = file.name.split(".").pop()
+        const filename = `${timestamp}-${customName || file.name}.${fileExtension}`
+
+        const bytes = await file.arrayBuffer()
+        const buffer = Buffer.from(bytes)
+
+        const command = new PutObjectCommand({
+          Bucket: storjBucket,
+          Key: filename,
+          Body: buffer,
+          ContentType: file.type,
+        })
+
+        await s3Client.send(command)
+
+        const publicUrl = `${storjEndpoint}/${storjBucket}/${filename}`
+
+        return NextResponse.json(
+          { url: publicUrl, filename },
+          { status: 200 }
+        )
+      } catch (storjError) {
+        console.error("Storj upload failed, falling back to local:", storjError)
+        // Fall back to local upload if Storj fails
       }
     }
 
