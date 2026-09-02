@@ -861,7 +861,7 @@ export default function ProjectDetailTabs({ project }: ProjectDetailTabsProps) {
                           {report.markedBlueprintUrl ? 'Plan' : 'Fotoğraf'}
                         </span>
                       </div>
-                      <h3 className="text-sm font-semibold text-slate-200 truncate" title={report.title}>
+                      <h3 className="text-sm font-semibold text-slate-200 truncate" title={report.title || ""}>
                         {report.title || report.description || "Rapor"}
                       </h3>
                     </div>
