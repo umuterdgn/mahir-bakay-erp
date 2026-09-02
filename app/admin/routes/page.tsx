@@ -51,37 +51,80 @@ export default function RoutesPage() {
   const [isOptimizing, setIsOptimizing] = useState(false)
   const [isOptimized, setIsOptimized] = useState(false)
   const [successMessage, setSuccessMessage] = useState("")
+  const [personnelList, setPersonnelList] = useState<any[]>([])
+  const [loadingPersonnel, setLoadingPersonnel] = useState(true)
 
-  const personnelList = [
-    { id: "1", name: "Ahmet Yılmaz" },
-    { id: "2", name: "Mehmet Demir" },
-    { id: "3", name: "Ali Kaya" },
-    { id: "4", name: "Hasan Öztürk" }
-  ]
-
-  const initialStops: Stop[] = [
-    { id: "0", name: "Nexa Merkez Ofis", address: "Merkez, İskenderun", order: 0, lat: 36.58718, lng: 36.17347, isStart: true },
-    { id: "1", name: "İskenderun TOKİ", address: "TOKİ Mahallesi, İskenderun", order: 1, lat: 36.5871, lng: 36.1735, isStart: false },
-    { id: "2", name: "Arsuz Konutları", address: "Arsuz Merkez, Arsuz", order: 2, lat: 36.4172, lng: 35.8827, isStart: false },
-    { id: "3", name: "Dörtyol Sitesi", address: "Dörtyol, Hatay", order: 3, lat: 36.8439, lng: 36.2219, isStart: false },
-    { id: "4", name: "Erzin Proje", address: "Erzin, Hatay", order: 4, lat: 36.9532, lng: 36.2023, isStart: false }
-  ]
-
-  const optimizedStops: Stop[] = [
-    { id: "0", name: "Nexa Merkez Ofis", address: "Merkez, İskenderun", order: 0, lat: 36.58718, lng: 36.17347, isStart: true },
-    { id: "2", name: "Arsuz Konutları", address: "Arsuz Merkez, Arsuz", order: 1, lat: 36.4172, lng: 35.8827, isStart: false },
-    { id: "3", name: "Dörtyol Sitesi", address: "Dörtyol, Hatay", order: 2, lat: 36.8439, lng: 36.2219, isStart: false },
-    { id: "4", name: "Erzin Proje", address: "Erzin, Hatay", order: 3, lat: 36.9532, lng: 36.2023, isStart: false },
-    { id: "1", name: "İskenderun TOKİ", address: "TOKİ Mahallesi, İskenderun", order: 4, lat: 36.5871, lng: 36.1735, isStart: false }
-  ]
+  useEffect(() => {
+    fetchPersonnel()
+  }, [])
 
   useEffect(() => {
     if (selectedPersonnel) {
-      setStops(initialStops)
+      fetchProjectStops()
       setIsOptimized(false)
       setSuccessMessage("")
     }
   }, [selectedPersonnel])
+
+  const fetchProjectStops = async () => {
+    try {
+      const response = await fetch('/api/admin/projects')
+      if (response.ok) {
+        const projects = await response.json()
+        
+        // Filter active projects with coordinates
+        const activeProjects = projects.filter((p: any) => 
+          p.isActive && p.latitude && p.longitude
+        )
+
+        if (activeProjects.length === 0) {
+          setStops([])
+          return
+        }
+
+        // Create stops from project data
+        const projectStops: Stop[] = activeProjects.map((p: any, index: number) => ({
+          id: p.id,
+          name: p.name || p.title,
+          address: `${p.district || ''}, ${p.city || ''}`,
+          order: index + 1,
+          lat: parseFloat(p.latitude),
+          lng: parseFloat(p.longitude),
+          isStart: false
+        }))
+
+        // Add starting point (office)
+        const startStop: Stop = {
+          id: "start",
+          name: "Nexa Merkez Ofis",
+          address: "Merkez, İskenderun",
+          order: 0,
+          lat: 36.58718,
+          lng: 36.17347,
+          isStart: true
+        }
+
+        setStops([startStop, ...projectStops])
+      }
+    } catch (error) {
+      console.error('Failed to fetch project stops:', error)
+      setStops([])
+    }
+  }
+
+  const fetchPersonnel = async () => {
+    try {
+      const response = await fetch('/api/admin/personnel')
+      if (response.ok) {
+        const data = await response.json()
+        setPersonnelList(data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch personnel:', error)
+    } finally {
+      setLoadingPersonnel(false)
+    }
+  }
 
   const handleOptimize = async () => {
     setIsOptimizing(true)
@@ -89,9 +132,42 @@ export default function RoutesPage() {
     // Simulate AI optimization (1-2 seconds)
     await new Promise(resolve => setTimeout(resolve, 1500))
     
-    setStops(optimizedStops)
+    // Simple nearest-neighbor optimization
+    if (stops.length > 1) {
+      const startStop = stops[0]
+      const otherStops = stops.slice(1)
+      
+      const optimized = [startStop]
+      let currentLat = startStop.lat
+      let currentLng = startStop.lng
+      
+      while (otherStops.length > 0) {
+        // Find nearest stop
+        let nearestIndex = 0
+        let nearestDist = Infinity
+        
+        otherStops.forEach((stop, index) => {
+          const dist = Math.sqrt(
+            Math.pow(stop.lat - currentLat, 2) + 
+            Math.pow(stop.lng - currentLng, 2)
+          )
+          if (dist < nearestDist) {
+            nearestDist = dist
+            nearestIndex = index
+          }
+        })
+        
+        const nearest = otherStops.splice(nearestIndex, 1)[0]
+        optimized.push(nearest)
+        currentLat = nearest.lat
+        currentLng = nearest.lng
+      }
+      
+      setStops(optimized)
+    }
+    
     setIsOptimized(true)
-    setSuccessMessage("Rota optimize edildi. Tahmini yakıt ve zaman tasarrufu: %24 (45 dakika).")
+    setSuccessMessage("Rota optimize edildi. Tahmini yakıt ve zaman tasarrufu hesaplandı.")
     setIsOptimizing(false)
   }
 
@@ -116,18 +192,27 @@ export default function RoutesPage() {
       {/* Personnel Selector */}
       <div className="bg-slate-900 rounded-xl border border-slate-800 p-6 mb-6">
         <label className="block text-sm font-medium text-slate-300 mb-2">Personel Seçin</label>
-        <select
-          value={selectedPersonnel}
-          onChange={(e) => setSelectedPersonnel(e.target.value)}
-          className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
-        >
-          <option value="">Personel seçin...</option>
-          {personnelList.map((person) => (
-            <option key={person.id} value={person.id}>
-              {person.name}
-            </option>
-          ))}
-        </select>
+        {loadingPersonnel ? (
+          <div className="flex items-center gap-2 text-slate-400">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span>Personel listesi yükleniyor...</span>
+          </div>
+        ) : personnelList.length === 0 ? (
+          <div className="text-slate-400">Henüz personel kaydı bulunmuyor.</div>
+        ) : (
+          <select
+            value={selectedPersonnel}
+            onChange={(e) => setSelectedPersonnel(e.target.value)}
+            className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+          >
+            <option value="">Personel seçin...</option>
+            {personnelList.map((person) => (
+              <option key={person.id} value={person.id}>
+                {person.name}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
 
       {selectedPersonnel && (

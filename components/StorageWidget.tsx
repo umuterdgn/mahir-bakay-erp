@@ -5,23 +5,63 @@
  * This code is the property of NXA Software.
  */
 
-import { HardDrive, AlertTriangle } from "lucide-react"
+import { HardDrive, AlertTriangle, Loader2 } from "lucide-react"
+import { useState, useEffect } from "react"
 
-interface StorageWidgetProps {
-  usedSpace: number
-  maxSpace?: number
-}
+export default function StorageWidget() {
+  const [storageData, setStorageData] = useState<{ usedSpace: number; maxSpace: number; percentage: number } | null>(null)
+  const [loading, setLoading] = useState(true)
 
-export default function StorageWidget({ usedSpace, maxSpace = 250 }: StorageWidgetProps) {
-  const percentage = (usedSpace / maxSpace) * 100
+  useEffect(() => {
+    fetchStorageData()
+  }, [])
+
+  const fetchStorageData = async () => {
+    try {
+      const response = await fetch('/api/admin/storage')
+      if (response.ok) {
+        const data = await response.json()
+        setStorageData(data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch storage data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+        <div className="flex items-center gap-2 mb-3">
+          <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />
+          <span className="text-sm font-medium text-slate-300">Depolama Alanı</span>
+        </div>
+      </div>
+    )
+  }
+
+  if (!storageData) {
+    return (
+      <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+        <div className="flex items-center gap-2 mb-3">
+          <HardDrive className="w-4 h-4 text-slate-400" />
+          <span className="text-sm font-medium text-slate-300">Depolama Alanı</span>
+        </div>
+        <div className="text-xs text-slate-500">Veri yüklenemedi</div>
+      </div>
+    )
+  }
+
+  const { usedSpace, maxSpace, percentage } = storageData
   const remainingSpace = maxSpace - usedSpace
 
   // Determine bar color based on usage
   let barColor = "bg-blue-500"
   let showWarning = false
 
-  if (usedSpace > 245) {
-    // Last 5 GB - critical
+  if (usedSpace > maxSpace * 0.95) {
+    // Last 5% - critical
     barColor = "bg-red-500"
     showWarning = true
   } else if (percentage >= 80) {

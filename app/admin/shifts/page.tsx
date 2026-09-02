@@ -22,26 +22,9 @@ export default function ShiftsPage() {
       if (response.ok) {
         const data = await response.json()
         setShiftData(data)
-      } else {
-        // Fallback mock data if API fails
-        setShiftData([
-          { id: "S001", name: "Sabah Vardiyası", timeRange: "08:00 - 17:00", personnelCount: 12, project: { name: "İskenderun TOKİ" }, status: "Active" },
-          { id: "S002", name: "Akşam Vardiyası", timeRange: "17:00 - 02:00", personnelCount: 8, project: { name: "Arsuz Konutları" }, status: "Active" },
-          { id: "S003", name: "Gece Vardiyası", timeRange: "02:00 - 08:00", personnelCount: 5, project: { name: "Dörtyol Sitesi" }, status: "Active" },
-          { id: "S004", name: "Hafta Sonu Vardiyası", timeRange: "08:00 - 17:00", personnelCount: 10, project: { name: "Erzin Proje" }, status: "Scheduled" },
-          { id: "S005", name: "Bayram Vardiyası", timeRange: "09:00 - 18:00", personnelCount: 6, project: { name: "İskenderun TOKİ" }, status: "Pending" },
-        ])
       }
     } catch (error) {
       console.error('Failed to fetch shifts:', error)
-      // Fallback mock data on error
-      setShiftData([
-        { id: "S001", name: "Sabah Vardiyası", timeRange: "08:00 - 17:00", personnelCount: 12, project: { name: "İskenderun TOKİ" }, status: "Active" },
-        { id: "S002", name: "Akşam Vardiyası", timeRange: "17:00 - 02:00", personnelCount: 8, project: { name: "Arsuz Konutları" }, status: "Active" },
-        { id: "S003", name: "Gece Vardiyası", timeRange: "02:00 - 08:00", personnelCount: 5, project: { name: "Dörtyol Sitesi" }, status: "Active" },
-        { id: "S004", name: "Hafta Sonu Vardiyası", timeRange: "08:00 - 17:00", personnelCount: 10, project: { name: "Erzin Proje" }, status: "Scheduled" },
-        { id: "S005", name: "Bayram Vardiyası", timeRange: "09:00 - 18:00", personnelCount: 6, project: { name: "İskenderun TOKİ" }, status: "Pending" },
-      ])
     } finally {
       setLoading(false)
     }
@@ -79,7 +62,8 @@ export default function ShiftsPage() {
             </tr>
           </thead>
           <tbody>
-            {shiftData.map((shift) => (
+            {shiftData.length > 0 ? (
+              shiftData.map((shift) => (
               <tr key={shift.id} className="border-b border-slate-800 hover:bg-slate-800/30 transition-colors">
                 <td className="p-4 text-white font-medium">{shift.id}</td>
                 <td className="p-4 text-white">{shift.name}</td>
@@ -106,7 +90,15 @@ export default function ShiftsPage() {
                   </span>
                 </td>
               </tr>
-            ))}
+              ))
+            ) : (
+              <tr>
+                <td colSpan={6} className="p-8 text-center text-slate-400">
+                  <Clock className="w-12 h-12 mx-auto mb-3 text-slate-600" />
+                  <p>Tanımlı vardiya bulunmuyor.</p>
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

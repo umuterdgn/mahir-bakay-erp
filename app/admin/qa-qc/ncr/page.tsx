@@ -87,6 +87,26 @@ export default function NCRPage() {
     }
   }
 
+  const updateStatus = async (reportId: string, newStatus: string) => {
+    try {
+      const response = await fetch(`/api/admin/ncr/${reportId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      })
+
+      if (response.ok) {
+        toast.success(`Durum güncellendi: ${newStatus}`)
+        fetchReports()
+      } else {
+        toast.error("Durum güncellenirken hata oluştu")
+      }
+    } catch (error) {
+      console.error('Failed to update status:', error)
+      toast.error("Bir hata oluştu")
+    }
+  }
+
   const filteredReports = reports.filter(report => {
     const matchesFilter = filter === "all" || 
       (filter === "open" && report.status === "Açık") ||
@@ -310,8 +330,26 @@ export default function NCRPage() {
                 </div>
               )}
 
-              <div className="pt-3 border-t border-slate-700 text-xs text-slate-500">
-                {new Date(report.createdAt).toLocaleDateString('tr-TR')}
+              <div className="pt-3 border-t border-slate-700 text-xs text-slate-500 flex items-center justify-between">
+                <span>{new Date(report.createdAt).toLocaleDateString('tr-TR')}</span>
+                <div className="flex gap-2">
+                  {report.status === "Açık" && (
+                    <button
+                      onClick={() => updateStatus(report.id, "İşlemde")}
+                      className="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-500 transition-colors"
+                    >
+                      İşleme Al
+                    </button>
+                  )}
+                  {report.status === "İşlemde" && (
+                    <button
+                      onClick={() => updateStatus(report.id, "Kapalı")}
+                      className="px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-500 transition-colors"
+                    >
+                      Kapat
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>

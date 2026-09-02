@@ -5,9 +5,9 @@
  * This code is the property of NXA Software.
  */
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import dynamic from "next/dynamic"
-import { Plane, MapPin, Calendar, TrendingUp, Bot, ChevronLeft, ChevronRight } from "lucide-react"
+import { Plane, MapPin, Calendar, TrendingUp, Bot, ChevronLeft, ChevronRight, Loader2 } from "lucide-react"
 
 // Dynamic import to avoid SSR issues with Leaflet
 const MapContainer = dynamic(
@@ -37,13 +37,26 @@ export default function DroneMapsPage() {
   const [selectedProject, setSelectedProject] = useState("")
   const [selectedMonth, setSelectedMonth] = useState(3)
   const [isTransitioning, setIsTransitioning] = useState(false)
+  const [projects, setProjects] = useState<any[]>([])
+  const [loadingProjects, setLoadingProjects] = useState(true)
 
-  const projects = [
-    { id: "1", name: "İskenderun TOKİ Projesi" },
-    { id: "2", name: "Arsuz Konutları" },
-    { id: "3", name: "Dörtyol Sitesi" },
-    { id: "4", name: "Erzin Proje" }
-  ]
+  useEffect(() => {
+    fetchProjects()
+  }, [])
+
+  const fetchProjects = async () => {
+    try {
+      const response = await fetch('/api/admin/projects')
+      if (response.ok) {
+        const data = await response.json()
+        setProjects(data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch projects:', error)
+    } finally {
+      setLoadingProjects(false)
+    }
+  }
 
   const droneImages: DroneImage[] = [
     {
@@ -112,18 +125,27 @@ export default function DroneMapsPage() {
       {/* Project Selector */}
       <div className="bg-slate-900 rounded-xl border border-slate-800 p-6 mb-6">
         <label className="block text-sm font-medium text-slate-300 mb-2">Proje Seçin</label>
-        <select
-          value={selectedProject}
-          onChange={(e) => setSelectedProject(e.target.value)}
-          className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
-        >
-          <option value="">Proje seçin...</option>
-          {projects.map((project) => (
-            <option key={project.id} value={project.id}>
-              {project.name}
-            </option>
-          ))}
-        </select>
+        {loadingProjects ? (
+          <div className="flex items-center gap-2 text-slate-400">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span>Projeler yükleniyor...</span>
+          </div>
+        ) : projects.length === 0 ? (
+          <div className="text-slate-400">Henüz proje kaydı bulunmuyor.</div>
+        ) : (
+          <select
+            value={selectedProject}
+            onChange={(e) => setSelectedProject(e.target.value)}
+            className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+          >
+            <option value="">Proje seçin...</option>
+            {projects.map((project) => (
+              <option key={project.id} value={project.id}>
+                {project.name || project.title}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
 
       {selectedProject && (

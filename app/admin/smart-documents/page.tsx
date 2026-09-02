@@ -5,7 +5,7 @@
  * This code is the property of NXA Software.
  */
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { ScanText, FileText, CheckCircle, AlertTriangle, X, Loader2, Scan, Calendar, User, FileCheck } from "lucide-react"
 
 interface DocumentItem {
@@ -28,44 +28,35 @@ export default function SmartDocumentsPage() {
   const [isScanning, setIsScanning] = useState(false)
   const [ocrResult, setOcrResult] = useState<OCRResult | null>(null)
   const [selectedDocument, setSelectedDocument] = useState<DocumentItem | null>(null)
+  const [projects, setProjects] = useState<any[]>([])
+  const [loadingProjects, setLoadingProjects] = useState(true)
+  const [documents, setDocuments] = useState<DocumentItem[]>([])
 
-  const projects = [
-    { id: "1", name: "İskenderun TOKİ Projesi" },
-    { id: "2", name: "Arsuz Konutları" },
-    { id: "3", name: "Dörtyol Sitesi" },
-    { id: "4", name: "Erzin Proje" }
-  ]
+  useEffect(() => {
+    fetchProjects()
+  }, [])
 
-  const mockDocuments: Record<string, DocumentItem[]> = {
-    "1": [
-      { id: "1", name: "Yapı Ruhsatı", status: "complete", expiryDate: "15.09.2026", uploadedBy: "Ahmet Yılmaz" },
-      { id: "2", name: "Yapı Denetim Sözleşmesi", status: "complete", expiryDate: "20.08.2025", uploadedBy: "Mehmet Demir" },
-      { id: "3", name: "İSG Sertifikası", status: "risky", expiryDate: "02.09.2026", uploadedBy: "İSG Uzmanı" },
-      { id: "4", name: "Sigorta Poliçesi", status: "complete", expiryDate: "10.12.2026", uploadedBy: "Finans Departmanı" },
-      { id: "5", name: "Zemin Etüdü", status: "missing" }
-    ],
-    "2": [
-      { id: "1", name: "Yapı Ruhsatı", status: "complete", expiryDate: "30.10.2026", uploadedBy: "Ali Kaya" },
-      { id: "2", name: "Yapı Denetim Sözleşmesi", status: "missing" },
-      { id: "3", name: "İSG Sertifikası", status: "complete", expiryDate: "15.11.2026", uploadedBy: "İSG Uzmanı" },
-      { id: "4", name: "Sigorta Poliçesi", status: "risky", expiryDate: "05.09.2026", uploadedBy: "Finans Departmanı" },
-      { id: "5", name: "Zemin Etüdü", status: "complete", expiryDate: "20.08.2025", uploadedBy: "Mühendislik" }
-    ],
-    "3": [
-      { id: "1", name: "Yapı Ruhsatı", status: "missing" },
-      { id: "2", name: "Yapı Denetim Sözleşmesi", status: "complete", expiryDate: "25.08.2025", uploadedBy: "Hasan Öztürk" },
-      { id: "3", name: "İSG Sertifikası", status: "complete", expiryDate: "20.12.2026", uploadedBy: "İSG Uzmanı" },
-      { id: "4", name: "Sigorta Poliçesi", status: "complete", expiryDate: "15.01.2027", uploadedBy: "Finans Departmanı" },
-      { id: "5", name: "Zemin Etüdü", status: "risky", expiryDate: "10.09.2026", uploadedBy: "Mühendislik" }
-    ],
-    "4": [
-      { id: "1", name: "Yapı Ruhsatı", status: "complete", expiryDate: "05.11.2026", uploadedBy: "Can Yılmaz" },
-      { id: "2", name: "Yapı Denetim Sözleşmesi", status: "complete", expiryDate: "10.08.2025", uploadedBy: "Mehmet Demir" },
-      { id: "3", name: "İSG Sertifikası", status: "missing" },
-      { id: "4", name: "Sigorta Poliçesi", status: "complete", expiryDate: "20.12.2026", uploadedBy: "Finans Departmanı" },
-      { id: "5", name: "Zemin Etüdü", status: "complete", expiryDate: "15.08.2025", uploadedBy: "Mühendislik" }
-    ]
+  const fetchProjects = async () => {
+    try {
+      const response = await fetch('/api/admin/projects')
+      if (response.ok) {
+        const data = await response.json()
+        setProjects(data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch projects:', error)
+    } finally {
+      setLoadingProjects(false)
+    }
   }
+
+  useEffect(() => {
+    if (selectedProject) {
+      // Fetch documents for selected project
+      // For now, show empty state since we don't have a documents API
+      setDocuments([])
+    }
+  }, [selectedProject])
 
   const handleOCRScan = async (document: DocumentItem) => {
     setSelectedDocument(document)
@@ -159,7 +150,7 @@ export default function SmartDocumentsPage() {
     }
   }
 
-  const currentDocuments = selectedProject ? mockDocuments[selectedProject] : []
+  const currentDocuments = documents
 
   return (
     <div className="lg:mt-0 mt-16">
@@ -174,22 +165,31 @@ export default function SmartDocumentsPage() {
       {/* Project Selector */}
       <div className="bg-slate-900 rounded-xl border border-slate-800 p-6 mb-6">
         <label className="block text-sm font-medium text-slate-300 mb-2">Proje (YİBF) Seçin</label>
-        <select
-          value={selectedProject}
-          onChange={(e) => {
-            setSelectedProject(e.target.value)
-            setSelectedDocument(null)
-            setOcrResult(null)
-          }}
-          className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
-        >
-          <option value="">Proje seçin...</option>
-          {projects.map((project) => (
-            <option key={project.id} value={project.id}>
-              {project.name}
-            </option>
-          ))}
-        </select>
+        {loadingProjects ? (
+          <div className="flex items-center gap-2 text-slate-400">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span>Projeler yükleniyor...</span>
+          </div>
+        ) : projects.length === 0 ? (
+          <div className="text-slate-400">Henüz proje kaydı bulunmuyor.</div>
+        ) : (
+          <select
+            value={selectedProject}
+            onChange={(e) => {
+              setSelectedProject(e.target.value)
+              setSelectedDocument(null)
+              setOcrResult(null)
+            }}
+            className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+          >
+            <option value="">Proje seçin...</option>
+            {projects.map((project) => (
+              <option key={project.id} value={project.id}>
+                {project.name || project.title}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
 
       {selectedProject && (
@@ -202,7 +202,8 @@ export default function SmartDocumentsPage() {
             </h3>
             
             <div className="space-y-3">
-              {currentDocuments.map((doc) => (
+              {currentDocuments.length > 0 ? (
+                currentDocuments.map((doc) => (
                 <div
                   key={doc.id}
                   className="p-4 rounded-lg border bg-slate-800/50 hover:bg-slate-800 transition-colors"
@@ -238,7 +239,13 @@ export default function SmartDocumentsPage() {
                     </div>
                   </div>
                 </div>
-              ))}
+                ))
+              ) : (
+                <div className="text-center py-8 text-slate-400">
+                  <FileText className="w-12 h-12 mx-auto mb-3 text-slate-600" />
+                  <p>Henüz evrak kaydı bulunmuyor.</p>
+                </div>
+              )}
             </div>
           </div>
 

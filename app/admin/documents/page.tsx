@@ -292,7 +292,7 @@ export default function DocumentsPage() {
 
       {/* Storage Widget */}
       <div className="mb-6">
-        <StorageWidget usedSpace={246} />
+        <StorageWidget />
       </div>
 
       {/* Filters */}
