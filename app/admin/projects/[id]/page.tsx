@@ -34,6 +34,12 @@ export default async function ProjectDetailPage({
     title?: string | null
     healthScore?: number | null
     progress?: number | null
+    yibfNo?: string | number | null
+    status?: string | null
+    startDate?: string | Date | null
+    endDate?: string | Date | null
+    locationCity?: string | null
+    district?: string | null
     transactions?: ProjectTransaction[]
     inspections?: Array<Record<string, unknown>>
     deficiencies?: Array<Record<string, unknown>>
@@ -203,10 +209,10 @@ export default async function ProjectDetailPage({
               )}
             </div>
             <div className="flex flex-wrap items-center gap-4 text-slate-600 dark:text-slate-400">
-              {project.company && (
+              {Boolean(project.company) && (
                 <span className="flex items-center">
                   <span className="mr-2">Müşteri:</span>
-                  <span className="text-slate-900 dark:text-white font-medium">{project.company.name}</span>
+                  <span className="text-slate-900 dark:text-white font-medium">{String(project.company?.name ?? "")}</span>
                 </span>
               )}
               <span className="flex items-center">
@@ -223,12 +229,12 @@ export default async function ProjectDetailPage({
                   </span>
                 </span>
               )}
-              {project.locationCity && (
+              {Boolean(project.locationCity) && (
                 <span className="flex items-center">
                   <span className="mr-2">Konum:</span>
                   <span className="text-slate-900 dark:text-white font-medium">
-                    {project.locationCity}
-                    {project.district && `, ${project.district}`}
+                    {String(project.locationCity ?? "")}
+                    {Boolean(project.district) && `, ${String(project.district ?? "")}`}
                   </span>
                 </span>
               )}
@@ -236,9 +242,9 @@ export default async function ProjectDetailPage({
           </div>
           <div className="flex items-center gap-3">
             <ProjectDetailClient project={project} />
-            {project.status && (
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(project.status)}`}>
-                {getStatusLabel(project.status)}
+            {Boolean(project.status) && (
+              <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(String(project.status ?? ""))}`}>
+                {getStatusLabel(String(project.status ?? ""))}
               </span>
             )}
           </div>
