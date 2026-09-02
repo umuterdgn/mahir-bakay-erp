@@ -57,6 +57,11 @@ interface Props {
   projectLat: number;
   projectLng: number;
   projectId: string;
+  userLocation?: {
+    latitude: number | null;
+    longitude: number | null;
+    isTracking: boolean;
+  };
 }
 
 const CATEGORY_COLORS = {
@@ -99,7 +104,7 @@ const playAlarm = () => {
   } catch(e) { console.error("Audio blocked by browser", e); }
 };
 
-export default function SiteMasterPlan({ projectLat, projectLng, projectId }: Props) {
+export default function SiteMasterPlan({ projectLat, projectLng, projectId, userLocation }: Props) {
   const [zones, setZones] = useState<SiteZone[]>([]);
   const [activeCategory, setActiveCategory] = useState<keyof typeof CATEGORY_COLORS>('BUILDING');
   const [mounted, setMounted] = useState(false);
@@ -620,6 +625,43 @@ export default function SiteMasterPlan({ projectLat, projectLng, projectId }: Pr
                 </Popup>
               </Circle>
             ))}
+
+            {/* User Location Marker */}
+            {userLocation?.isTracking && userLocation.latitude && userLocation.longitude && (
+              <CircleMarker
+                center={[userLocation.latitude, userLocation.longitude]}
+                radius={8}
+                interactive={true}
+                pathOptions={{
+                  color: '#00bcd4',
+                  fillColor: '#00bcd4',
+                  fillOpacity: 1,
+                  className: 'animate-pulse'
+                }}
+              >
+                <Popup className="user-location-popup">
+                  <div className="flex flex-col gap-1 min-w-[180px]">
+                    <div className="font-bold text-slate-800 border-b pb-2 flex items-center gap-2">
+                      <span className="text-blue-500">📍</span>
+                      <span>Siz Buradasınız</span>
+                    </div>
+                    <div className="text-xs text-slate-600">
+                      <div className="flex justify-between">
+                        <span>Enlem:</span>
+                        <span className="font-mono">{userLocation.latitude.toFixed(6)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Boylam:</span>
+                        <span className="font-mono">{userLocation.longitude.toFixed(6)}</span>
+                      </div>
+                    </div>
+                    <div className="text-xs text-blue-600 font-medium text-center mt-1">
+                      Canlı Takip Aktif
+                    </div>
+                  </div>
+                </Popup>
+              </CircleMarker>
+            )}
           </MapContainer>
         )}
       </div>

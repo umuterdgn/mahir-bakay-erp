@@ -8,7 +8,8 @@
 
 import { useState, useEffect } from "react"
 import dynamic from "next/dynamic"
-import { Map, ChevronDown } from "lucide-react"
+import { Map, ChevronDown, Navigation, NavigationOff } from "lucide-react"
+import { useGeolocation } from "@/hooks/useGeolocation"
 
 const SiteMasterPlan = dynamic(() => import("@/components/SiteMasterPlan"), { 
   ssr: false,
@@ -29,6 +30,12 @@ export default function ISGMasterPlanPage() {
   const [projects, setProjects] = useState<Project[]>([])
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
   const [loading, setLoading] = useState(true)
+  
+  const geolocation = useGeolocation({
+    enableHighAccuracy: true,
+    timeout: 10000,
+    maximumAge: 0
+  })
 
   useEffect(() => {
     fetchProjects()
@@ -110,12 +117,52 @@ export default function ISGMasterPlanPage() {
         </div>
       </div>
 
+      {/* Location Tracking Button */}
+      <div className="mb-6">
+        <button
+          onClick={geolocation.toggleTracking}
+          className={`w-full px-4 py-3 rounded-xl font-medium transition-all flex items-center justify-center gap-2 ${
+            geolocation.isTracking
+              ? 'bg-green-600 hover:bg-green-500 text-white'
+              : 'bg-blue-600 hover:bg-blue-500 text-white'
+          }`}
+        >
+          {geolocation.isTracking ? (
+            <>
+              <NavigationOff className="w-5 h-5" />
+              Konum Takibi Durdur
+            </>
+          ) : (
+            <>
+              <Navigation className="w-5 h-5" />
+              Konumumu Paylaş / Canlı Takip
+            </>
+          )}
+        </button>
+        {geolocation.error && (
+          <div className="mt-2 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg p-3">
+            {geolocation.error}
+          </div>
+        )}
+        {geolocation.isTracking && geolocation.latitude && geolocation.longitude && (
+          <div className="mt-2 text-sm text-green-400 bg-green-500/10 border border-green-500/30 rounded-lg p-3">
+            Konum aktif: {geolocation.latitude.toFixed(6)}, {geolocation.longitude.toFixed(6)}
+            {geolocation.accuracy && ` (Doğruluk: ±${Math.round(geolocation.accuracy)}m)`}
+          </div>
+        )}
+      </div>
+
       {/* Site Master Plan */}
       {selectedProject.latitude && selectedProject.longitude ? (
         <SiteMasterPlan
           projectLat={selectedProject.latitude}
           projectLng={selectedProject.longitude}
           projectId={selectedProject.id}
+          userLocation={{
+            latitude: geolocation.latitude,
+            longitude: geolocation.longitude,
+            isTracking: geolocation.isTracking
+          }}
         />
       ) : (
         <div className="bg-slate-900/50 backdrop-blur-lg rounded-2xl border border-slate-800 p-8 text-center">
