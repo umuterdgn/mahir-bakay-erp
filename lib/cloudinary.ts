@@ -11,6 +11,8 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+export default cloudinary;
+
 export const deleteFromCloudinary = async (url: string) => {
   if (!url || !url.includes('cloudinary.com')) return;
   try {

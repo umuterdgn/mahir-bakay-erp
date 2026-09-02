@@ -11,6 +11,7 @@ import path from "path"
 import { google } from "googleapis"
 import { PutObjectCommand } from "@aws-sdk/client-s3"
 import { s3Client } from "@/lib/s3"
+import cloudinary from "@/lib/cloudinary"
 
 export async function POST(request: Request) {
   try {
@@ -25,39 +26,34 @@ export async function POST(request: Request) {
       )
     }
 
-    // Check if it's an image file - use Cloudinary for images
-    if (file.type.startsWith("image/")) {
-      try {
-        const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
-        const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'ml_default'
+    // Try Cloudinary upload first (for all file types including PDFs and documents)
+    try {
+      const bytes = await file.arrayBuffer()
+      const buffer = Buffer.from(bytes)
 
-        if (!cloudName) {
-          throw new Error("Cloudinary cloud name not configured")
-        }
+      const uploadResult = await new Promise((resolve, reject) => {
+        cloudinary.uploader.upload_stream(
+          {
+            folder: 'mahir-bakay-erp',
+            resource_type: 'auto',
+            public_id: customName ? `${customName}-${Date.now()}` : undefined,
+          },
+          (error, result) => {
+            if (error) reject(error)
+            else resolve(result)
+          }
+        ).end(buffer)
+      })
 
-        const uploadFormData = new FormData()
-        uploadFormData.append('file', file)
-        uploadFormData.append('upload_preset', uploadPreset)
-
-        const uploadResponse = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-          method: 'POST',
-          body: uploadFormData
-        })
-
-        const uploadData = await uploadResponse.json()
-
-        if (!uploadData.secure_url) {
-          throw new Error('Cloudinary upload failed')
-        }
-
+      if (uploadResult && typeof uploadResult === 'object' && 'secure_url' in uploadResult) {
         return NextResponse.json(
-          { url: uploadData.secure_url, filename: customName || file.name },
+          { url: uploadResult.secure_url, filename: customName || file.name },
           { status: 200 }
         )
-      } catch (cloudinaryError) {
-        console.error("Cloudinary upload failed, falling back to local:", cloudinaryError)
-        // Fall back to local upload if Cloudinary fails
       }
+    } catch (cloudinaryError) {
+      console.error("Cloudinary upload failed, falling back to other methods:", cloudinaryError)
+      // Fall back to other upload methods if Cloudinary fails
     }
 
     // Check if Google Drive credentials are available
