@@ -65,6 +65,9 @@ export default async function AdminDashboard() {
   let contractorAverageProgress = 0
   let contractorOpenDeficiencies = 0
 
+  // YİBF Risk Radar data
+  let riskRadarProjects: any[] = []
+
   if (isClientPortal && userId) {
     try {
       // Fetch contractor's managed projects
@@ -111,7 +114,8 @@ export default async function AdminDashboard() {
         logs,
         revenue,
         expenses,
-        stockCount
+        stockCount,
+        projects
       ] = await Promise.all([
         prisma.project.count().catch(() => 0),
         prisma.attendanceRecord.count({
@@ -159,12 +163,26 @@ export default async function AdminDashboard() {
               lt: 10 // Items with quantity less than 10
             }
           }
-        }).catch(() => 0)
+        }).catch(() => 0),
+        // Projects for YİBF Risk Radar
+        prisma.project.findMany({
+          select: {
+            id: true,
+            yibfNo: true,
+            name: true,
+            healthScore: true,
+            riskScore: true,
+            status: true
+          },
+          take: 5,
+          orderBy: { createdAt: 'desc' }
+        }).catch(() => [])
       ])
       totalProjects = totalProjectsCount
       todayCheckins = todayCheckinsCount
       upcomingReminders = reminders
       recentLogs = logs
+      riskRadarProjects = projects
       const normalizedReminders = reminders.map((reminder) => ({
         ...reminder,
         project: reminder.project
@@ -695,91 +713,66 @@ export default async function AdminDashboard() {
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                  <td className="py-3 px-4 text-sm text-slate-900 dark:text-white font-medium">#14585</td>
-                  <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-300">Yılmaz İnşaat</td>
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-16 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                        <div className="h-full bg-red-500 rounded-full" style={{ width: '45%' }} />
-                      </div>
-                      <span className="text-sm font-medium text-red-600 dark:text-red-400">45</span>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4 text-sm text-red-600 dark:text-red-400 font-medium">Yüksek</td>
-                  <td className="py-3 px-4 text-sm text-orange-600 dark:text-orange-400 font-medium">Orta</td>
-                  <td className="py-3 px-4">
-                    <span className="px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-full text-xs font-medium">Kritik 🔴</span>
-                  </td>
-                </tr>
-                <tr className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                  <td className="py-3 px-4 text-sm text-slate-900 dark:text-white font-medium">#14592</td>
-                  <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-300">Kaya Yapı</td>
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-16 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                        <div className="h-full bg-orange-500 rounded-full" style={{ width: '68%' }} />
-                      </div>
-                      <span className="text-sm font-medium text-orange-600 dark:text-orange-400">68</span>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4 text-sm text-orange-600 dark:text-orange-400 font-medium">Orta</td>
-                  <td className="py-3 px-4 text-sm text-yellow-600 dark:text-yellow-400 font-medium">Düşük</td>
-                  <td className="py-3 px-4">
-                    <span className="px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded-full text-xs font-medium">Takip 🟠</span>
-                  </td>
-                </tr>
-                <tr className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                  <td className="py-3 px-4 text-sm text-slate-900 dark:text-white font-medium">#14601</td>
-                  <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-300">Demir Grup</td>
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-16 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                        <div className="h-full bg-green-500 rounded-full" style={{ width: '85%' }} />
-                      </div>
-                      <span className="text-sm font-medium text-green-600 dark:text-green-400">85</span>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4 text-sm text-green-600 dark:text-green-400 font-medium">Düşük</td>
-                  <td className="py-3 px-4 text-sm text-green-600 dark:text-green-400 font-medium">Düşük</td>
-                  <td className="py-3 px-4">
-                    <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-xs font-medium">Normal 🟢</span>
-                  </td>
-                </tr>
-                <tr className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                  <td className="py-3 px-4 text-sm text-slate-900 dark:text-white font-medium">#14615</td>
-                  <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-300">Özkan İnşaat</td>
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-16 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                        <div className="h-full bg-orange-500 rounded-full" style={{ width: '72%' }} />
-                      </div>
-                      <span className="text-sm font-medium text-orange-600 dark:text-orange-400">72</span>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4 text-sm text-yellow-600 dark:text-yellow-400 font-medium">Düşük</td>
-                  <td className="py-3 px-4 text-sm text-orange-600 dark:text-orange-400 font-medium">Orta</td>
-                  <td className="py-3 px-4">
-                    <span className="px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded-full text-xs font-medium">Takip 🟠</span>
-                  </td>
-                </tr>
-                <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                  <td className="py-3 px-4 text-sm text-slate-900 dark:text-white font-medium">#14623</td>
-                  <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-300">Star Yapı</td>
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-16 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                        <div className="h-full bg-green-500 rounded-full" style={{ width: '92%' }} />
-                      </div>
-                      <span className="text-sm font-medium text-green-600 dark:text-green-400">92</span>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4 text-sm text-green-600 dark:text-green-400 font-medium">Düşük</td>
-                  <td className="py-3 px-4 text-sm text-green-600 dark:text-green-400 font-medium">Düşük</td>
-                  <td className="py-3 px-4">
-                    <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-xs font-medium">Normal 🟢</span>
-                  </td>
-                </tr>
+                {riskRadarProjects.length > 0 ? (
+                  riskRadarProjects.map((project) => {
+                    const healthScore = project.healthScore || 50
+                    const riskScore = project.riskScore || 50
+                    const getHealthColor = (score: number) => {
+                      if (score >= 80) return 'bg-green-500'
+                      if (score >= 60) return 'bg-orange-500'
+                      return 'bg-red-500'
+                    }
+                    const getHealthTextColor = (score: number) => {
+                      if (score >= 80) return 'text-green-600 dark:text-green-400'
+                      if (score >= 60) return 'text-orange-600 dark:text-orange-400'
+                      return 'text-red-600 dark:text-red-400'
+                    }
+                    const getRiskLabel = (score: number) => {
+                      if (score >= 70) return 'Yüksek'
+                      if (score >= 40) return 'Orta'
+                      return 'Düşük'
+                    }
+                    const getRiskTextColor = (score: number) => {
+                      if (score >= 70) return 'text-red-600 dark:text-red-400'
+                      if (score >= 40) return 'text-orange-600 dark:text-orange-400'
+                      return 'text-green-600 dark:text-green-400'
+                    }
+                    const getStatusBadge = (healthScore: number, riskScore: number) => {
+                      if (healthScore < 50 || riskScore > 70) {
+                        return <span className="px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-full text-xs font-medium">Kritik �</span>
+                      } else if (healthScore < 70 || riskScore > 40) {
+                        return <span className="px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded-full text-xs font-medium">Takip 🟠</span>
+                      } else {
+                        return <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-xs font-medium">Normal 🟢</span>
+                      }
+                    }
+                    return (
+                      <tr key={project.id} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                        <td className="py-3 px-4 text-sm text-slate-900 dark:text-white font-medium">{project.yibfNo || '-'}</td>
+                        <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-300">{project.name || '-'}</td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2">
+                            <div className="w-16 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                              <div className={`h-full ${getHealthColor(healthScore)} rounded-full`} style={{ width: `${healthScore}%` }} />
+                            </div>
+                            <span className={`text-sm font-medium ${getHealthTextColor(healthScore)}`}>{healthScore}</span>
+                          </div>
+                        </td>
+                        <td className={`py-3 px-4 text-sm ${getRiskTextColor(riskScore)} font-medium`}>{getRiskLabel(riskScore)}</td>
+                        <td className={`py-3 px-4 text-sm ${getRiskTextColor(100 - riskScore)} font-medium`}>{getRiskLabel(100 - riskScore)}</td>
+                        <td className="py-3 px-4">
+                          {getStatusBadge(healthScore, riskScore)}
+                        </td>
+                      </tr>
+                    )
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-slate-500">
+                      Kayıtlı YİBF projesi bulunmamaktadır.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
