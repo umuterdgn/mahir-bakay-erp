@@ -21,7 +21,7 @@ export async function GET() {
 
     // Fetch all document URLs
     const documents = await prisma.document.findMany({
-      select: { fileUrl: true }
+      select: { googleDriveUrl: true }
     })
 
     // Calculate estimated storage usage
