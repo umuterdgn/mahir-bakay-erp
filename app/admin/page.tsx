@@ -170,9 +170,8 @@ export default async function AdminDashboard() {
             id: true,
             yibfNo: true,
             name: true,
-            healthScore: true,
-            riskScore: true,
-            status: true
+            status: true,
+            progress: true
           },
           take: 5,
           orderBy: { createdAt: 'desc' }
@@ -715,8 +714,8 @@ export default async function AdminDashboard() {
               <tbody>
                 {riskRadarProjects.length > 0 ? (
                   riskRadarProjects.map((project) => {
-                    const healthScore = project.healthScore || 50
-                    const riskScore = project.riskScore || 50
+                    const healthScore = project.progress || 50
+                    const riskScore = 100 - (project.progress || 50)
                     const getHealthColor = (score: number) => {
                       if (score >= 80) return 'bg-green-500'
                       if (score >= 60) return 'bg-orange-500'
